@@ -1,6 +1,7 @@
 using Blindify.Api.Contracts;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Enums;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Blindify.Tests.Hubs;
@@ -96,6 +97,28 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         var alice = scoreUpdates[^1].Joueurs.Single(j => j.PlayerId == "player-1");
         Assert.Equal(resultat.NouveauScore, alice.Score);
         Assert.Null(scoreUpdates[^1].Equipes);
+    }
+
+    [Fact]
+    public async Task NextRound_ApresLeDernierRoundDeLaSerie_StartRoundEstRefuse()
+    {
+        var roundEndedTcs = new TaskCompletionSource<RoundEndedDto>();
+        _hostConnection.On<RoundEndedDto>("RoundEnded", payload => roundEndedTcs.TrySetResult(payload));
+
+        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
+            Tags: [],
+            ModeEquipe: false,
+            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
+            Config: null));
+
+        await _hostConnection.InvokeAsync("StartRound");
+        await AvecTimeout(roundEndedTcs.Task, TimeSpan.FromSeconds(5));
+
+        // Un seul round dans l'unique série : plus rien à démarrer après NextRound().
+        await _hostConnection.InvokeAsync("NextRound");
+
+        var exception = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync("StartRound"));
+        Assert.Contains("Plus de round classique", exception.Message);
     }
 
     [Fact]

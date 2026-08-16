@@ -166,7 +166,13 @@ public class GameHub(
             session.SerieCouranteIndex++;
             session.RoundCourantIndex = -1;
         }
-        // Sinon : dernière série épuisée — le host doit appeler StartBonusRound() puis EndGame().
+        else
+        {
+            // Dernière série épuisée — le host doit appeler StartBonusRound() puis EndGame(). On avance
+            // quand même le pointeur hors limites pour que StartRound() refuse désormais de rejouer le
+            // dernier round au lieu de le relancer silencieusement.
+            session.RoundCourantIndex++;
+        }
 
         return Task.CompletedTask;
     }

@@ -16,7 +16,7 @@ builder.Services.AddSignalR().AddJsonProtocol(options =>
 {
     options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
-    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
 // Réseau local uniquement (voir architecture.md section 2) : CORS ouvert aux clients LAN, pas de credentials.
@@ -24,6 +24,10 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
 var app = builder.Build();
+
+// UseCors doit précéder UseStaticFiles : sinon les fichiers statiques répondent avant que les en-têtes
+// CORS ne soient ajoutés, et le navigateur bloque les requêtes cross-origin vers /files/*.
+app.UseCors();
 
 // Sert audio/ et covers/ sous /files — les chemins de tracks.json (ex. "audio/xxx.mp3") sont déjà
 // relatifs à cette racine. Seul le host consomme ces fichiers, jamais les joueurs (voir CLAUDE.md).
@@ -33,8 +37,6 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new PhysicalFileProvider(dataRootPath),
     RequestPath = "/files"
 });
-
-app.UseCors();
 
 app.MapGet("/", () => "Hello World!");
 app.MapHub<GameHub>("/hubs/game");
