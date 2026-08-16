@@ -1,0 +1,43 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+
+namespace Blindify.Tests.Hubs;
+
+/// <summary>Héberge Blindify.Api en mémoire, avec tracks.json/stats.json pointés vers des fichiers temporaires.</summary>
+public class GameHubTestFactory : WebApplicationFactory<Program>
+{
+    public readonly string TracksPath = Path.Combine(Path.GetTempPath(), $"blindify-it-tracks-{Guid.NewGuid()}.json");
+    public readonly string StatsPath = Path.Combine(Path.GetTempPath(), $"blindify-it-stats-{Guid.NewGuid()}.json");
+
+    public GameHubTestFactory()
+    {
+        File.WriteAllText(TracksPath, """
+            [
+              { "id": "t1", "title": "Under the Sea", "artist": "Samuel E. Wright", "filePath": "audio/t1.mp3", "genres": ["disney"], "tags": [] },
+              { "id": "t2", "title": "Circle of Life", "artist": "Elton John", "filePath": "audio/t2.mp3", "genres": ["disney"], "tags": [] },
+              { "id": "t3", "title": "Let It Go", "artist": "Idina Menzel", "filePath": "audio/t3.mp3", "genres": ["disney"], "tags": [] },
+              { "id": "t4", "title": "Hakuna Matata", "artist": "Nathan Lane", "filePath": "audio/t4.mp3", "genres": ["disney"], "tags": [] }
+            ]
+            """);
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.ConfigureAppConfiguration((_, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Data:TracksPath"] = TracksPath,
+                ["Data:StatsPath"] = StatsPath
+            });
+        });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (File.Exists(TracksPath)) File.Delete(TracksPath);
+        if (File.Exists(StatsPath)) File.Delete(StatsPath);
+    }
+}

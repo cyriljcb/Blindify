@@ -10,4 +10,7 @@ public class Round
     public DateTimeOffset? DebutRound { get; set; }
     public long DureeEnPauseMs { get; set; }
     public List<RoundAnswer> Reponses { get; set; } = [];
+
+    /// <summary>Les 4 IDs de morceaux proposés (mode Qcm uniquement), générés au démarrage du round.</summary>
+    public List<string>? QcmOptionTrackIds { get; set; }
 }
