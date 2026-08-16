@@ -1,0 +1,40 @@
+# === .NET / Visual Studio (backend) ===
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# === Flutter / Dart (app) ===
+app/**/build/
+app/**/.dart_tool/
+app/**/.flutter-plugins
+app/**/.flutter-plugins-dependencies
+app/**/.packages
+app/**/.pub-cache/
+app/**/.pub/
+app/**/ios/Pods/
+app/**/ios/.symlinks/
+app/**/ios/Flutter/Flutter.framework
+app/**/ios/Flutter/Flutter.podspec
+app/**/android/.gradle/
+app/**/android/local.properties
+app/**/*.g.dart
+app/**/*.freezed.dart
+
+# === Data (audio/covers/runtime — jamais dans le repo) ===
+data/audio/
+data/covers/
+data/stats.json
+
+# === Éditeurs / OS ===
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# === Secrets ===
+*.env
+appsettings.*.local.json
