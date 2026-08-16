@@ -12,4 +12,11 @@ public class DataPathsOptions
     public required string StatsPath { get; set; }
     public string? AudioPath { get; set; }
     public string? CoversPath { get; set; }
+
+    /// <summary>
+    /// Racine data/ (parent de audio/ et covers/) — servie en fichiers statiques sous /files pour que
+    /// le host puisse lire l'audio par HTTP (les chemins de tracks.json, ex. "audio/xxx.mp3", sont déjà
+    /// relatifs à cette racine).
+    /// </summary>
+    public required string RootPath { get; set; }
 }

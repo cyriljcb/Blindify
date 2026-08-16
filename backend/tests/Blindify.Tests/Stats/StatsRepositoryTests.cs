@@ -15,7 +15,7 @@ public class StatsRepositoryTests : IDisposable
 
     private IStatsRepository CreateRepository()
     {
-        var options = Options.Create(new DataPathsOptions { TracksPath = "unused", StatsPath = _statsPath });
+        var options = Options.Create(new DataPathsOptions { TracksPath = "unused", StatsPath = _statsPath, RootPath = "unused" });
         return new StatsRepository(options);
     }
 

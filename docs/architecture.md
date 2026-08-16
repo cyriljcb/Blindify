@@ -80,7 +80,10 @@ services:
       - Data__StatsPath=/data/stats.json
       - Data__AudioPath=/data/audio
       - Data__CoversPath=/data/covers
+      - Data__RootPath=/data
 ```
+
+`Data__RootPath` est servi en fichiers statiques sous `/files` par le backend — c'est ce qui permet au host de lire l'audio par HTTP (`GET /files/audio/xxx.mp3`), les chemins de `tracks.json` étant déjà relatifs à cette racine. Seul le host y accède, jamais les joueurs.
 
 Les volumes audio/covers sont montés en lecture seule (`ro`) côté conteneur — les scripts de préparation des données (sync Spotify, téléchargement YouTube, export/import CSV) écrivent directement sur le HDD, en dehors de Docker, donc le conteneur n'a besoin que de lire.
 

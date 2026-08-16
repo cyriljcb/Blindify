@@ -15,14 +15,14 @@ public class TracksRepositoryTests : IDisposable
 
     private ITracksRepository CreateRepository()
     {
-        var options = Options.Create(new DataPathsOptions { TracksPath = _tracksPath, StatsPath = "unused" });
+        var options = Options.Create(new DataPathsOptions { TracksPath = _tracksPath, StatsPath = "unused", RootPath = "unused" });
         return new TracksRepository(options);
     }
 
     [Fact]
     public void Constructeur_FichierIntrouvable_LeveUneException()
     {
-        var options = Options.Create(new DataPathsOptions { TracksPath = Path.Combine(Path.GetTempPath(), "inexistant.json"), StatsPath = "unused" });
+        var options = Options.Create(new DataPathsOptions { TracksPath = Path.Combine(Path.GetTempPath(), "inexistant.json"), StatsPath = "unused", RootPath = "unused" });
 
         Assert.Throws<FileNotFoundException>(() => new TracksRepository(options));
     }

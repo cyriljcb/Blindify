@@ -44,6 +44,7 @@ blindify/
 │   │   └── Blindify.Api/             ← Program.cs, GameHub (SignalR), DI
 │   └── tests/Blindify.Tests/
 ├── app/                           ← Flutter
+├── host/                          ← page web host (HTML/CSS/JS vanilla, pas de build tooling)
 ├── data/
 │   ├── tracks.json
 │   └── scripts/                  ← sync Spotify, téléchargement YouTube, export/import CSV
