@@ -1,6 +1,10 @@
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Blindify.Tests.Hubs;
 
@@ -38,6 +42,17 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
             });
         });
     }
+
+    /// <summary>Connexion configurée avec le même protocole JSON (enums en string) que le serveur.</summary>
+    public HubConnection CreateHubConnection() =>
+        new HubConnectionBuilder()
+            .WithUrl(new Uri(Server.BaseAddress, "/hubs/game"), options =>
+            {
+                options.HttpMessageHandlerFactory = _ => Server.CreateHandler();
+                options.Transports = HttpTransportType.LongPolling;
+            })
+            .AddJsonProtocol(options => options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
+            .Build();
 
     protected override void Dispose(bool disposing)
     {

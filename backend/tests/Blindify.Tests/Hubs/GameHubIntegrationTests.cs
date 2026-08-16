@@ -1,7 +1,6 @@
 using Blindify.Api.Contracts;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Enums;
-using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Blindify.Tests.Hubs;
@@ -19,8 +18,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
     public async Task InitializeAsync()
     {
-        _hostConnection = CreerConnexion();
-        _playerConnection = CreerConnexion();
+        _hostConnection = _factory.CreateHubConnection();
+        _playerConnection = _factory.CreateHubConnection();
         await _hostConnection.StartAsync();
         await _playerConnection.StartAsync();
     }
@@ -30,15 +29,6 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         await _hostConnection.DisposeAsync();
         await _playerConnection.DisposeAsync();
     }
-
-    private HubConnection CreerConnexion() =>
-        new HubConnectionBuilder()
-            .WithUrl(new Uri(_factory.Server.BaseAddress, "/hubs/game"), options =>
-            {
-                options.HttpMessageHandlerFactory = _ => _factory.Server.CreateHandler();
-                options.Transports = HttpTransportType.LongPolling;
-            })
-            .Build();
 
     private static SeriesConfig NouveauSeriesConfig(int nombreRounds) => new()
     {

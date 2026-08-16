@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blindify — Host</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Blindify</h1>
+    <span id="connection-indicator" class="pill pill--off">déconnecté</span>
+  </header>
+
+  <main>
+    <!-- Écran 1 : connexion au serveur -->
+    <section id="screen-connect" class="screen">
+      <h2>Connexion au serveur</h2>
+      <label for="server-url">Adresse du serveur (Raspberry Pi)</label>
+      <input id="server-url" type="text" placeholder="http://192.168.1.42:5000" />
+      <button id="btn-connect">Se connecter</button>
+      <p id="connect-error" class="error"></p>
+    </section>
+
+    <!-- Écran 2 : création de partie -->
+    <section id="screen-setup" class="screen hidden">
+      <h2>Nouvelle partie</h2>
+      <label for="setup-tags">Thèmes / tags (séparés par des virgules, vide = tout le catalogue)</label>
+      <input id="setup-tags" type="text" placeholder="disney, annees-90" />
+
+      <label for="setup-nombre-rounds">Nombre de rounds classiques</label>
+      <input id="setup-nombre-rounds" type="number" min="1" value="10" />
+
+      <label for="setup-duree-fenetre">Durée de la fenêtre de réponse (secondes)</label>
+      <input id="setup-duree-fenetre" type="number" min="1" value="15" />
+
+      <label for="setup-mode">Mode de réponse</label>
+      <select id="setup-mode">
+        <option value="Qcm">QCM</option>
+        <option value="TapeReponse">Réponse tapée</option>
+        <option value="PremiereLettre">Première lettre</option>
+      </select>
+
+      <label><input id="setup-mode-equipe" type="checkbox" /> Mode équipes</label>
+
+      <button id="btn-create-game">Créer la partie</button>
+      <p id="setup-error" class="error"></p>
+    </section>
+
+    <!-- Écran 3 : lobby -->
+    <section id="screen-lobby" class="screen hidden">
+      <h2>Salle d'attente</h2>
+      <div class="game-code">
+        Code de la partie : <span id="lobby-code"></span>
+      </div>
+      <h3>Joueurs connectés</h3>
+      <ul id="lobby-players" class="player-list"></ul>
+      <div class="actions">
+        <button id="btn-start-round">Démarrer le round</button>
+      </div>
+    </section>
+
+    <!-- Écran 4 : round en cours -->
+    <section id="screen-round" class="screen hidden">
+      <h2>Round en cours — <span id="round-mode-label"></span></h2>
+      <div class="timer-bar"><div id="timer-fill" class="timer-fill"></div></div>
+      <audio id="player-audio" controls></audio>
+      <button id="btn-manual-play" class="hidden">Lecture bloquée par le navigateur — cliquer pour lancer</button>
+
+      <h3>Scores</h3>
+      <ul id="round-scores" class="score-list"></ul>
+
+      <div class="actions">
+        <button id="btn-pause">Pause</button>
+        <button id="btn-resume" class="hidden">Reprendre</button>
+        <button id="btn-leaderboard">Tableau général</button>
+      </div>
+    </section>
+
+    <!-- Écran 5 : résultat du round -->
+    <section id="screen-round-ended" class="screen hidden">
+      <h2>Résultat</h2>
+      <p class="reveal">
+        <strong id="reveal-title"></strong> — <span id="reveal-artist"></span>
+      </p>
+      <table id="results-table">
+        <thead>
+          <tr><th>Joueur</th><th>Réponse</th><th>Correct</th><th>Points</th></tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+      <div class="actions">
+        <button id="btn-next-round">Round suivant</button>
+        <button id="btn-end-game">Terminer la partie</button>
+      </div>
+    </section>
+
+    <!-- Écran 6 : fin de partie -->
+    <section id="screen-ended" class="screen hidden">
+      <h2>Partie terminée</h2>
+      <ol id="final-scores" class="score-list score-list--final"></ol>
+    </section>
+
+    <!-- Tableau général (superposé, indépendant du round en cours) -->
+    <section id="leaderboard-overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <h2>Tableau général</h2>
+        <ol id="leaderboard-scores" class="score-list score-list--final"></ol>
+        <button id="btn-close-leaderboard">Fermer</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="vendor/signalr.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

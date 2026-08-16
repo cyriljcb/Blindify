@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Blindify.Api.Hubs;
 using Blindify.Application.DependencyInjection;
 using Blindify.Infrastructure.DependencyInjection;
@@ -15,6 +16,7 @@ builder.Services.AddSignalR().AddJsonProtocol(options =>
 {
     options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
+    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 });
 
 // Réseau local uniquement (voir architecture.md section 2) : CORS ouvert aux clients LAN, pas de credentials.
