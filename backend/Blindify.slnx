@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Blindify.Api/Blindify.Api.csproj" />
+    <Project Path="src/Blindify.Application/Blindify.Application.csproj" />
+    <Project Path="src/Blindify.Domain/Blindify.Domain.csproj" />
+    <Project Path="src/Blindify.Infrastructure/Blindify.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Blindify.Tests/Blindify.Tests.csproj" />
+  </Folder>
+</Solution>
