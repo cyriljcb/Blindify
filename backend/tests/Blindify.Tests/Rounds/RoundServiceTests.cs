@@ -181,4 +181,37 @@ public class RoundServiceTests
         Assert.False(reponseBob.EstCorrecte);
         Assert.Equal(-5, reponseBob.Points);
     }
+
+    [Fact]
+    public void ValiderManuellement_BasculeFauxVersJuste_CrediteLeDelta()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, DebutRound = DateTimeOffset.UtcNow };
+        var config = NouveauConfig();
+
+        // Réponse jugée fausse automatiquement (ex. faute de frappe hors tolérance) : -50.
+        _service.SoumettreReponse(session, round, config, track, "p1", "Reponse hors tolerance", round.DebutRound!.Value);
+        Assert.Equal(-50, joueur.Score);
+
+        var revalidee = _service.ValiderManuellement(session, round, config, "p1", estCorrecte: true);
+
+        Assert.NotNull(revalidee);
+        Assert.True(revalidee!.EstCorrecte);
+        Assert.Equal(100, revalidee.Points);
+        Assert.Equal(100, joueur.Score);
+    }
+
+    [Fact]
+    public void ValiderManuellement_JoueurSansReponse_RetourneNull()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, DebutRound = DateTimeOffset.UtcNow };
+
+        var resultat = _service.ValiderManuellement(session, round, NouveauConfig(), "p1", estCorrecte: true);
+
+        Assert.Null(resultat);
+    }
 }

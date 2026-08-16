@@ -1,4 +1,5 @@
 using Blindify.Application.Answers;
+using Blindify.Application.Bonus;
 using Blindify.Application.Qcm;
 using Blindify.Application.Rounds;
 using Blindify.Application.Scoring;
@@ -16,6 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAnswerMatcher, AnswerMatcher>();
         services.AddSingleton<IQcmGenerator, QcmGenerator>();
         services.AddSingleton<IRoundService, RoundService>();
+        services.AddSingleton<IBonusRoundService, BonusRoundService>();
         services.AddSingleton<IGameCodeGenerator, GameCodeGenerator>();
         services.AddSingleton<IGameSessionStore, GameSessionStore>();
 

@@ -5,7 +5,13 @@ namespace Blindify.Domain.Entities;
 public class BonusRound
 {
     public required string TrackId { get; set; }
+
+    public DateTimeOffset? DebutPhaseMise { get; set; }
+    public DateTimeOffset? DebutPhaseQuestion { get; set; }
+
+    /// <summary>Pause écoulée pendant la phase actuellement active (remise à 0 au passage à la phase question).</summary>
     public long DureeEnPauseMs { get; set; }
+
     public List<BonusStake> Mises { get; set; } = [];
     public List<BonusAnswer> Reponses { get; set; } = [];
 }

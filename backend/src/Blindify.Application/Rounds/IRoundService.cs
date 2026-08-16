@@ -28,4 +28,11 @@ public interface IRoundService
 
     /// <summary>Applique la pénalité fixe d'absence de réponse à tous les joueurs n'ayant pas répondu.</summary>
     void TerminerParTimeout(GameSession session, Round round, SeriesConfig config);
+
+    /// <summary>
+    /// Override manuel (host) d'une réponse texte ambiguë. Recalcule les points à partir du pointsEnJeu
+    /// déjà figé au moment de la réponse et applique le delta au score du joueur. Retourne null si le
+    /// joueur n'a pas de réponse enregistrée pour ce round.
+    /// </summary>
+    RoundAnswer? ValiderManuellement(GameSession session, Round round, SeriesConfig config, string playerId, bool estCorrecte);
 }

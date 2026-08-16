@@ -65,7 +65,8 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
             Timestamp = maintenant,
             Reponse = reponse,
             EstCorrecte = estCorrecte,
-            Points = points
+            Points = points,
+            PointsEnJeu = pointsEnJeu
         };
 
         round.Reponses.Add(answer);
@@ -87,11 +88,28 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
                 Timestamp = DateTimeOffset.UtcNow,
                 Reponse = "",
                 EstCorrecte = false,
-                Points = penalite
+                Points = penalite,
+                PointsEnJeu = 0
             });
 
             AppliquerPoints(session, player.PlayerId, penalite);
         }
+    }
+
+    public RoundAnswer? ValiderManuellement(GameSession session, Round round, SeriesConfig config, string playerId, bool estCorrecte)
+    {
+        var answer = round.Reponses.FirstOrDefault(r => r.PlayerId == playerId);
+        if (answer is null) return null;
+
+        var nouveauxPoints = estCorrecte
+            ? scoring.PointsBonneReponse(answer.PointsEnJeu)
+            : scoring.PointsMauvaiseReponse(answer.PointsEnJeu, config);
+
+        AppliquerPoints(session, playerId, nouveauxPoints - answer.Points);
+        answer.EstCorrecte = estCorrecte;
+        answer.Points = nouveauxPoints;
+
+        return answer;
     }
 
     private static IEnumerable<Track> FiltrerParTagsOuGenres(IReadOnlyList<Track> pool, IReadOnlyList<string> tags) =>

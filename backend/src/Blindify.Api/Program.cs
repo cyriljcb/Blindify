@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSingleton<RoundTimerCoordinator>();
+builder.Services.AddSingleton<BonusTimerCoordinator>();
 
 builder.Services.AddSignalR().AddJsonProtocol(options =>
 {

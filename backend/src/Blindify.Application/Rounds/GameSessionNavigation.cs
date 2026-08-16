@@ -14,4 +14,8 @@ public static class GameSessionNavigation
             ? serie.Rounds[session.RoundCourantIndex]
             : null;
     }
+
+    /// <summary>Score d'équipe = somme des points gagnés par ses membres — voir architecture.md section 8.</summary>
+    public static IEnumerable<(Team Team, int Score)> ScoresParEquipe(this GameSession session) =>
+        session.Teams.Select(team => (team, session.Players.Where(p => p.TeamId == team.Id).Sum(p => p.Score)));
 }

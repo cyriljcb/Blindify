@@ -11,6 +11,10 @@ public class GameSession
     public DateTimeOffset? PauseDemarreeA { get; set; }
     public bool ModeEquipe { get; set; }
     public required GameConfig Config { get; set; }
+
+    /// <summary>Tags/genres utilisés pour filtrer le pool à CreateGame — réutilisés pour sélectionner le morceau bonus.</summary>
+    public List<string> Tags { get; set; } = [];
+
     public List<Series> SeriesList { get; set; } = [];
     public List<Player> Players { get; set; } = [];
     public List<Team> Teams { get; set; } = [];

@@ -1,4 +1,5 @@
 using Blindify.Api.Contracts;
+using Blindify.Application.Bonus;
 using Blindify.Application.Rounds;
 using Blindify.Application.Sessions;
 using Blindify.Domain.Configuration;
@@ -10,16 +11,18 @@ using Microsoft.AspNetCore.SignalR;
 namespace Blindify.Api.Hubs;
 
 /// <summary>
-/// Hub SignalR — contrat complet dans architecture.md section 10. Cette implémentation couvre le lobby,
-/// le cycle de vie du round classique, la pause et la reconnexion. La question bonus, le déclenchement du
-/// tableau général et la validation manuelle de réponse restent à câbler dans une prochaine itération.
+/// Hub SignalR — contrat complet dans architecture.md section 10 : lobby, cycle de vie du round classique,
+/// question bonus (mise + question ralentie), pause, reconnexion, tableau général, override manuel.
+/// Les nuances fines du mode équipe (au-delà de l'agrégation de score) restent à affiner à l'usage.
 /// </summary>
 public class GameHub(
     IGameSessionStore sessionStore,
     IGameCodeGenerator codeGenerator,
     IRoundService roundService,
+    IBonusRoundService bonusRoundService,
     ITracksRepository tracksRepository,
-    RoundTimerCoordinator timerCoordinator) : Hub
+    RoundTimerCoordinator timerCoordinator,
+    BonusTimerCoordinator bonusTimerCoordinator) : Hub
 {
     // ----- Méthodes host -----
 
@@ -52,6 +55,7 @@ public class GameHub(
             Etat = GameState.Lobby,
             ModeEquipe = request.ModeEquipe,
             Config = config,
+            Tags = request.Tags,
             SeriesList = seriesList,
             HostConnectionId = Context.ConnectionId
         };
@@ -122,6 +126,32 @@ public class GameHub(
         timerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
     }
 
+    public async Task StartBonusRound()
+    {
+        var session = ResoudreSessionHost();
+        var serie = session.SerieCourante();
+
+        if (serie.BonusRound is not null)
+            throw new HubException("La question bonus de cette série a déjà été démarrée.");
+
+        var dejaUtilises = session.SeriesList
+            .SelectMany(s => s.Rounds.Select(r => r.TrackId))
+            .Concat(session.SeriesList.Where(s => s.BonusRound is not null).Select(s => s.BonusRound!.TrackId))
+            .ToHashSet();
+
+        var morceaux = roundService.SelectionnerMorceaux(tracksRepository.GetAll(), session.Tags, 1, dejaUtilises);
+        if (morceaux.Count == 0)
+            throw new HubException("Pas assez de morceaux disponibles pour la question bonus.");
+
+        var bonusRound = bonusRoundService.CreerBonusRound(morceaux[0]);
+        serie.BonusRound = bonusRound;
+        bonusRoundService.DemarrerPhaseMise(bonusRound, DateTimeOffset.UtcNow);
+
+        await Clients.Group(session.Id).SendAsync("BonusStakeOptions", new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.Config.DureePhaseMiseMs));
+
+        bonusTimerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
+    }
+
     public Task NextRound()
     {
         var session = ResoudreSessionHost();
@@ -136,9 +166,27 @@ public class GameHub(
             session.SerieCouranteIndex++;
             session.RoundCourantIndex = -1;
         }
-        // Sinon : dernière série épuisée — le host doit appeler EndGame() (ou, plus tard, StartBonusRound()).
+        // Sinon : dernière série épuisée — le host doit appeler StartBonusRound() puis EndGame().
 
         return Task.CompletedTask;
+    }
+
+    public async Task ShowLeaderboard()
+    {
+        var session = ResoudreSessionHost();
+        await Clients.Group(session.Id).SendAsync("LeaderboardShown", ScoreDtoBuilder.Construire(session));
+    }
+
+    public async Task ValidateAnswerManually(ValidateAnswerManuallyRequestDto request)
+    {
+        var session = ResoudreSessionHost();
+        var round = session.RoundCourant() ?? throw new HubException("Aucun round en cours.");
+        var serie = session.SerieCourante();
+
+        var resultat = roundService.ValiderManuellement(session, round, serie.Config, request.PlayerId, request.EstCorrecte)
+                       ?? throw new HubException("Aucune réponse enregistrée pour ce joueur sur ce round.");
+
+        await Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
     }
 
     public async Task PauseGame()
@@ -157,9 +205,14 @@ public class GameHub(
         var session = ResoudreSessionHost();
         if (!session.EnPause || session.PauseDemarreeA is null) return;
 
+        var pauseMs = (long)(DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds;
+
         var round = session.RoundCourant();
-        if (round?.DebutRound is not null)
-            round.DureeEnPauseMs += (long)(DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds;
+        if (round?.DebutRound is not null) round.DureeEnPauseMs += pauseMs;
+
+        var bonusRound = session.SerieCourante().BonusRound;
+        if (bonusRound is not null && (bonusRound.DebutPhaseMise is not null || bonusRound.DebutPhaseQuestion is not null))
+            bonusRound.DureeEnPauseMs += pauseMs;
 
         session.EnPause = false;
         session.PauseDemarreeA = null;
@@ -172,8 +225,9 @@ public class GameHub(
         var session = ResoudreSessionHost();
         session.Etat = GameState.Termine;
         timerCoordinator.Annuler(session.Id);
+        bonusTimerCoordinator.Annuler(session.Id);
 
-        await Clients.Group(session.Id).SendAsync("GameEnded", ConstruireScores(session));
+        await Clients.Group(session.Id).SendAsync("GameEnded", ScoreDtoBuilder.Construire(session));
     }
 
     // ----- Méthodes joueur -----
@@ -222,9 +276,39 @@ public class GameHub(
         if (reponse is null)
             return new RoundAnswerResultDto(false, 0, joueur.Score);
 
-        await Clients.Group(session.Id).SendAsync("ScoreUpdate", ConstruireScores(session));
+        await Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
 
         return new RoundAnswerResultDto(reponse.EstCorrecte, reponse.Points, joueur.Score);
+    }
+
+    public bool SelectStake(SelectStakeRequestDto request)
+    {
+        var session = ResoudreSession();
+        var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
+                     ?? throw new HubException("Joueur non reconnu dans cette partie.");
+
+        var bonusRound = session.SerieCourante().BonusRound ?? throw new HubException("Aucune question bonus en cours.");
+
+        return bonusRoundService.EnregistrerMise(bonusRound, joueur.PlayerId, request.PalierIndex);
+    }
+
+    public async Task<BonusAnswerResultDto> SubmitBonusAnswer(SubmitBonusAnswerRequestDto request)
+    {
+        var session = ResoudreSession();
+        var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
+                     ?? throw new HubException("Joueur non reconnu dans cette partie.");
+
+        var serie = session.SerieCourante();
+        var bonusRound = serie.BonusRound ?? throw new HubException("Aucune question bonus en cours.");
+        var track = tracksRepository.GetById(bonusRound.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
+
+        var reponse = bonusRoundService.SoumettreReponse(session, bonusRound, serie.Config, track, joueur.PlayerId, request.Reponse, DateTimeOffset.UtcNow);
+        if (reponse is null)
+            return new BonusAnswerResultDto(false, 0, joueur.Score);
+
+        await Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
+
+        return new BonusAnswerResultDto(reponse.EstCorrecte, reponse.Points, joueur.Score);
     }
 
     // ----- Cycle de connexion -----
@@ -272,7 +356,4 @@ public class GameHub(
 
         return (long)((DateTimeOffset.UtcNow - round.DebutRound!.Value).TotalMilliseconds - (round.DureeEnPauseMs + pauseEnCoursMs));
     }
-
-    private static List<PlayerScoreDto> ConstruireScores(GameSession session) =>
-        session.Players.Select(p => new PlayerScoreDto(p.PlayerId, p.Nom, p.Score, p.TeamId)).ToList();
 }

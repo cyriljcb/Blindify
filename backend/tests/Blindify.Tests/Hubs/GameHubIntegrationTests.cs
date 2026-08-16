@@ -56,12 +56,12 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     [Fact]
     public async Task PartieComplete_CreateJoinStartAnswer_ProduitLesEvenementsAttendus()
     {
-        var scoreUpdates = new List<List<PlayerScoreDto>>();
+        var scoreUpdates = new List<ScoreUpdateDto>();
         var roundEndedTcs = new TaskCompletionSource<RoundEndedDto>();
         RoundStartedForPlayersDto? roundStartedPlayer = null;
         RoundStartedForHostDto? roundStartedHost = null;
 
-        _playerConnection.On<List<PlayerScoreDto>>("ScoreUpdate", scores => scoreUpdates.Add(scores));
+        _playerConnection.On<ScoreUpdateDto>("ScoreUpdate", scores => scoreUpdates.Add(scores));
         _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
         _playerConnection.On<RoundEndedDto>("RoundEnded", payload => roundEndedTcs.TrySetResult(payload));
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
@@ -101,7 +101,11 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         Assert.Equal(roundStartedHost.TrackId, roundEnded.TrackId);
         var entreeAlice = roundEnded.Resultats.Single(r => r.PlayerId == "player-1");
         Assert.True(entreeAlice.EstCorrecte);
+
         Assert.True(scoreUpdates.Count > 0);
+        var alice = scoreUpdates[^1].Joueurs.Single(j => j.PlayerId == "player-1");
+        Assert.Equal(resultat.NouveauScore, alice.Score);
+        Assert.Null(scoreUpdates[^1].Equipes);
     }
 
     [Fact]

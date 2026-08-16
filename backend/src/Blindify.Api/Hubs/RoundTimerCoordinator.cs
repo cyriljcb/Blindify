@@ -94,7 +94,6 @@ public class RoundTimerCoordinator(
         await hubContext.Clients.Group(session.Id)
             .SendAsync("RoundEnded", new RoundEndedDto(round.TrackId, track?.Title ?? "?", track?.Artist ?? "?", resultats));
 
-        var scores = session.Players.Select(p => new PlayerScoreDto(p.PlayerId, p.Nom, p.Score, p.TeamId)).ToList();
-        await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", scores);
+        await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
     }
 }
