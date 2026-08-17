@@ -11,15 +11,17 @@ import '../models/join_result.dart';
 import '../models/round_ended.dart';
 import '../models/round_started.dart';
 import '../models/score_update.dart';
+import '../models/team.dart';
 
 enum AppScreen { connect, join, lobby, round, roundEnded, bonusStake, bonusQuestion, bonusResult, ended }
 
 class PlayerInfo {
-  PlayerInfo({required this.playerId, required this.nom, this.estConnecte = true});
+  PlayerInfo({required this.playerId, required this.nom, this.estConnecte = true, this.teamId});
 
   final String playerId;
   final String nom;
   bool estConnecte;
+  String? teamId;
 }
 
 const _prefsPlayerId = 'blindify_player_id';
@@ -46,6 +48,7 @@ class GameConnection extends ChangeNotifier {
   final List<PlayerInfo> players = [];
   int score = 0;
   String? teamId;
+  List<Team> teams = []; // équipes disponibles — vide si mode équipe inactif
 
   RoundStarted? currentRound;
   bool roundAnswered = false;
@@ -167,6 +170,18 @@ class GameConnection extends ChangeNotifier {
     hub.on('PlayerDisconnected', (args) {
       final data = args![0] as Map<String, dynamic>;
       _updatePlayerConnection(data['playerId'] as String, false);
+    });
+
+    hub.on('PlayerTeamChanged', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      final changedPlayerId = data['playerId'] as String;
+      final newTeamId = data['teamId'] as String;
+
+      if (changedPlayerId == playerId) teamId = newTeamId;
+      for (final p in players) {
+        if (p.playerId == changedPlayerId) p.teamId = newTeamId;
+      }
+      notifyListeners();
     });
 
     hub.on('RoundStarted', (args) {
@@ -302,6 +317,7 @@ class GameConnection extends ChangeNotifier {
       nom = pseudo;
       score = joinResult.score;
       teamId = joinResult.teamId;
+      teams = joinResult.teams;
       await _prefs?.setString(_prefsNom, pseudo);
 
       players.clear();
@@ -312,6 +328,18 @@ class GameConnection extends ChangeNotifier {
       errorMessage = 'Erreur : ${e.toString()}';
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Autorisé à tout moment (pas seulement au lobby) — l'état local est mis à jour via
+  /// l'événement PlayerTeamChanged plutôt qu'ici, pour rester cohérent avec ce que voient
+  /// les autres joueurs et le host.
+  Future<void> joinTeam(String teamId) async {
+    try {
+      await _hub!.invoke('JoinTeam', args: [teamId]);
+    } catch (e) {
+      errorMessage = 'Erreur : ${e.toString()}';
+      notifyListeners();
     }
   }
 
