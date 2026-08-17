@@ -15,6 +15,9 @@ let timerPausedRemainingMs = null;
 let autoNextTimeoutId = null;
 let autoNextIntervalId = null;
 
+let autoEndTimeoutId = null;
+let autoEndIntervalId = null;
+
 let refrainCourantMs = null;
 let nombreRoundsTotal = 0;
 let roundsDemarres = 0;
@@ -30,12 +33,25 @@ const screens = [
   "screen-lobby",
   "screen-round",
   "screen-round-ended",
+  "screen-bonus-stake",
+  "screen-bonus-question",
+  "screen-bonus-result",
   "screen-ended",
 ];
 
+// Écrans où le lecteur audio + pause/tableau général doivent rester visibles.
+const ECRANS_AVEC_CONTROLES = new Set([
+  "screen-round",
+  "screen-round-ended",
+  "screen-bonus-stake",
+  "screen-bonus-question",
+  "screen-bonus-result",
+]);
+
 const audioEl = el("player-audio");
 const manualPlayBtn = el("btn-manual-play");
-const timerFillEl = el("timer-fill");
+const gameControlsEl = el("game-controls");
+let timerFillEl = null; // assigné dynamiquement selon la phase (round, mise bonus, question bonus)
 
 // ----- Utilitaires -----
 
@@ -45,10 +61,38 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+const DUREE_TRANSITION_MS = 180;
+
 function showScreen(id) {
-  for (const s of screens) {
-    el(s).classList.toggle("hidden", s !== id);
+  gameControlsEl.classList.toggle("hidden", !ECRANS_AVEC_CONTROLES.has(id));
+
+  const actuel = screens.find((s) => !el(s).classList.contains("hidden"));
+  if (actuel === id) return;
+
+  if (!actuel) {
+    afficherEcran(id);
+    return;
   }
+
+  const actuelEl = el(actuel);
+  actuelEl.classList.add("screen--leaving");
+  setTimeout(() => {
+    actuelEl.classList.add("hidden");
+    actuelEl.classList.remove("screen--leaving");
+    afficherEcran(id);
+  }, DUREE_TRANSITION_MS);
+}
+
+function afficherEcran(id) {
+  for (const s of screens) {
+    if (s !== id) el(s).classList.add("hidden");
+  }
+  const cible = el(id);
+  cible.classList.remove("hidden");
+  cible.classList.add("screen--entering");
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => cible.classList.remove("screen--entering"));
+  });
 }
 
 function setConnected(connected) {
@@ -114,10 +158,40 @@ function renderResults(resultats) {
   }
 }
 
+function renderBonusPaliers(paliers) {
+  const list = el("bonus-paliers");
+  list.innerHTML = "";
+  paliers.forEach((valeur, index) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>Palier ${index + 1}${index === 0 ? " (safe)" : ""}</span><span>${valeur} pts</span>`;
+    list.appendChild(li);
+  });
+}
+
+function renderBonusResults(resultats) {
+  const body = el("bonus-results-body");
+  body.innerHTML = "";
+
+  for (const r of resultats) {
+    const tr = document.createElement("tr");
+    const reponseAffichee = r.reponse ? r.reponse : "(absent)";
+    const classe = r.estCorrecte ? "correct" : "incorrect";
+    tr.innerHTML = `
+      <td>${escapeHtml(nomJoueur(r.playerId))}</td>
+      <td>${r.mise}</td>
+      <td>${escapeHtml(reponseAffichee)}</td>
+      <td class="${classe}">${r.estCorrecte ? "oui" : "non"}</td>
+      <td>${r.points}</td>
+    `;
+    body.appendChild(tr);
+  }
+}
+
 // ----- Minuteur visuel (approximatif — le serveur reste seul juge du timing) -----
 
-function startTimer(durationMs) {
+function startTimer(durationMs, fillEl) {
   clearInterval(timerInterval);
+  timerFillEl = fillEl;
   timerDurationMs = durationMs;
   timerEndAt = Date.now() + durationMs;
   timerPausedRemainingMs = null;
@@ -126,7 +200,7 @@ function startTimer(durationMs) {
 }
 
 function updateTimer() {
-  if (timerEndAt === null) return;
+  if (timerEndAt === null || !timerFillEl) return;
   const remaining = Math.max(0, timerEndAt - Date.now());
   const pct = timerDurationMs > 0 ? (remaining / timerDurationMs) * 100 : 0;
   timerFillEl.style.width = `${pct}%`;
@@ -150,10 +224,36 @@ function stopTimer() {
   clearInterval(timerInterval);
   timerEndAt = null;
   timerPausedRemainingMs = null;
-  timerFillEl.style.width = "0%";
+  if (timerFillEl) timerFillEl.style.width = "0%";
 }
 
 // ----- Audio -----
+
+let fadeIntervalId = null;
+
+// Fondu de volume — évite les coupures sèches entre la découverte et le reveal, ou entre
+// deux morceaux qui s'enchaînent automatiquement.
+function fadeAudioVolume(cible, dureeMs, onDone) {
+  clearInterval(fadeIntervalId);
+  const depart = audioEl.volume;
+  const debutTs = performance.now();
+  fadeIntervalId = setInterval(() => {
+    const t = Math.min(1, (performance.now() - debutTs) / dureeMs);
+    audioEl.volume = depart + (cible - depart) * t;
+    if (t >= 1) {
+      clearInterval(fadeIntervalId);
+      fadeIntervalId = null;
+      if (onDone) onDone();
+    }
+  }, 30);
+}
+
+function lancerLecture() {
+  const playPromise = audioEl.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => manualPlayBtn.classList.remove("hidden"));
+  }
+}
 
 function playAudio(filePath) {
   audioEl.src = `${serverBaseUrl}/files/${filePath}`;
@@ -163,18 +263,23 @@ function playAudio(filePath) {
   // reste bloquée sur l'état du round précédent.
   audioEl.load();
   manualPlayBtn.classList.add("hidden");
-  const playPromise = audioEl.play();
-  if (playPromise && typeof playPromise.catch === "function") {
-    playPromise.catch(() => manualPlayBtn.classList.remove("hidden"));
-  }
+  audioEl.volume = 0;
+  lancerLecture();
+  fadeAudioVolume(1, 300);
 }
 
+// Au reveal (round classique ou question bonus) : petit fondu avant de sauter au refrain,
+// pour éviter la coupure sèche entre la découverte et la révélation.
 function jouerRefrain(refrainStartMs) {
-  audioEl.currentTime = refrainStartMs / 1000;
-  const playPromise = audioEl.play();
-  if (playPromise && typeof playPromise.catch === "function") {
-    playPromise.catch(() => manualPlayBtn.classList.remove("hidden"));
-  }
+  fadeAudioVolume(0, 150, () => {
+    audioEl.currentTime = refrainStartMs / 1000;
+    lancerLecture();
+    fadeAudioVolume(1, 300);
+  });
+}
+
+function pauseAudioEnDouceur() {
+  fadeAudioVolume(0, 200, () => audioEl.pause());
 }
 
 manualPlayBtn.addEventListener("click", () => {
@@ -221,7 +326,7 @@ function registerHandlers() {
     showScreen("screen-round");
     refrainCourantMs = payload.refrainStartMs ?? null;
     playAudio(payload.filePath); // toujours depuis le début pendant la découverte — le refrain n'est joué qu'au reveal
-    startTimer(payload.dureeFenetreReponseMs);
+    startTimer(payload.dureeFenetreReponseMs, el("timer-fill"));
     roundsDemarres++;
   });
 
@@ -236,7 +341,7 @@ function registerHandlers() {
     if (refrainCourantMs !== null) {
       jouerRefrain(refrainCourantMs);
     } else if (!el("setup-audio-continu").checked) {
-      audioEl.pause();
+      pauseAudioEnDouceur();
     }
     el("reveal-title").textContent = payload.title;
     el("reveal-artist").textContent = payload.artist;
@@ -247,15 +352,17 @@ function registerHandlers() {
   });
 
   connection.on("GamePaused", () => {
-    audioEl.pause();
+    pauseAudioEnDouceur();
     pauseTimer();
     cancelAutoNext();
+    cancelAutoEnd();
     el("btn-pause").classList.add("hidden");
     el("btn-resume").classList.remove("hidden");
   });
 
   connection.on("GameResumed", () => {
-    audioEl.play().catch(() => manualPlayBtn.classList.remove("hidden"));
+    lancerLecture();
+    fadeAudioVolume(1, 300);
     resumeTimer();
     el("btn-pause").classList.remove("hidden");
     el("btn-resume").classList.add("hidden");
@@ -268,16 +375,49 @@ function registerHandlers() {
 
   connection.on("GameEnded", (dto) => {
     stopTimer();
+    cancelAutoEnd();
     audioEl.pause();
+    audioEl.playbackRate = 1;
     renderScoreList(el("final-scores"), dto);
     showScreen("screen-ended");
   });
 
   connection.on("GameRestarted", () => {
     roundsDemarres = 0;
+    audioEl.playbackRate = 1;
     el("lobby-code").textContent = gameCode;
     renderPlayers();
     showScreen("screen-lobby");
+  });
+
+  connection.on("BonusStakeOptions", (payload) => {
+    renderBonusPaliers(payload.paliers);
+    showScreen("screen-bonus-stake");
+    startTimer(payload.dureePhaseMiseMs, el("bonus-stake-timer-fill"));
+  });
+
+  connection.on("BonusQuestionStarted", (payload) => {
+    // Seul le host reçoit filePath/refrainStartMs/ralentissement (jamais envoyés aux joueurs).
+    refrainCourantMs = payload.refrainStartMs ?? null;
+    audioEl.playbackRate = payload.ralentissementActive ? payload.facteurRalentissement : 1;
+    playAudio(payload.filePath); // depuis le début — c'est la devinette elle-même, pas le reveal
+    showScreen("screen-bonus-question");
+    startTimer(payload.dureePhaseQuestionMs, el("bonus-question-timer-fill"));
+  });
+
+  connection.on("BonusResult", (payload) => {
+    stopTimer();
+    audioEl.playbackRate = 1; // remis à la vitesse normale pour la suite (fin de partie, replay...)
+    if (refrainCourantMs !== null) {
+      jouerRefrain(refrainCourantMs);
+    } else {
+      pauseAudioEnDouceur();
+    }
+    el("bonus-reveal-title").textContent = payload.title;
+    el("bonus-reveal-artist").textContent = payload.artist;
+    renderBonusResults(payload.resultats);
+    showScreen("screen-bonus-result");
+    scheduleAutoEndGame();
   });
 }
 
@@ -390,16 +530,18 @@ function cancelAutoNext() {
   el("auto-next-note").textContent = "";
 }
 
-const MESSAGE_SERIE_EPUISEE =
-  "Plus de round classique dans cette série — cliquez sur \"Terminer la partie\" (la question bonus n'est pas encore gérée par cette page).";
-
 async function avancerRoundSuivant() {
   el("round-ended-note").textContent = "";
 
-  // Vérifié côté client avant d'appeler le serveur : évite de systématiquement déclencher
-  // (et journaliser) une HubException attendue à chaque fin de série.
+  // Vérifié côté client avant d'appeler le serveur : la série classique est épuisée, on
+  // enchaîne directement sur la question bonus plutôt que d'attendre une intervention.
   if (roundsDemarres >= nombreRoundsTotal) {
-    el("round-ended-note").textContent = MESSAGE_SERIE_EPUISEE;
+    try {
+      await connection.invoke("StartBonusRound");
+    } catch (err) {
+      console.error(err);
+      el("round-ended-note").textContent = "Erreur au démarrage de la question bonus : " + (err.message || err);
+    }
     return;
   }
 
@@ -408,7 +550,7 @@ async function avancerRoundSuivant() {
     await connection.invoke("StartRound");
   } catch (err) {
     console.error(err);
-    el("round-ended-note").textContent = MESSAGE_SERIE_EPUISEE;
+    el("round-ended-note").textContent = "Erreur : " + (err.message || err);
   }
 }
 
@@ -416,7 +558,7 @@ function scheduleAutoNext() {
   cancelAutoNext();
 
   if (roundsDemarres >= nombreRoundsTotal) {
-    avancerRoundSuivant(); // affiche directement la note de fin de série, sans décompte inutile
+    avancerRoundSuivant(); // enchaîne directement sur la question bonus, sans décompte inutile
     return;
   }
 
@@ -433,6 +575,44 @@ function scheduleAutoNext() {
   autoNextTimeoutId = setTimeout(() => {
     cancelAutoNext();
     avancerRoundSuivant();
+  }, delaiMs);
+}
+
+// ----- Fin de partie automatique (après le résultat de la question bonus) -----
+
+function cancelAutoEnd() {
+  if (autoEndTimeoutId !== null) {
+    clearTimeout(autoEndTimeoutId);
+    autoEndTimeoutId = null;
+  }
+  if (autoEndIntervalId !== null) {
+    clearInterval(autoEndIntervalId);
+    autoEndIntervalId = null;
+  }
+  el("bonus-end-note").textContent = "";
+}
+
+function scheduleAutoEndGame() {
+  cancelAutoEnd();
+
+  const delaiMs = Math.max(1, parseInt(el("setup-delai-enchainement").value, 10) || 6) * 1000;
+  const finA = Date.now() + delaiMs;
+
+  const updateNote = () => {
+    const restant = Math.max(0, Math.ceil((finA - Date.now()) / 1000));
+    el("bonus-end-note").textContent = `Fin de la partie dans ${restant}s...`;
+  };
+  updateNote();
+  autoEndIntervalId = setInterval(updateNote, 250);
+
+  autoEndTimeoutId = setTimeout(async () => {
+    cancelAutoEnd();
+    try {
+      await connection.invoke("EndGame");
+    } catch (err) {
+      console.error(err);
+      el("bonus-end-note").textContent = "Erreur : " + (err.message || err);
+    }
   }, delaiMs);
 }
 
@@ -468,6 +648,7 @@ el("btn-resume").addEventListener("click", async () => {
 
 el("btn-leaderboard").addEventListener("click", async () => {
   cancelAutoNext();
+  cancelAutoEnd();
   try {
     await connection.invoke("ShowLeaderboard");
   } catch (err) {
@@ -492,6 +673,16 @@ el("btn-end-game").addEventListener("click", async () => {
   } catch (err) {
     console.error(err);
     el("round-ended-note").textContent = "Erreur : " + (err.message || err);
+  }
+});
+
+el("btn-end-now").addEventListener("click", async () => {
+  cancelAutoEnd();
+  try {
+    await connection.invoke("EndGame");
+  } catch (err) {
+    console.error(err);
+    el("bonus-end-note").textContent = "Erreur : " + (err.message || err);
   }
 });
 

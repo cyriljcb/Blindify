@@ -40,8 +40,9 @@ header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.02em; }
 
 main { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 
-.screen { display: flex; flex-direction: column; gap: 0.75rem; }
+.screen { display: flex; flex-direction: column; gap: 0.75rem; opacity: 1; transition: opacity 0.18s ease; }
 .hidden { display: none !important; }
+.screen--leaving, .screen--entering { opacity: 0; }
 
 label { font-size: 0.9rem; color: var(--text-dim); margin-top: 0.5rem; }
 
@@ -116,6 +117,9 @@ button#btn-end-game { background: var(--surface-alt); color: var(--text); }
 }
 
 audio { width: 100%; }
+
+#game-controls { margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+#game-controls.hidden { display: none !important; }
 
 .reveal { font-size: 1.2rem; }
 

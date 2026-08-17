@@ -13,6 +13,18 @@
   </header>
 
   <main>
+    <!-- Contrôles partagés (audio + pause/tableau général) — hors des écrans pour rester
+         disponibles quel que soit l'écran affiché (découverte, reveal, bonus...). -->
+    <div id="game-controls" class="hidden">
+      <audio id="player-audio" controls></audio>
+      <button id="btn-manual-play" class="hidden">Lecture bloquée par le navigateur — cliquer pour lancer</button>
+      <div class="actions">
+        <button id="btn-pause">Pause</button>
+        <button id="btn-resume" class="hidden">Reprendre</button>
+        <button id="btn-leaderboard">Tableau général</button>
+      </div>
+    </div>
+
     <!-- Écran 1 : connexion au serveur -->
     <section id="screen-connect" class="screen">
       <h2>Connexion au serveur</h2>
@@ -63,17 +75,9 @@
     <section id="screen-round" class="screen hidden">
       <h2>Round en cours — <span id="round-mode-label"></span></h2>
       <div class="timer-bar"><div id="timer-fill" class="timer-fill"></div></div>
-      <audio id="player-audio" controls></audio>
-      <button id="btn-manual-play" class="hidden">Lecture bloquée par le navigateur — cliquer pour lancer</button>
 
       <h3>Scores</h3>
       <ul id="round-scores" class="score-list"></ul>
-
-      <div class="actions">
-        <button id="btn-pause">Pause</button>
-        <button id="btn-resume" class="hidden">Reprendre</button>
-        <button id="btn-leaderboard">Tableau général</button>
-      </div>
       <p id="round-error" class="error"></p>
     </section>
 
@@ -97,7 +101,40 @@
       <p id="round-ended-note" class="error"></p>
     </section>
 
-    <!-- Écran 6 : fin de partie -->
+    <!-- Écran 6 : question bonus — phase mise (à l'aveugle) -->
+    <section id="screen-bonus-stake" class="screen hidden">
+      <h2>Question bonus — mise à l'aveugle</h2>
+      <p>Les joueurs choisissent un palier sur leur téléphone avant de découvrir la question.</p>
+      <div class="timer-bar"><div id="bonus-stake-timer-fill" class="timer-fill"></div></div>
+      <ul id="bonus-paliers" class="score-list"></ul>
+    </section>
+
+    <!-- Écran 7 : question bonus — phase question -->
+    <section id="screen-bonus-question" class="screen hidden">
+      <h2>Question bonus — à deviner !</h2>
+      <p>Morceau ralenti, un seul essai, pas de dégressivité.</p>
+      <div class="timer-bar"><div id="bonus-question-timer-fill" class="timer-fill"></div></div>
+    </section>
+
+    <!-- Écran 8 : question bonus — résultat -->
+    <section id="screen-bonus-result" class="screen hidden">
+      <h2>Résultat de la question bonus</h2>
+      <p class="reveal">
+        <strong id="bonus-reveal-title"></strong> — <span id="bonus-reveal-artist"></span>
+      </p>
+      <table id="bonus-results-table">
+        <thead>
+          <tr><th>Joueur</th><th>Mise</th><th>Réponse</th><th>Correct</th><th>Points</th></tr>
+        </thead>
+        <tbody id="bonus-results-body"></tbody>
+      </table>
+      <p id="bonus-end-note" class="reveal"></p>
+      <div class="actions">
+        <button id="btn-end-now">Terminer maintenant</button>
+      </div>
+    </section>
+
+    <!-- Écran 9 : fin de partie -->
     <section id="screen-ended" class="screen hidden">
       <h2>Partie terminée</h2>
       <ol id="final-scores" class="score-list score-list--final"></ol>
