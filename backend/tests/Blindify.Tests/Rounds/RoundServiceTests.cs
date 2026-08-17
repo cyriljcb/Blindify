@@ -133,6 +133,58 @@ public class RoundServiceTests
     }
 
     [Fact]
+    public void SoumettreReponse_PremiereLettreCorrecte_EstValidee()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a"); // Title = "Titre a"
+        var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "t", round.DebutRound!.Value);
+
+        Assert.True(reponse!.EstCorrecte);
+    }
+
+    [Fact]
+    public void SoumettreReponse_PremiereLettreCasseDifferente_EstValidee()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "T", round.DebutRound!.Value);
+
+        Assert.True(reponse!.EstCorrecte);
+    }
+
+    [Fact]
+    public void SoumettreReponse_PremiereLettreAccentuee_EstNormaliseeAvantComparaison()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "Étoile", Artist = "Artiste", FilePath = "audio/a.mp3" };
+        var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "e", round.DebutRound!.Value);
+
+        Assert.True(reponse!.EstCorrecte);
+    }
+
+    [Fact]
+    public void SoumettreReponse_PremiereLettreIncorrecte_EstRefusee()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "x", round.DebutRound!.Value);
+
+        Assert.False(reponse!.EstCorrecte);
+    }
+
+    [Fact]
     public void SoumettreReponse_DeuxiemeEssaiDuMemeJoueur_EstRejete()
     {
         var joueur = new Player { PlayerId = "p1", Nom = "Alice" };

@@ -50,9 +50,12 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         if (round.DebutRound is null) return null;
         if (round.Reponses.Any(r => r.PlayerId == playerId)) return null;
 
-        var estCorrecte = round.Mode == RoundMode.Qcm
-            ? reponse == track.Id
-            : answerMatcher.EstCorrecte(reponse, track.Title, session.Config.SeuilToleranceLevenshteinRatio);
+        var estCorrecte = round.Mode switch
+        {
+            RoundMode.Qcm => reponse == track.Id,
+            RoundMode.PremiereLettre => EstPremiereLettreCorrecte(reponse, track.Title),
+            _ => answerMatcher.EstCorrecte(reponse, track.Title, session.Config.SeuilToleranceLevenshteinRatio),
+        };
 
         var pointsEnJeu = scoring.CalculerPointsEnJeu(round.DebutRound.Value, maintenant, round.DureeEnPauseMs, seriesConfig);
         var points = estCorrecte
@@ -119,5 +122,13 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     {
         var player = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
         if (player is not null) player.Score += points;
+    }
+
+    private bool EstPremiereLettreCorrecte(string reponse, string titre)
+    {
+        var normaliseeReponse = answerMatcher.Normaliser(reponse);
+        var normaliseTitre = answerMatcher.Normaliser(titre);
+        return normaliseeReponse.Length > 0 && normaliseTitre.Length > 0
+               && normaliseeReponse[0] == normaliseTitre[0];
     }
 }
