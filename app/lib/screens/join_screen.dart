@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/game_connection.dart';
+import '../theme.dart';
+import '../widgets/game_card.dart';
 
 class JoinScreen extends StatefulWidget {
   const JoinScreen({super.key});
@@ -51,24 +53,26 @@ class _JoinScreenState extends State<JoinScreen> {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: GameCard(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Icon(Icons.groups_rounded, size: 40, color: BlindifyColors.accent2),
+              const SizedBox(height: 12),
               Text('Rejoindre une partie', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               TextField(
                 controller: _nomController,
-                decoration: const InputDecoration(labelText: 'Ton pseudo', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Ton pseudo'),
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _codeController,
-                decoration: const InputDecoration(labelText: 'Code de la partie', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Code de la partie'),
                 textCapitalization: TextCapitalization.characters,
+                style: const TextStyle(letterSpacing: 4, fontWeight: FontWeight.w700),
                 onSubmitted: (_) => _join(),
               ),
               const SizedBox(height: 16),
@@ -78,7 +82,7 @@ class _JoinScreenState extends State<JoinScreen> {
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: BlindifyColors.onAccent),
                       )
                     : const Text('Rejoindre'),
               ),

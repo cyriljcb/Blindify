@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/game_connection.dart';
+import '../theme.dart';
+import '../widgets/game_card.dart';
 
 class ConnectScreen extends StatefulWidget {
   const ConnectScreen({super.key});
@@ -32,20 +34,25 @@ class _ConnectScreenState extends State<ConnectScreen> {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: GameCard(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Icon(Icons.podcasts_rounded, size: 40, color: BlindifyColors.accent),
+              const SizedBox(height: 12),
               Text('Connexion au serveur', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
+              Text(
+                "Adresse du backend affichée par le host (Raspberry Pi)",
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 20),
               TextField(
                 controller: _urlController,
                 decoration: const InputDecoration(
-                  labelText: 'Adresse du serveur (Raspberry Pi)',
+                  labelText: 'Adresse du serveur',
                   hintText: 'http://192.168.1.42:5000',
-                  border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.url,
                 onSubmitted: (_) => context.read<GameConnection>().connect(_urlController.text),
@@ -59,7 +66,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: BlindifyColors.onAccent),
                       )
                     : const Text('Se connecter'),
               ),

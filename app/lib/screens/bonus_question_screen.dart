@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/game_connection.dart';
+import '../theme.dart';
+import '../widgets/cover_art.dart';
+import '../widgets/game_card.dart';
 
 class BonusQuestionScreen extends StatefulWidget {
   const BonusQuestionScreen({super.key});
@@ -44,30 +47,40 @@ class _BonusQuestionScreenState extends State<BonusQuestionScreen> {
 
     final disabled = game.bonusAnswered || game.paused;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
+    return GameCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text('Question bonus', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          const Text('Le morceau (ralenti) est joué côté host — écoute et tape le titre. Un seul essai.'),
+          const SizedBox(height: 12),
+          const MysteryCoverArt(size: 110),
+          const SizedBox(height: 12),
+          Text(
+            'Le morceau (ralenti) est joué côté host — écoute et tape le titre. Un seul essai.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: 4),
-          Text('${(_remainingMs / 1000).ceil()}s restantes', style: Theme.of(context).textTheme.bodyMedium),
+          Text('${(_remainingMs / 1000).ceil()}s restantes', style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
-          if (game.paused) const _Banner(text: 'Partie en pause — en attente du host.'),
-          if (game.bonusAnswered && !game.paused) const _Banner(text: 'Réponse envoyée — en attente des autres joueurs.'),
+          if (game.paused) const _Banner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
+          if (game.bonusAnswered && !game.paused)
+            const _Banner(text: 'Réponse envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
           const Spacer(),
           TextField(
             controller: _reponseController,
             enabled: !disabled,
-            decoration: const InputDecoration(labelText: 'Titre du morceau', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Titre du morceau'),
             onSubmitted: disabled ? null : (value) => context.read<GameConnection>().submitBonusAnswer(value.trim()),
           ),
           const SizedBox(height: 12),
-          FilledButton(
-            onPressed: disabled ? null : () => context.read<GameConnection>().submitBonusAnswer(_reponseController.text.trim()),
-            child: const Text('Valider'),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed:
+                  disabled ? null : () => context.read<GameConnection>().submitBonusAnswer(_reponseController.text.trim()),
+              child: const Text('Valider'),
+            ),
           ),
         ],
       ),
@@ -76,9 +89,10 @@ class _BonusQuestionScreenState extends State<BonusQuestionScreen> {
 }
 
 class _Banner extends StatelessWidget {
-  const _Banner({required this.text});
+  const _Banner({required this.text, required this.color});
 
   final String text;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -86,8 +100,12 @@ class _Banner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(8)),
-      child: Text(text),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
     );
   }
 }

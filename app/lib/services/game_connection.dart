@@ -40,6 +40,10 @@ class GameConnection extends ChangeNotifier {
   String? nom;
   String? gameCode;
 
+  /// URL complète d'une pochette (servie sous /files, comme l'audio côté host — voir
+  /// Program.cs). null si le morceau n'a pas de coverPath.
+  String? coverUrl(String? coverPath) => coverPath == null ? null : '$serverUrl/files/$coverPath';
+
   AppScreen screen = AppScreen.connect;
   bool connected = false;
   bool connecting = false;

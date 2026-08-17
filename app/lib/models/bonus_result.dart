@@ -27,18 +27,21 @@ class BonusResult {
     required this.trackId,
     required this.title,
     required this.artist,
+    this.coverPath,
     required this.resultats,
   });
 
   final String trackId;
   final String title;
   final String artist;
+  final String? coverPath;
   final List<BonusResultEntry> resultats;
 
   factory BonusResult.fromJson(Map<String, dynamic> json) => BonusResult(
         trackId: json['trackId'] as String,
         title: json['title'] as String,
         artist: json['artist'] as String,
+        coverPath: json['coverPath'] as String?,
         resultats: (json['resultats'] as List<dynamic>)
             .map((e) => BonusResultEntry.fromJson(e as Map<String, dynamic>))
             .toList(),

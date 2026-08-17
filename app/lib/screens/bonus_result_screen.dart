@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/game_connection.dart';
+import '../theme.dart';
+import '../widgets/cover_art.dart';
+import '../widgets/game_card.dart';
 
 class BonusResultScreen extends StatelessWidget {
   const BonusResultScreen({super.key});
@@ -18,19 +21,21 @@ class BonusResultScreen extends StatelessWidget {
     final mine = result.resultats.where((r) => r.playerId == game.playerId);
     final monResultat = mine.isNotEmpty ? mine.first : null;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
+    return GameCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text('Résultat de la question bonus', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text('${result.title} — ${result.artist}', style: Theme.of(context).textTheme.titleMedium),
+          Text('Résultat de la question bonus', style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          CoverArt(imageUrl: game.coverUrl(result.coverPath)),
+          const SizedBox(height: 16),
+          Text(result.title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
+          Text(result.artist, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 24),
           if (monResultat != null) ...[
             Icon(
-              monResultat.estCorrecte ? Icons.check_circle : Icons.cancel,
-              color: monResultat.estCorrecte ? Colors.green : Colors.red,
+              monResultat.estCorrecte ? Icons.check_circle_rounded : Icons.cancel_rounded,
+              color: monResultat.estCorrecte ? BlindifyColors.good : BlindifyColors.bad,
               size: 48,
             ),
             const SizedBox(height: 8),
@@ -39,10 +44,13 @@ class BonusResultScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 4),
-            Text('Mise : ${monResultat.mise} pts'),
+            Text('Mise : ${monResultat.mise} pts', style: Theme.of(context).textTheme.bodySmall),
           ],
           const Spacer(),
-          const Text('En attente de la fin de la partie...', style: TextStyle(fontStyle: FontStyle.italic)),
+          Text(
+            'En attente de la fin de la partie...',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+          ),
         ],
       ),
     );

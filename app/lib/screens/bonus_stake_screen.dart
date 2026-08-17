@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/game_connection.dart';
+import '../theme.dart';
+import '../widgets/game_card.dart';
 
 class BonusStakeScreen extends StatefulWidget {
   const BonusStakeScreen({super.key});
@@ -43,19 +45,28 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
 
     final disabled = game.bonusStakeEnvoyee || game.paused;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
+    return GameCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Question bonus — mise à l\'aveugle', style: Theme.of(context).textTheme.headlineSmall),
+          Row(
+            children: [
+              const Icon(Icons.casino_rounded, color: BlindifyColors.accent2),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Mise à l\'aveugle', style: Theme.of(context).textTheme.headlineSmall)),
+            ],
+          ),
           const SizedBox(height: 8),
-          const Text('Choisis un palier avant de découvrir la question. Pas de choix dans le délai = palier "safe" appliqué automatiquement.'),
+          Text(
+            'Choisis un palier avant de découvrir la question. Pas de choix dans le délai = palier "safe" appliqué automatiquement.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: 4),
-          Text('${(_remainingMs / 1000).ceil()}s restantes', style: Theme.of(context).textTheme.bodyMedium),
+          Text('${(_remainingMs / 1000).ceil()}s restantes', style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
-          if (game.paused) const _Banner(text: 'Partie en pause — en attente du host.'),
-          if (game.bonusStakeEnvoyee && !game.paused) const _Banner(text: 'Mise envoyée — en attente des autres joueurs.'),
+          if (game.paused) const _Banner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
+          if (game.bonusStakeEnvoyee && !game.paused)
+            const _Banner(text: 'Mise envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
           const SizedBox(height: 12),
           Expanded(
             child: ListView.separated(
@@ -64,16 +75,27 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
               itemBuilder: (context, index) {
                 final valeur = options.paliers[index];
                 final selectionne = game.bonusPalierSelectionne == index;
-                return FilledButton.tonal(
-                  onPressed: disabled ? null : () => context.read<GameConnection>().selectStake(index),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.all(16),
-                    backgroundColor: selectionne ? Theme.of(context).colorScheme.primary : null,
-                    foregroundColor: selectionne ? Theme.of(context).colorScheme.onPrimary : null,
-                  ),
-                  child: Text(
-                    'Palier ${index + 1}${index == 0 ? " (safe)" : ""} — $valeur pts',
-                    textAlign: TextAlign.center,
+                return Material(
+                  color: selectionne ? BlindifyColors.accent : BlindifyColors.surfaceAlt,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: disabled ? null : () => context.read<GameConnection>().selectStake(index),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: selectionne ? BlindifyColors.accent : BlindifyColors.border),
+                      ),
+                      child: Text(
+                        'Palier ${index + 1}${index == 0 ? " (safe)" : ""} — $valeur pts',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: selectionne ? BlindifyColors.onAccent : BlindifyColors.text,
+                        ),
+                      ),
+                    ),
                   ),
                 );
               },
@@ -86,17 +108,22 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
 }
 
 class _Banner extends StatelessWidget {
-  const _Banner({required this.text});
+  const _Banner({required this.text, required this.color});
 
   final String text;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(8)),
-      child: Text(text),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
     );
   }
 }

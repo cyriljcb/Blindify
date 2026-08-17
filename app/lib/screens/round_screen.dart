@@ -7,6 +7,9 @@ import '../models/round_cible.dart';
 import '../models/round_mode.dart';
 import '../models/round_started.dart';
 import '../services/game_connection.dart';
+import '../theme.dart';
+import '../widgets/cover_art.dart';
+import '../widgets/game_card.dart';
 
 class RoundScreen extends StatefulWidget {
   const RoundScreen({super.key});
@@ -70,25 +73,36 @@ class _RoundScreenState extends State<RoundScreen> {
     final totalMs = round.dureeFenetreReponseMs;
     final progress = totalMs > 0 ? _remainingMs / totalMs : 0.0;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
+    return GameCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Round en cours — ${round.mode.label}', style: Theme.of(context).textTheme.headlineSmall),
-          Text('Trouve ${round.cible.label} du morceau', style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(value: progress, minHeight: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(round.mode.label, style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: 2),
+                    Text('Trouve ${round.cible.label} du morceau', style: Theme.of(context).textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              const MysteryCoverArt(size: 64),
+            ],
           ),
+          const SizedBox(height: 16),
+          _RoundTimerBar(progress: progress),
           const SizedBox(height: 4),
-          Text('${(_remainingMs / 1000).ceil()}s restantes', style: Theme.of(context).textTheme.bodyMedium),
+          Text('${(_remainingMs / 1000).ceil()}s restantes', style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
-          if (game.paused) const _Banner(text: 'Partie en pause — en attente du host.', color: Colors.orange),
+          if (game.paused) const _Banner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.roundAnswered && !game.paused)
-            const _Banner(text: 'Réponse envoyée — en attente des autres joueurs.', color: Colors.green),
-          const SizedBox(height: 16),
+            const _Banner(text: 'Réponse envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
+          const SizedBox(height: 8),
           Expanded(
             child: switch (round.mode) {
               RoundMode.qcm => _QcmAnswers(round: round, disabled: disabled),
@@ -102,11 +116,37 @@ class _RoundScreenState extends State<RoundScreen> {
   }
 }
 
+class _RoundTimerBar extends StatelessWidget {
+  const _RoundTimerBar({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = progress.clamp(0, 1) * 100;
+    final color = pct <= 15 ? BlindifyColors.bad : (pct <= 40 ? BlindifyColors.warn : BlindifyColors.accent);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: TweenAnimationBuilder<Color?>(
+        tween: ColorTween(end: color),
+        duration: const Duration(milliseconds: 300),
+        builder: (context, animatedColor, _) => LinearProgressIndicator(
+          value: progress.clamp(0, 1),
+          minHeight: 10,
+          backgroundColor: BlindifyColors.surfaceAlt,
+          valueColor: AlwaysStoppedAnimation(animatedColor ?? BlindifyColors.accent),
+        ),
+      ),
+    );
+  }
+}
+
 class _Banner extends StatelessWidget {
   const _Banner({required this.text, required this.color});
 
   final String text;
-  final MaterialColor color;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -114,8 +154,12 @@ class _Banner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(color: color.shade100, borderRadius: BorderRadius.circular(8)),
-      child: Text(text),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -138,12 +182,43 @@ class _QcmAnswers extends StatelessWidget {
         // Un seul champ affiché par option (titre OU premier auteur), pas les deux — un
         // morceau à plusieurs auteurs listés en entier rend le QCM illisible.
         final label = round.cible == RoundCible.titre ? option.title : option.artist.split(',').first.trim();
-        return FilledButton.tonal(
+        return _AnswerTile(
+          label: label,
           onPressed: disabled ? null : () => context.read<GameConnection>().submitAnswer(option.trackId),
-          style: FilledButton.styleFrom(padding: const EdgeInsets.all(16)),
-          child: Text(label, textAlign: TextAlign.center),
         );
       },
+    );
+  }
+}
+
+class _AnswerTile extends StatelessWidget {
+  const _AnswerTile({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BlindifyColors.surfaceAlt,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onPressed,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: BlindifyColors.border),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -169,10 +244,21 @@ class _LetterAnswer extends StatelessWidget {
       itemCount: _letters.length,
       itemBuilder: (context, index) {
         final letter = _letters[index];
-        return FilledButton.tonal(
-          onPressed: disabled ? null : () => context.read<GameConnection>().submitAnswer(letter),
-          style: FilledButton.styleFrom(padding: EdgeInsets.zero),
-          child: Text(letter, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        return Material(
+          color: BlindifyColors.surfaceAlt,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: disabled ? null : () => context.read<GameConnection>().submitAnswer(letter),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: BlindifyColors.border),
+              ),
+              alignment: Alignment.center,
+              child: Text(letter, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            ),
+          ),
         );
       },
     );
@@ -195,7 +281,7 @@ class _TextAnswer extends StatelessWidget {
         TextField(
           controller: controller,
           enabled: !disabled,
-          decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+          decoration: InputDecoration(labelText: label),
           onSubmitted: disabled ? null : (value) => context.read<GameConnection>().submitAnswer(value.trim()),
         ),
         const SizedBox(height: 12),
