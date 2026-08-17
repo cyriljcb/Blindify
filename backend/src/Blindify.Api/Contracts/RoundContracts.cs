@@ -19,4 +19,4 @@ public record RoundAnswerResultDto(bool EstCorrecte, int Points, int NouveauScor
 
 public record RoundResultEntryDto(string PlayerId, string? Reponse, bool? EstCorrecte, int Points);
 
-public record RoundEndedDto(string TrackId, string Title, string Artist, List<RoundResultEntryDto> Resultats);
+public record RoundEndedDto(string TrackId, string Title, string Artist, string? CoverPath, List<RoundResultEntryDto> Resultats);

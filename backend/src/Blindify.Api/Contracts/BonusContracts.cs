@@ -18,4 +18,4 @@ public record BonusAnswerResultDto(bool EstCorrecte, int Points, int NouveauScor
 
 public record BonusResultEntryDto(string PlayerId, int Mise, string? Reponse, bool EstCorrecte, int Points);
 
-public record BonusResultDto(string TrackId, string Title, string Artist, List<BonusResultEntryDto> Resultats);
+public record BonusResultDto(string TrackId, string Title, string Artist, string? CoverPath, List<BonusResultEntryDto> Resultats);
