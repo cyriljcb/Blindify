@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/round_cible.dart';
 import '../models/round_mode.dart';
 import '../models/round_started.dart';
 import '../services/game_connection.dart';
@@ -75,6 +76,7 @@ class _RoundScreenState extends State<RoundScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Round en cours — ${round.mode.label}', style: Theme.of(context).textTheme.headlineSmall),
+          Text('Trouve ${round.cible.label} du morceau', style: Theme.of(context).textTheme.bodyLarge),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(999),
@@ -91,7 +93,7 @@ class _RoundScreenState extends State<RoundScreen> {
             child: switch (round.mode) {
               RoundMode.qcm => _QcmAnswers(round: round, disabled: disabled),
               RoundMode.premiereLettre => _LetterAnswer(disabled: disabled),
-              RoundMode.tapeReponse => _TextAnswer(controller: _reponseController, disabled: disabled),
+              RoundMode.tapeReponse => _TextAnswer(controller: _reponseController, disabled: disabled, cible: round.cible),
             },
           ),
         ],
@@ -133,10 +135,13 @@ class _QcmAnswers extends StatelessWidget {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final option = options[index];
+        // Un seul champ affiché par option (titre OU premier auteur), pas les deux — un
+        // morceau à plusieurs auteurs listés en entier rend le QCM illisible.
+        final label = round.cible == RoundCible.titre ? option.title : option.artist.split(',').first.trim();
         return FilledButton.tonal(
           onPressed: disabled ? null : () => context.read<GameConnection>().submitAnswer(option.trackId),
           style: FilledButton.styleFrom(padding: const EdgeInsets.all(16)),
-          child: Text('${option.title} — ${option.artist}', textAlign: TextAlign.center),
+          child: Text(label, textAlign: TextAlign.center),
         );
       },
     );
@@ -175,20 +180,22 @@ class _LetterAnswer extends StatelessWidget {
 }
 
 class _TextAnswer extends StatelessWidget {
-  const _TextAnswer({required this.controller, required this.disabled});
+  const _TextAnswer({required this.controller, required this.disabled, required this.cible});
 
   final TextEditingController controller;
   final bool disabled;
+  final RoundCible cible;
 
   @override
   Widget build(BuildContext context) {
+    final label = cible == RoundCible.titre ? 'Titre du morceau' : "Nom de l'artiste";
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextField(
           controller: controller,
           enabled: !disabled,
-          decoration: const InputDecoration(labelText: 'Ta réponse', border: OutlineInputBorder()),
+          decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
           onSubmitted: disabled ? null : (value) => context.read<GameConnection>().submitAnswer(value.trim()),
         ),
         const SizedBox(height: 12),

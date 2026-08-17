@@ -1,4 +1,5 @@
 import 'qcm_option.dart';
+import 'round_cible.dart';
 import 'round_mode.dart';
 
 /// Miroir de `RoundStartedForPlayersDto` — jamais de champ audio ici, contrairement
@@ -7,16 +8,19 @@ import 'round_mode.dart';
 class RoundStarted {
   RoundStarted({
     required this.mode,
+    required this.cible,
     required this.dureeFenetreReponseMs,
     this.qcmOptions,
   });
 
   final RoundMode mode;
+  final RoundCible cible;
   final int dureeFenetreReponseMs;
   final List<QcmOption>? qcmOptions;
 
   factory RoundStarted.fromJson(Map<String, dynamic> json) => RoundStarted(
         mode: RoundModeJson.fromJson(json['mode'] as String),
+        cible: RoundCibleJson.fromJson(json['cible'] as String),
         dureeFenetreReponseMs: json['dureeFenetreReponseMs'] as int,
         qcmOptions: (json['qcmOptions'] as List<dynamic>?)
             ?.map((e) => QcmOption.fromJson(e as Map<String, dynamic>))
