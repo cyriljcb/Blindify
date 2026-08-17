@@ -185,7 +185,7 @@ public class GameHub(
         await Clients.Group(session.Id).SendAsync("LeaderboardShown", ScoreDtoBuilder.Construire(session));
     }
 
-    public async Task ValidateAnswerManually(ValidateAnswerManuallyRequestDto request)
+    public async Task<RoundAnswerResultDto> ValidateAnswerManually(ValidateAnswerManuallyRequestDto request)
     {
         var session = ResoudreSessionHost();
         var round = session.RoundCourant() ?? throw new HubException("Aucun round en cours.");
@@ -195,6 +195,9 @@ public class GameHub(
                        ?? throw new HubException("Aucune réponse enregistrée pour ce joueur sur ce round.");
 
         await Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
+
+        var joueur = session.Players.First(p => p.PlayerId == request.PlayerId);
+        return new RoundAnswerResultDto(resultat.EstCorrecte, resultat.Points, joueur.Score);
     }
 
     public async Task PauseGame()
