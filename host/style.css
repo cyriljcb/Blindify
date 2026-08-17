@@ -58,6 +58,7 @@ header h1 {
 main {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   max-width: 900px;
@@ -164,7 +165,6 @@ button#btn-end-game { background: var(--surface-alt); color: var(--text); }
 
 .player-row { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
 .player-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.player-row small { color: var(--text-dim); font-weight: 500; font-size: 0.8rem; }
 
 .player-list, .score-list {
   list-style: none;
