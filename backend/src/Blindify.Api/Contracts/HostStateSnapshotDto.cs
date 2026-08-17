@@ -6,7 +6,9 @@ namespace Blindify.Api.Contracts;
 public record HostStateSnapshotDto(
     bool EnPause,
     RoundMode? ModeCourant,
+    RoundCible? CibleCourante,
     string? TrackId,
     string? FilePath,
+    int? RefrainStartMs,
     long? PositionAudioMs,
     int? DureeFenetreReponseMs);

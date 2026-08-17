@@ -7,6 +7,12 @@ public class Round
 {
     public required string TrackId { get; set; }
     public RoundMode Mode { get; set; }
+
+    /// <summary>Titre ou Auteur — tiré aléatoirement au démarrage (RoundService.DemarrerRound),
+    /// utilisé aussi bien pour la validation des réponses (TapeReponse/PremiereLettre) que pour
+    /// indiquer au joueur ce qui est demandé.</summary>
+    public RoundCible Cible { get; set; }
+
     public DateTimeOffset? DebutRound { get; set; }
     public long DureeEnPauseMs { get; set; }
     public List<RoundAnswer> Reponses { get; set; } = [];

@@ -36,6 +36,7 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     public void DemarrerRound(Round round, Track track, IReadOnlyList<Track> catalogueComplet, GameConfig config, DateTimeOffset maintenant)
     {
         round.DebutRound = maintenant;
+        round.Cible = Random.Shared.Next(2) == 0 ? RoundCible.Titre : RoundCible.Auteur;
 
         if (round.Mode == RoundMode.Qcm)
         {
@@ -53,8 +54,12 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         var estCorrecte = round.Mode switch
         {
             RoundMode.Qcm => reponse == track.Id,
-            RoundMode.PremiereLettre => EstPremiereLettreCorrecte(reponse, track.Title),
-            _ => answerMatcher.EstCorrecte(reponse, track.Title, session.Config.SeuilToleranceLevenshteinRatio),
+            RoundMode.PremiereLettre => round.Cible == RoundCible.Titre
+                ? EstPremiereLettreCorrecte(reponse, track.Title)
+                : DecouperAuteurs(track.Artist).Any(auteur => EstPremiereLettreCorrecte(reponse, auteur)),
+            _ => round.Cible == RoundCible.Titre
+                ? answerMatcher.EstCorrecte(reponse, track.Title, session.Config.SeuilToleranceLevenshteinRatio)
+                : DecouperAuteurs(track.Artist).Any(auteur => answerMatcher.EstCorrecte(reponse, auteur, session.Config.SeuilToleranceLevenshteinRatio)),
         };
 
         var pointsEnJeu = scoring.CalculerPointsEnJeu(round.DebutRound.Value, maintenant, round.DureeEnPauseMs, seriesConfig);
@@ -124,11 +129,17 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         if (player is not null) player.Score += points;
     }
 
-    private bool EstPremiereLettreCorrecte(string reponse, string titre)
+    private bool EstPremiereLettreCorrecte(string reponse, string texteAttendu)
     {
         var normaliseeReponse = answerMatcher.Normaliser(reponse);
-        var normaliseTitre = answerMatcher.Normaliser(titre);
-        return normaliseeReponse.Length > 0 && normaliseTitre.Length > 0
-               && normaliseeReponse[0] == normaliseTitre[0];
+        var normaliseAttendu = answerMatcher.Normaliser(texteAttendu);
+        return normaliseeReponse.Length > 0 && normaliseAttendu.Length > 0
+               && normaliseeReponse[0] == normaliseAttendu[0];
     }
+
+    /// <summary>Un morceau peut avoir plusieurs auteurs listés dans un seul champ ("A, B, C") —
+    /// n'importe lequel d'entre eux est une réponse valable (voir retour utilisateur : exiger la
+    /// liste complète est ingérable dès qu'il y a plus d'un featuring).</summary>
+    private static IEnumerable<string> DecouperAuteurs(string artist) =>
+        artist.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 }

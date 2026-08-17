@@ -77,7 +77,7 @@ public class GameHub(
 
         var round = session.RoundCourant();
         if (round?.DebutRound is null)
-            return new HostStateSnapshotDto(session.EnPause, null, null, null, null, null);
+            return new HostStateSnapshotDto(session.EnPause, null, null, null, null, null, null, null);
 
         var track = tracksRepository.GetById(round.TrackId);
         var positionMs = Math.Max(0, CalculerTempsEcouleMs(session, round));
@@ -85,8 +85,10 @@ public class GameHub(
         return new HostStateSnapshotDto(
             session.EnPause,
             round.Mode,
+            round.Cible,
             track?.Id,
             track?.FilePath,
+            track?.RefrainStartMs,
             positionMs,
             session.SerieCourante().Config.DureeFenetreReponseMs);
     }
@@ -116,12 +118,12 @@ public class GameHub(
         if (session.HostConnectionId is not null)
         {
             await Clients.Client(session.HostConnectionId)
-                .SendAsync("RoundStarted", new RoundStartedForHostDto(round.Mode, track.Id, track.FilePath, serie.Config.DureeFenetreReponseMs));
+                .SendAsync("RoundStarted", new RoundStartedForHostDto(round.Mode, round.Cible, track.Id, track.FilePath, track.RefrainStartMs, serie.Config.DureeFenetreReponseMs));
         }
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
         await Clients.Clients(joueursConnectes)
-            .SendAsync("RoundStarted", new RoundStartedForPlayersDto(round.Mode, serie.Config.DureeFenetreReponseMs, qcmOptions));
+            .SendAsync("RoundStarted", new RoundStartedForPlayersDto(round.Mode, round.Cible, serie.Config.DureeFenetreReponseMs, qcmOptions));
 
         timerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
     }

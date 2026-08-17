@@ -19,6 +19,7 @@ internal static class TrackMapper
         Year = dto.Year,
         FilePath = dto.FilePath,
         CoverPath = dto.CoverPath,
+        RefrainStartMs = dto.RefrainStartMs,
         AddedAt = dto.AddedAt
     };
 }

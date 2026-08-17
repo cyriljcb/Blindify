@@ -185,6 +185,62 @@ public class RoundServiceTests
     }
 
     [Fact]
+    public void DemarrerRound_TireLaCible_LesDeuxValeursApparaissentSurPlusieursTirages()
+    {
+        var correct = NouveauTrack("a");
+        var cibles = new HashSet<RoundCible>();
+
+        for (var i = 0; i < 50; i++)
+        {
+            var round = new Round { TrackId = correct.Id, Mode = RoundMode.TapeReponse };
+            _service.DemarrerRound(round, correct, [correct], new GameConfig(), DateTimeOffset.UtcNow);
+            cibles.Add(round.Cible);
+        }
+
+        Assert.Contains(RoundCible.Titre, cibles);
+        Assert.Contains(RoundCible.Auteur, cibles);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAuteur_UnSeulDesPlusieursAuteursSuffit()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "Gone Gone Gone", Artist = "David Guetta, Tones And I, Teddy Swims", FilePath = "audio/a.mp3" };
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Teddy Swims", round.DebutRound!.Value);
+
+        Assert.True(reponse!.EstCorrecte);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAuteur_LeTitreNestPasAccepte()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "Gone Gone Gone", Artist = "David Guetta, Tones And I, Teddy Swims", FilePath = "audio/a.mp3" };
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Gone Gone Gone", round.DebutRound!.Value);
+
+        Assert.False(reponse!.EstCorrecte);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAuteurPremiereLettre_MatchNimporteLequelDesAuteurs()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "Gone Gone Gone", Artist = "David Guetta, Tones And I, Teddy Swims", FilePath = "audio/a.mp3" };
+        var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "t", round.DebutRound!.Value);
+
+        Assert.True(reponse!.EstCorrecte);
+    }
+
+    [Fact]
     public void SoumettreReponse_DeuxiemeEssaiDuMemeJoueur_EstRejete()
     {
         var joueur = new Player { PlayerId = "p1", Nom = "Alice" };

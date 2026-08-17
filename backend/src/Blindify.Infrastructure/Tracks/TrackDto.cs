@@ -16,5 +16,6 @@ public class TrackDto
     public int? Year { get; set; }
     public required string FilePath { get; set; }
     public string? CoverPath { get; set; }
+    public int? RefrainStartMs { get; set; }
     public DateTimeOffset AddedAt { get; set; }
 }

@@ -119,6 +119,7 @@ Pour ~1000 morceaux en MP3 192 kbps (largement suffisant pour un blindtest, surt
   "year": 1989,
   "filePath": "audio/a1b2c3.mp3",
   "coverPath": "covers/a1b2c3.jpg",
+  "refrainStartMs": null,
   "addedAt": "2026-08-06T10:00:00Z"
 }
 ```
@@ -127,6 +128,8 @@ Pour ~1000 morceaux en MP3 192 kbps (largement suffisant pour un blindtest, surt
 - `tags` : thèmes personnalisés, remplis manuellement ou semi-automatiquement.
 - `trapWith` : IDs de morceaux fréquemment confondus (ex. Axel F / Crazy Frog), utilisés pour générer des QCM pièges.
 - `coverPath` : pochette d'album téléchargée localement depuis Spotify, utilisée sur les écrans de jeu pour l'esthétique.
+- `title` : nettoyé à l'import (voir section 3) des suffixes d'édition ("- Radio Edit", "- ... Remix", "(feat. ...)") — trop de bruit dans le titre le rend impossible à taper en mode `TapeReponse`/`PremiereLettre`.
+- `refrainStartMs` : optionnel, `null` par défaut (comportement actuel : lecture depuis le début du fichier). Renseigné manuellement, indique le point de départ (ms) à jouer pendant le round plutôt que le début du morceau — utile quand l'intro n'est pas identifiable.
 
 **Stockage** : `tracks.json` = source de vérité unique pour les métadonnées éditoriales, versionnable avec Git, chargé en mémoire par le backend au démarrage (`List<Track>` + LINQ pour le filtrage). Pas de base de données pour l'instant — largement suffisant pour ce volume, à réévaluer seulement si le catalogue dépasse les dizaines de milliers de morceaux ou si des écritures concurrentes deviennent nécessaires.
 
@@ -177,6 +180,14 @@ pointsEnJeu(t) = max(min, max - (tempsÉcoulé / duréeFenêtre) × (max - min))
 - `duréeEnPauseMs` neutralise le temps où la partie était en pause, pour ne pas pénaliser injustement.
 
 **Pourquoi une pénalité asymétrique (×0.5) plutôt que symétrique** : ne pas répondre du tout coûte déjà -5 points fixes (étape 4), donc l'abstention n'est jamais "gratuite" — la question est seulement de savoir à partir de quel niveau de certitude tenter sa chance devient rentable. Avec une pénalité égale au gain (×1), deviner sur un QCM à 4 options sans aucun indice donne une espérance de `-0.5 × pointsEnJeu` : pire que les -5 fixes de l'abstention, donc un joueur hésitant a mathématiquement intérêt à ne jamais répondre — à l'encontre de l'esprit "tout le monde participe". Avec ×0.5, ce même guess à l'aveugle reste à espérance négative (`-0.125 × pointsEnJeu`, ce n'est pas un moyen de "rentabiliser le hasard pur"), mais dès que le joueur a éliminé ne serait-ce qu'une option parmi les 4 (3 candidats restants), l'espérance devient nulle, et à 2 candidats restants elle devient nettement positive (`+0.25 × pointsEnJeu`). Le rôle du ×0.5 est donc d'inciter à répondre dès qu'on a un minimum d'indice, pas de rendre le pur hasard profitable, tout en gardant un vrai coût à l'erreur.
+
+### Cible de la question (titre ou auteur)
+
+Chaque round tire aléatoirement (50/50, indépendamment du mode QCM/TapeReponse/PremiereLettre) une **cible** — `Titre` ou `Auteur` — annoncée au joueur ("trouve le titre" / "trouve l'artiste"). Ajouté suite à un retour de playtest : sans cible explicite, un morceau à plusieurs auteurs (ex. featurings) rendait le mode `TapeReponse` quasi injouable (fallait taper la liste complète) et le mode `PremiereLettre` ambigu (première lettre de quoi ?).
+
+- **QCM** : les options affichent uniquement le champ correspondant à la cible (titre ou un seul auteur par option), jamais les deux concaténés.
+- **TapeReponse / PremiereLettre**, cible `Auteur` : le champ `artist` peut lister plusieurs noms séparés par des virgules (ex. `"David Guetta, Tones And I, Teddy Swims"`) — **n'importe lequel** des auteurs listés est accepté comme réponse correcte, pas besoin de tous les citer.
+- La cible n'affecte jamais la validation en mode QCM (toujours par sélection d'ID) ni l'écran de révélation (`RoundEnded` affiche toujours titre **et** artiste complets, quelle que soit la cible du round qui vient de se terminer).
 
 ### Génération des QCM
 
@@ -251,7 +262,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 |---|---|
 | `PlayerJoined` | Infos du joueur (nouveau joueur) |
 | `PlayerReconnected` / `PlayerDisconnected` | Changement d'état `estConnecté` d'un joueur existant (perte réseau, reconnexion) |
-| `RoundStarted` | Morceau (mode-dépendant), mode, URL audio |
+| `RoundStarted` | Morceau (mode-dépendant), mode, cible (Titre/Auteur — voir section 6), URL audio + `refrainStartMs` (host uniquement) |
 | `ScoreUpdate` | Scores à jour de tous les joueurs |
 | `RoundEnded` | Réponse correcte, détail des points de chacun |
 | `BonusStakeOptions` | Les 4 paliers de la série courante |

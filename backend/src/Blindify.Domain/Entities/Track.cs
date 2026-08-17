@@ -22,5 +22,10 @@ public class Track
     public int? Year { get; set; }
     public required string FilePath { get; set; }
     public string? CoverPath { get; set; }
+
+    /// <summary>Point de départ (ms) du refrain, joué à la place du début du morceau pendant le
+    /// round — null = comportement actuel (lecture depuis le début), à renseigner manuellement.</summary>
+    public int? RefrainStartMs { get; set; }
+
     public DateTimeOffset AddedAt { get; set; }
 }
