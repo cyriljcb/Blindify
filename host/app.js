@@ -12,6 +12,9 @@ let timerEndAt = null;
 let timerDurationMs = 0;
 let timerPausedRemainingMs = null;
 
+let autoNextTimeoutId = null;
+let autoNextIntervalId = null;
+
 // ----- Éléments DOM -----
 
 const el = (id) => document.getElementById(id);
@@ -148,12 +151,24 @@ function stopTimer() {
 
 // ----- Audio -----
 
-function playAudio(filePath) {
+function playAudio(filePath, refrainStartMs) {
   audioEl.src = `${serverBaseUrl}/files/${filePath}`;
   manualPlayBtn.classList.add("hidden");
-  const playPromise = audioEl.play();
-  if (playPromise && typeof playPromise.catch === "function") {
-    playPromise.catch(() => manualPlayBtn.classList.remove("hidden"));
+
+  const demarrerLecture = () => {
+    if (refrainStartMs) audioEl.currentTime = refrainStartMs / 1000;
+    const playPromise = audioEl.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => manualPlayBtn.classList.remove("hidden"));
+    }
+  };
+
+  // currentTime n'est fiable qu'une fois les métadonnées (durée/seekable) chargées —
+  // pas besoin d'attendre quand il n'y a pas de refrain à cibler (lecture immédiate depuis 0).
+  if (refrainStartMs) {
+    audioEl.addEventListener("loadedmetadata", demarrerLecture, { once: true });
+  } else {
+    demarrerLecture();
   }
 }
 
@@ -165,8 +180,14 @@ manualPlayBtn.addEventListener("click", () => {
 // ----- Handlers SignalR -----
 
 function registerHandlers() {
-  connection.onclose(() => setConnected(false));
-  connection.onreconnecting(() => setConnected(false));
+  connection.onclose((err) => {
+    console.error("SignalR onclose:", err);
+    setConnected(false);
+  });
+  connection.onreconnecting((err) => {
+    console.warn("SignalR onreconnecting:", err);
+    setConnected(false);
+  });
   connection.onreconnected(() => setConnected(true));
 
   connection.on("PlayerJoined", ({ playerId, nom }) => {
@@ -188,11 +209,12 @@ function registerHandlers() {
 
   connection.on("RoundStarted", (payload) => {
     el("round-error").textContent = "";
-    el("round-mode-label").textContent = payload.mode;
+    const cibleLabel = payload.cible === "Titre" ? "le titre" : "l'artiste";
+    el("round-mode-label").textContent = `${payload.mode} — trouver ${cibleLabel}`;
     el("btn-pause").classList.remove("hidden");
     el("btn-resume").classList.add("hidden");
     showScreen("screen-round");
-    playAudio(payload.filePath);
+    playAudio(payload.filePath, payload.refrainStartMs);
     startTimer(payload.dureeFenetreReponseMs);
   });
 
@@ -202,17 +224,19 @@ function registerHandlers() {
 
   connection.on("RoundEnded", (payload) => {
     stopTimer();
-    audioEl.pause();
+    if (!el("setup-audio-continu").checked) audioEl.pause();
     el("reveal-title").textContent = payload.title;
     el("reveal-artist").textContent = payload.artist;
     el("round-ended-note").textContent = "";
     renderResults(payload.resultats);
     showScreen("screen-round-ended");
+    scheduleAutoNext();
   });
 
   connection.on("GamePaused", () => {
     audioEl.pause();
     pauseTimer();
+    cancelAutoNext();
     el("btn-pause").classList.add("hidden");
     el("btn-resume").classList.remove("hidden");
   });
@@ -252,7 +276,7 @@ el("btn-connect").addEventListener("click", async () => {
   serverBaseUrl = url;
 
   connection = new signalR.HubConnectionBuilder()
-    .withUrl(`${serverBaseUrl}/hubs/game`)
+    .withUrl(`${serverBaseUrl}/hubs/game`, { withCredentials: false })
     .withAutomaticReconnect()
     .build();
 
@@ -270,6 +294,14 @@ el("btn-connect").addEventListener("click", async () => {
 
 // ----- Création de partie -----
 
+const ROUND_MODES = ["Qcm", "TapeReponse", "PremiereLettre"];
+
+// Tiré aléatoirement par round plutôt que configuré manuellement — le contrat
+// backend (roundModes) accepte un mode par round, la génération est laissée au code.
+function pickRandomRoundModes(count) {
+  return Array.from({ length: count }, () => ROUND_MODES[Math.floor(Math.random() * ROUND_MODES.length)]);
+}
+
 function buildCreateGameRequest() {
   const tags = el("setup-tags")
     .value.split(",")
@@ -278,7 +310,6 @@ function buildCreateGameRequest() {
 
   const nombreRounds = parseInt(el("setup-nombre-rounds").value, 10);
   const dureeFenetreMs = parseInt(el("setup-duree-fenetre").value, 10) * 1000;
-  const mode = el("setup-mode").value;
   const modeEquipe = el("setup-mode-equipe").checked;
 
   // Valeurs par défaut pour les paramètres non exposés dans ce premier écran de création
@@ -295,7 +326,7 @@ function buildCreateGameRequest() {
     dureePhaseQuestionMs: 20000,
   };
 
-  const roundModes = Array.from({ length: nombreRounds }, () => mode);
+  const roundModes = pickRandomRoundModes(nombreRounds);
 
   return {
     tags,
@@ -322,6 +353,51 @@ el("btn-create-game").addEventListener("click", async () => {
     errorEl.textContent = "Erreur : " + (err.message || err);
   }
 });
+
+// ----- Enchaînement automatique des rounds -----
+
+function cancelAutoNext() {
+  if (autoNextTimeoutId !== null) {
+    clearTimeout(autoNextTimeoutId);
+    autoNextTimeoutId = null;
+  }
+  if (autoNextIntervalId !== null) {
+    clearInterval(autoNextIntervalId);
+    autoNextIntervalId = null;
+  }
+  el("auto-next-note").textContent = "";
+}
+
+async function avancerRoundSuivant() {
+  el("round-ended-note").textContent = "";
+  try {
+    await connection.invoke("NextRound");
+    await connection.invoke("StartRound");
+  } catch (err) {
+    console.error(err);
+    el("round-ended-note").textContent =
+      "Plus de round classique dans cette série — cliquez sur \"Terminer la partie\" (la question bonus n'est pas encore gérée par cette page).";
+  }
+}
+
+function scheduleAutoNext() {
+  cancelAutoNext();
+
+  const delaiMs = Math.max(1, parseInt(el("setup-delai-enchainement").value, 10) || 6) * 1000;
+  const finA = Date.now() + delaiMs;
+
+  const updateNote = () => {
+    const restant = Math.max(0, Math.ceil((finA - Date.now()) / 1000));
+    el("auto-next-note").textContent = `Round suivant dans ${restant}s...`;
+  };
+  updateNote();
+  autoNextIntervalId = setInterval(updateNote, 250);
+
+  autoNextTimeoutId = setTimeout(() => {
+    cancelAutoNext();
+    avancerRoundSuivant();
+  }, delaiMs);
+}
 
 // ----- Lobby / round -----
 
@@ -354,6 +430,7 @@ el("btn-resume").addEventListener("click", async () => {
 });
 
 el("btn-leaderboard").addEventListener("click", async () => {
+  cancelAutoNext();
   try {
     await connection.invoke("ShowLeaderboard");
   } catch (err) {
@@ -366,19 +443,13 @@ el("btn-close-leaderboard").addEventListener("click", () => {
   el("leaderboard-overlay").classList.add("hidden");
 });
 
-el("btn-next-round").addEventListener("click", async () => {
-  el("round-ended-note").textContent = "";
-  try {
-    await connection.invoke("NextRound");
-    await connection.invoke("StartRound");
-  } catch (err) {
-    console.error(err);
-    el("round-ended-note").textContent =
-      "Plus de round classique dans cette série — cliquez sur \"Terminer la partie\" (la question bonus n'est pas encore gérée par cette page).";
-  }
+el("btn-next-round").addEventListener("click", () => {
+  cancelAutoNext();
+  avancerRoundSuivant();
 });
 
 el("btn-end-game").addEventListener("click", async () => {
+  cancelAutoNext();
   try {
     await connection.invoke("EndGame");
   } catch (err) {

@@ -34,14 +34,12 @@
       <label for="setup-duree-fenetre">Durée de la fenêtre de réponse (secondes)</label>
       <input id="setup-duree-fenetre" type="number" min="1" value="15" />
 
-      <label for="setup-mode">Mode de réponse</label>
-      <select id="setup-mode">
-        <option value="Qcm">QCM</option>
-        <option value="TapeReponse">Réponse tapée</option>
-        <option value="PremiereLettre">Première lettre</option>
-      </select>
-
       <label><input id="setup-mode-equipe" type="checkbox" /> Mode équipes</label>
+
+      <label><input id="setup-audio-continu" type="checkbox" checked /> Musique continue entre les rounds</label>
+
+      <label for="setup-delai-enchainement">Délai avant le round suivant (secondes)</label>
+      <input id="setup-delai-enchainement" type="number" min="1" value="6" />
 
       <button id="btn-create-game">Créer la partie</button>
       <p id="setup-error" class="error"></p>
@@ -91,6 +89,7 @@
         </thead>
         <tbody id="results-body"></tbody>
       </table>
+      <p id="auto-next-note" class="reveal"></p>
       <div class="actions">
         <button id="btn-next-round">Round suivant</button>
         <button id="btn-end-game">Terminer la partie</button>
