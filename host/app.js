@@ -25,6 +25,9 @@ let roundsDemarres = 0;
 let dernierModeRound = null;
 let dernierResultats = [];
 
+let equipes = []; // [{ id, nom }] — vide si mode équipe inactif
+let equipeParJoueur = {}; // playerId -> teamId
+
 // ----- Éléments DOM -----
 
 const el = (id) => document.getElementById(id);
@@ -109,13 +112,20 @@ function nomJoueur(playerId) {
   return p ? p.nom : playerId;
 }
 
+function nomEquipe(teamId) {
+  const eq = equipes.find((e) => e.id === teamId);
+  return eq ? eq.nom : null;
+}
+
 function renderPlayers() {
   const list = el("lobby-players");
   list.innerHTML = "";
   for (const p of players) {
     const li = document.createElement("li");
     if (!p.estConnecte) li.classList.add("disconnected");
-    li.innerHTML = `<span>${escapeHtml(p.nom)}</span><span>${p.estConnecte ? "" : "déconnecté"}</span>`;
+    const equipeJoueur = nomEquipe(equipeParJoueur[p.playerId]);
+    const statut = [equipeJoueur, p.estConnecte ? "" : "déconnecté"].filter(Boolean).join(" — ");
+    li.innerHTML = `<span>${escapeHtml(p.nom)}</span><span>${escapeHtml(statut)}</span>`;
     list.appendChild(li);
   }
 }
@@ -363,6 +373,11 @@ function registerHandlers() {
     renderPlayers();
   });
 
+  connection.on("PlayerTeamChanged", ({ playerId, teamId }) => {
+    equipeParJoueur[playerId] = teamId;
+    renderPlayers();
+  });
+
   connection.on("RoundStarted", (payload) => {
     el("round-error").textContent = "";
     const cibleLabel = payload.cible === "Titre" ? "le titre" : "l'artiste";
@@ -519,6 +534,12 @@ function buildCreateGameRequest() {
   const nombreRounds = parseInt(el("setup-nombre-rounds").value, 10);
   const dureeFenetreMs = parseInt(el("setup-duree-fenetre").value, 10) * 1000;
   const modeEquipe = el("setup-mode-equipe").checked;
+  const nomsEquipes = modeEquipe
+    ? el("setup-noms-equipes")
+        .value.split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
 
   // Valeurs par défaut pour les paramètres non exposés dans ce premier écran de création
   // (à affiner plus tard) — restent configurables par partie via ce payload, jamais en dur côté serveur.
@@ -541,8 +562,13 @@ function buildCreateGameRequest() {
     modeEquipe,
     seriesSetups: [{ config: seriesConfig, roundModes }],
     config: null,
+    nomsEquipes,
   };
 }
+
+el("setup-mode-equipe").addEventListener("change", (e) => {
+  el("setup-equipes-wrapper").classList.toggle("hidden", !e.target.checked);
+});
 
 el("btn-create-game").addEventListener("click", async () => {
   const errorEl = el("setup-error");
@@ -555,6 +581,8 @@ el("btn-create-game").addEventListener("click", async () => {
     nombreRoundsTotal = payload.seriesSetups[0].config.nombreRoundsClassiques;
     roundsDemarres = 0;
     players = [];
+    equipes = result.teams ?? [];
+    equipeParJoueur = {};
     el("lobby-code").textContent = gameCode;
     renderPlayers();
     showScreen("screen-lobby");
