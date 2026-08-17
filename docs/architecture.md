@@ -129,7 +129,7 @@ Pour ~1000 morceaux en MP3 192 kbps (largement suffisant pour un blindtest, surt
 - `trapWith` : IDs de morceaux fréquemment confondus (ex. Axel F / Crazy Frog), utilisés pour générer des QCM pièges.
 - `coverPath` : pochette d'album téléchargée localement depuis Spotify, utilisée sur les écrans de jeu pour l'esthétique.
 - `title` : nettoyé à l'import (voir section 3) des suffixes d'édition ("- Radio Edit", "- ... Remix", "(feat. ...)") — trop de bruit dans le titre le rend impossible à taper en mode `TapeReponse`/`PremiereLettre`.
-- `refrainStartMs` : optionnel, `null` par défaut (comportement actuel : lecture depuis le début du fichier). Renseigné manuellement, indique le point de départ (ms) à jouer pendant le round plutôt que le début du morceau — utile quand l'intro n'est pas identifiable.
+- `refrainStartMs` : optionnel, `null` par défaut. Deviné automatiquement à l'import (voir section 3, analyse de similarité audio) ou renseigné manuellement — point de départ (ms) où le host saute pour jouer le refrain **au reveal** (une fois que tout le monde a répondu), pas pendant la découverte du round qui reste toujours jouée depuis le début du fichier.
 
 **Stockage** : `tracks.json` = source de vérité unique pour les métadonnées éditoriales, versionnable avec Git, chargé en mémoire par le backend au démarrage (`List<Track>` + LINQ pour le filtrage). Pas de base de données pour l'instant — largement suffisant pour ce volume, à réévaluer seulement si le catalogue dépasse les dizaines de milliers de morceaux ou si des écritures concurrentes deviennent nécessaires.
 
@@ -263,7 +263,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 |---|---|
 | `PlayerJoined` | Infos du joueur (nouveau joueur) |
 | `PlayerReconnected` / `PlayerDisconnected` | Changement d'état `estConnecté` d'un joueur existant (perte réseau, reconnexion) |
-| `RoundStarted` | Morceau (mode-dépendant), mode, cible (Titre/Auteur — voir section 6), URL audio + `refrainStartMs` (host uniquement) |
+| `RoundStarted` | Morceau (mode-dépendant), mode, cible (Titre/Auteur — voir section 6), URL audio + `refrainStartMs` (host uniquement — mémorisé côté host, appliqué au moment du `RoundEnded`, pas pendant la découverte) |
 | `ScoreUpdate` | Scores à jour de tous les joueurs |
 | `RoundEnded` | Réponse correcte, détail des points de chacun |
 | `BonusStakeOptions` | Les 4 paliers de la série courante |
