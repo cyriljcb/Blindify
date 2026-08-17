@@ -79,6 +79,7 @@
     <!-- Écran 4 : round en cours -->
     <section id="screen-round" class="screen hidden">
       <h2>Round en cours — <span id="round-mode-label"></span></h2>
+      <div class="cover-frame cover-frame--mystere"><span class="cover-placeholder">❓</span></div>
       <div class="timer-bar"><div id="timer-fill" class="timer-fill"></div></div>
 
       <h3>Scores</h3>
@@ -89,6 +90,10 @@
     <!-- Écran 5 : résultat du round -->
     <section id="screen-round-ended" class="screen hidden">
       <h2>Résultat</h2>
+      <div class="cover-frame">
+        <img id="reveal-cover" class="hidden" alt="Pochette de l'album" />
+        <span id="reveal-cover-placeholder" class="cover-placeholder">🎵</span>
+      </div>
       <p class="reveal">
         <strong id="reveal-title"></strong> — <span id="reveal-artist"></span>
       </p>
@@ -117,6 +122,7 @@
     <!-- Écran 7 : question bonus — phase question -->
     <section id="screen-bonus-question" class="screen hidden">
       <h2>Question bonus — à deviner !</h2>
+      <div class="cover-frame cover-frame--mystere"><span class="cover-placeholder">❓</span></div>
       <p>Morceau ralenti, un seul essai, pas de dégressivité.</p>
       <div class="timer-bar"><div id="bonus-question-timer-fill" class="timer-fill"></div></div>
     </section>
@@ -124,6 +130,10 @@
     <!-- Écran 8 : question bonus — résultat -->
     <section id="screen-bonus-result" class="screen hidden">
       <h2>Résultat de la question bonus</h2>
+      <div class="cover-frame">
+        <img id="bonus-reveal-cover" class="hidden" alt="Pochette de l'album" />
+        <span id="bonus-reveal-cover-placeholder" class="cover-placeholder">🎵</span>
+      </div>
       <p class="reveal">
         <strong id="bonus-reveal-title"></strong> — <span id="bonus-reveal-artist"></span>
       </p>

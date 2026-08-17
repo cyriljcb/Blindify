@@ -117,6 +117,25 @@ function nomEquipe(teamId) {
   return eq ? eq.nom : null;
 }
 
+// Couleur stable par identifiant (même joueur = même couleur d'un affichage à l'autre).
+function couleurAvatar(id) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return `hsl(${hash % 360}, 65%, 55%)`;
+}
+
+const MEDAILLES = ["🥇", "🥈", "🥉"];
+
+// rang (0-indexé) : si fourni et < 3, affiche une médaille à la place des initiales
+// (classement final / tableau général uniquement — pas pendant un round en cours).
+function avatarHtml(id, nom, rang) {
+  if (rang !== undefined && rang < 3) {
+    return `<span class="avatar" style="background: transparent; font-size: 1.3rem;">${MEDAILLES[rang]}</span>`;
+  }
+  const initiale = escapeHtml(nom.trim().slice(0, 1).toUpperCase() || "?");
+  return `<span class="avatar" style="background: ${couleurAvatar(id)};">${initiale}</span>`;
+}
+
 function renderPlayers() {
   const list = el("lobby-players");
   list.innerHTML = "";
@@ -125,31 +144,40 @@ function renderPlayers() {
     if (!p.estConnecte) li.classList.add("disconnected");
     const equipeJoueur = nomEquipe(equipeParJoueur[p.playerId]);
     const statut = [equipeJoueur, p.estConnecte ? "" : "déconnecté"].filter(Boolean).join(" — ");
-    li.innerHTML = `<span>${escapeHtml(p.nom)}</span><span>${escapeHtml(statut)}</span>`;
+    li.innerHTML = `
+      <div class="player-row">${avatarHtml(p.playerId, p.nom)}<span>${escapeHtml(p.nom)}</span></div>
+      <span>${escapeHtml(statut)}</span>
+    `;
     list.appendChild(li);
   }
 }
 
-function renderScoreList(container, dto) {
+function renderScoreList(container, dto, { medailles = false } = {}) {
   container.innerHTML = "";
 
   const joueurs = [...dto.joueurs].sort((a, b) => b.score - a.score);
-  for (const j of joueurs) {
+  joueurs.forEach((j, index) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${escapeHtml(j.nom)}</span><span>${j.score}</span>`;
+    li.innerHTML = `
+      <div class="player-row">${avatarHtml(j.playerId, j.nom, medailles ? index : undefined)}<span>${escapeHtml(j.nom)}</span></div>
+      <span>${j.score}</span>
+    `;
     container.appendChild(li);
-  }
+  });
 
   if (dto.equipes && dto.equipes.length > 0) {
     const header = document.createElement("li");
     header.innerHTML = "<strong>Équipes</strong><span></span>";
     container.appendChild(header);
 
-    for (const eq of [...dto.equipes].sort((a, b) => b.score - a.score)) {
+    [...dto.equipes].sort((a, b) => b.score - a.score).forEach((eq, index) => {
       const li = document.createElement("li");
-      li.innerHTML = `<span>${escapeHtml(eq.nom)}</span><span>${eq.score}</span>`;
+      li.innerHTML = `
+        <div class="player-row">${avatarHtml(eq.teamId, eq.nom, medailles ? index : undefined)}<span>${escapeHtml(eq.nom)}</span></div>
+        <span>${eq.score}</span>
+      `;
       container.appendChild(li);
-    }
+    });
   }
 }
 
@@ -214,6 +242,18 @@ async function validerManuellement(playerId, estCorrecte) {
   }
 }
 
+function afficherCover(imgEl, placeholderEl, coverPath) {
+  if (coverPath) {
+    imgEl.src = `${serverBaseUrl}/files/${coverPath}`;
+    imgEl.classList.remove("hidden");
+    placeholderEl.classList.add("hidden");
+  } else {
+    imgEl.classList.add("hidden");
+    imgEl.removeAttribute("src");
+    placeholderEl.classList.remove("hidden");
+  }
+}
+
 function renderBonusPaliers(paliers) {
   const list = el("bonus-paliers");
   list.innerHTML = "";
@@ -260,6 +300,8 @@ function updateTimer() {
   const remaining = Math.max(0, timerEndAt - Date.now());
   const pct = timerDurationMs > 0 ? (remaining / timerDurationMs) * 100 : 0;
   timerFillEl.style.width = `${pct}%`;
+  timerFillEl.classList.toggle("timer-fill--warn", pct <= 40 && pct > 15);
+  timerFillEl.classList.toggle("timer-fill--danger", pct <= 15);
   if (remaining <= 0) clearInterval(timerInterval);
 }
 
@@ -407,6 +449,7 @@ function registerHandlers() {
     }
     el("reveal-title").textContent = payload.title;
     el("reveal-artist").textContent = payload.artist;
+    afficherCover(el("reveal-cover"), el("reveal-cover-placeholder"), payload.coverPath);
     el("round-ended-note").textContent = "";
     dernierResultats = payload.resultats;
     renderResults(dernierResultats);
@@ -432,7 +475,7 @@ function registerHandlers() {
   });
 
   connection.on("LeaderboardShown", (dto) => {
-    renderScoreList(el("leaderboard-scores"), dto);
+    renderScoreList(el("leaderboard-scores"), dto, { medailles: true });
     el("leaderboard-overlay").classList.remove("hidden");
   });
 
@@ -441,7 +484,7 @@ function registerHandlers() {
     cancelAutoEnd();
     audioEl.pause();
     audioEl.playbackRate = 1;
-    renderScoreList(el("final-scores"), dto);
+    renderScoreList(el("final-scores"), dto, { medailles: true });
     showScreen("screen-ended");
   });
 
@@ -478,6 +521,7 @@ function registerHandlers() {
     }
     el("bonus-reveal-title").textContent = payload.title;
     el("bonus-reveal-artist").textContent = payload.artist;
+    afficherCover(el("bonus-reveal-cover"), el("bonus-reveal-cover-placeholder"), payload.coverPath);
     renderBonusResults(payload.resultats);
     showScreen("screen-bonus-result");
     scheduleAutoEndGame();
