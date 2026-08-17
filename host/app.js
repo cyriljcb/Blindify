@@ -353,13 +353,16 @@ function lancerLecture() {
   }
 }
 
-function playAudio(filePath) {
+function playAudio(filePath, playbackRate = 1) {
   audioEl.src = `${serverBaseUrl}/files/${filePath}`;
   // Force un rechargement propre même si l'URL est identique au morceau précédent (le
   // catalogue étant petit, "Rejouer" retombe facilement sur le même fichier) — sans ça,
   // certains navigateurs ne redéclenchent pas leurs événements de chargement et la lecture
   // reste bloquée sur l'état du round précédent.
   audioEl.load();
+  // playbackRate doit être réappliqué APRÈS load() : certains navigateurs le réinitialisent
+  // à 1 au chargement, ce qui annulait silencieusement le ralentissement de la question bonus.
+  audioEl.playbackRate = playbackRate;
   manualPlayBtn.classList.add("hidden");
   audioEl.volume = 0;
   lancerLecture();
@@ -482,8 +485,8 @@ function registerHandlers() {
   connection.on("GameEnded", (dto) => {
     stopTimer();
     cancelAutoEnd();
-    audioEl.pause();
-    audioEl.playbackRate = 1;
+    // Musique laissée telle quelle (retour utilisateur : garder l'ambiance) — seul EndGame
+    // manuel/pause l'arrêtent explicitement, pas la fin automatique.
     renderScoreList(el("final-scores"), dto, { medailles: true });
     showScreen("screen-ended");
   });
@@ -505,8 +508,8 @@ function registerHandlers() {
   connection.on("BonusQuestionStarted", (payload) => {
     // Seul le host reçoit filePath/refrainStartMs/ralentissement (jamais envoyés aux joueurs).
     refrainCourantMs = payload.refrainStartMs ?? null;
-    audioEl.playbackRate = payload.ralentissementActive ? payload.facteurRalentissement : 1;
-    playAudio(payload.filePath); // depuis le début — c'est la devinette elle-même, pas le reveal
+    const rate = payload.ralentissementActive ? payload.facteurRalentissement : 1;
+    playAudio(payload.filePath, rate); // depuis le début — c'est la devinette elle-même, pas le reveal
     showScreen("screen-bonus-question");
     startTimer(payload.dureePhaseQuestionMs, el("bonus-question-timer-fill"));
   });
