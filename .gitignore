@@ -29,6 +29,11 @@ data/audio/
 data/covers/
 data/stats.json
 
+# === Scripts Python (data/scripts) — exports intermédiaires, pas tracks.json ===
+data/scripts/output/
+data/scripts/__pycache__/
+data/scripts/.venv/
+
 # === Éditeurs / OS ===
 .vscode/
 .idea/
