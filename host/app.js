@@ -259,6 +259,12 @@ function registerHandlers() {
     renderScoreList(el("final-scores"), dto);
     showScreen("screen-ended");
   });
+
+  connection.on("GameRestarted", () => {
+    el("lobby-code").textContent = gameCode;
+    renderPlayers();
+    showScreen("screen-lobby");
+  });
 }
 
 // ----- Connexion -----
@@ -455,6 +461,16 @@ el("btn-end-game").addEventListener("click", async () => {
   } catch (err) {
     console.error(err);
     el("round-ended-note").textContent = "Erreur : " + (err.message || err);
+  }
+});
+
+el("btn-rejouer").addEventListener("click", async () => {
+  el("ended-error").textContent = "";
+  try {
+    await connection.invoke("RejouerPartie");
+  } catch (err) {
+    console.error(err);
+    el("ended-error").textContent = "Erreur : " + (err.message || err);
   }
 });
 
