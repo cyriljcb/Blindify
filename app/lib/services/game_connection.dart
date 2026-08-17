@@ -204,6 +204,19 @@ class GameConnection extends ChangeNotifier {
       screen = AppScreen.ended;
       notifyListeners();
     });
+
+    // Déclenché par le host (RejouerPartie côté serveur) — même code, mêmes joueurs,
+    // scores remis à zéro côté serveur. Pas de bouton côté joueur : seul le host décide.
+    hub.on('GameRestarted', (_) {
+      score = 0;
+      currentRound = null;
+      roundAnswered = false;
+      lastRoundResult = null;
+      scoreUpdate = null;
+      finalScores = null;
+      screen = AppScreen.lobby;
+      notifyListeners();
+    });
   }
 
   void _updatePlayerConnection(String id, bool estConnecte) {
