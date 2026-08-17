@@ -324,7 +324,14 @@ class GameConnection extends ChangeNotifier {
       teams = joinResult.teams;
       await _prefs?.setString(_prefsNom, pseudo);
 
-      players.clear();
+      // Le serveur ne diffuse PlayerJoined qu'aux AUTRES joueurs déjà présents (GameHub.JoinGame)
+      // — sans le roster complet renvoyé ici, un joueur ne voyait ni lui-même (retour
+      // utilisateur), ni ceux ayant rejoint avant lui.
+      players
+        ..clear()
+        ..addAll(joinResult.joueurs.map(
+          (j) => PlayerInfo(playerId: j.playerId, nom: j.nom, estConnecte: j.estConnecte, teamId: j.teamId),
+        ));
       screen = AppScreen.lobby;
       notifyListeners();
       return true;
