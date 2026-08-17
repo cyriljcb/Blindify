@@ -91,5 +91,58 @@
     "coverPath": "covers/3Fcfwhm8oRrBvBZ8KGhtea.jpg",
     "refrainStartMs": 195874,
     "addedAt": "2026-08-17T16:24:46.578891+00:00"
+  },
+  {
+    "id": "6nek1Nin9q48AVZcWs9e9D",
+    "title": "Paradise",
+    "artist": "Coldplay",
+    "album": "Mylo Xyloto",
+    "spotifyId": "6nek1Nin9q48AVZcWs9e9D",
+    "youtubeId": "1G4isv_Fylg",
+    "durationMs": 278719,
+    "genres": [],
+    "tags": [],
+    "trapWith": [],
+    "year": 2011,
+    "filePath": "audio/6nek1Nin9q48AVZcWs9e9D.mp3",
+    "coverPath": "covers/6nek1Nin9q48AVZcWs9e9D.jpg",
+    "refrainStartMs": 180736,
+    "addedAt": "2026-08-17T18:57:33.626992+00:00"
+  },
+  {
+    "id": "6AXCd4zhFP0DokZUxRzMif",
+    "title": "Need You The Most",
+    "artist": "Ofenbach",
+    "album": "Need You The Most",
+    "spotifyId": "6AXCd4zhFP0DokZUxRzMif",
+    "youtubeId": "Q4upakrPdGY",
+    "durationMs": 130100,
+    "genres": [],
+    "tags": [],
+    "trapWith": [],
+    "year": 2025,
+    "filePath": "audio/6AXCd4zhFP0DokZUxRzMif.mp3",
+    "coverPath": "covers/6AXCd4zhFP0DokZUxRzMif.jpg",
+    "refrainStartMs": 92841,
+    "addedAt": "2026-08-17T18:57:44.736134+00:00"
+  },
+  {
+    "id": "5UqCQaDshqbIk3pkhy4Pjg",
+    "title": "Levels",
+    "artist": "Avicii",
+    "album": "Levels",
+    "spotifyId": "5UqCQaDshqbIk3pkhy4Pjg",
+    "youtubeId": "_ovdm2yX4MA",
+    "durationMs": 199906,
+    "genres": [
+      "edm"
+    ],
+    "tags": [],
+    "trapWith": [],
+    "year": 2011,
+    "filePath": "audio/5UqCQaDshqbIk3pkhy4Pjg.mp3",
+    "coverPath": "covers/5UqCQaDshqbIk3pkhy4Pjg.jpg",
+    "refrainStartMs": 164740,
+    "addedAt": "2026-08-17T18:59:11.244952+00:00"
   }
 ]
