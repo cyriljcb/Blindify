@@ -22,6 +22,9 @@ let refrainCourantMs = null;
 let nombreRoundsTotal = 0;
 let roundsDemarres = 0;
 
+let dernierModeRound = null;
+let dernierResultats = [];
+
 // ----- Éléments DOM -----
 
 const el = (id) => document.getElementById(id);
@@ -153,8 +156,51 @@ function renderResults(resultats) {
       <td>${escapeHtml(reponseAffichee)}</td>
       <td class="${classe}">${r.estCorrecte ? "oui" : "non"}</td>
       <td>${r.points}</td>
+      <td></td>
     `;
+
+    // Override manuel : utile pour les réponses tapées ambiguës (tolérance Levenshtein pas
+    // toujours adaptée) — inutile pour un QCM (choix strict) ou une première lettre (déjà
+    // binaire). Le morceau doit avoir été répondu (pas de mise à jour possible sinon).
+    if (dernierModeRound === "TapeReponse" && r.reponse) {
+      const cellOverride = tr.lastElementChild;
+      const btnOui = document.createElement("button");
+      btnOui.className = "btn-override btn-override--oui";
+      btnOui.textContent = "✓";
+      btnOui.title = "Marquer correct";
+      btnOui.addEventListener("click", () => validerManuellement(r.playerId, true));
+
+      const btnNon = document.createElement("button");
+      btnNon.className = "btn-override btn-override--non";
+      btnNon.textContent = "✗";
+      btnNon.title = "Marquer incorrect";
+      btnNon.addEventListener("click", () => validerManuellement(r.playerId, false));
+
+      cellOverride.appendChild(btnOui);
+      cellOverride.appendChild(btnNon);
+    }
+
     body.appendChild(tr);
+  }
+}
+
+async function validerManuellement(playerId, estCorrecte) {
+  let resultat;
+  try {
+    resultat = await connection.invoke("ValidateAnswerManually", { playerId, estCorrecte });
+  } catch (err) {
+    console.error(err);
+    el("round-ended-note").textContent = "Erreur override : " + (err.message || err);
+    return;
+  }
+
+  // ScoreUpdate (score total) est déjà géré par ailleurs — on met à jour localement la
+  // ligne concernée (statut + points de CE round) pour refléter le résultat sans attendre.
+  const entree = dernierResultats.find((r) => r.playerId === playerId);
+  if (entree) {
+    entree.estCorrecte = resultat.estCorrecte;
+    entree.points = resultat.points;
+    renderResults(dernierResultats);
   }
 }
 
@@ -321,6 +367,7 @@ function registerHandlers() {
     el("round-error").textContent = "";
     const cibleLabel = payload.cible === "Titre" ? "le titre" : "l'artiste";
     el("round-mode-label").textContent = `${payload.mode} — trouver ${cibleLabel}`;
+    dernierModeRound = payload.mode;
     el("btn-pause").classList.remove("hidden");
     el("btn-resume").classList.add("hidden");
     showScreen("screen-round");
@@ -346,7 +393,8 @@ function registerHandlers() {
     el("reveal-title").textContent = payload.title;
     el("reveal-artist").textContent = payload.artist;
     el("round-ended-note").textContent = "";
-    renderResults(payload.resultats);
+    dernierResultats = payload.resultats;
+    renderResults(dernierResultats);
     showScreen("screen-round-ended");
     scheduleAutoNext();
   });
