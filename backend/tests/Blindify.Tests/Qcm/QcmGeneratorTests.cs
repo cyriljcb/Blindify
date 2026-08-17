@@ -61,6 +61,44 @@ public class QcmGeneratorTests
     }
 
     [Fact]
+    public void GenererOptions_EviteUnDistracteurDuMemeAuteurQuandDautresSontDisponibles()
+    {
+        var correct = new Track { Id = "a", Title = "Viva La Vida", Artist = "Coldplay", FilePath = "audio/a.mp3", Genres = ["pop"] };
+        var pool = new List<Track>
+        {
+            correct,
+            new() { Id = "b", Title = "Paradise", Artist = "Coldplay", FilePath = "audio/b.mp3", Genres = ["pop"] },
+            NouveauTrack("c", genres: ["pop"]),
+            NouveauTrack("d", genres: ["pop"]),
+            NouveauTrack("e", genres: ["pop"])
+        };
+        var config = new GameConfig { ProbabiliteQcmPiege = 0 };
+
+        var result = _generator.GenererOptions(correct, pool, config, new Random(3));
+
+        Assert.DoesNotContain("b", result.OptionsTrackIds);
+    }
+
+    [Fact]
+    public void GenererOptions_CatalogueRestreint_IncludeMemeAuteurPlutotQueBloquerLeRound()
+    {
+        var correct = new Track { Id = "a", Title = "Viva La Vida", Artist = "Coldplay", FilePath = "audio/a.mp3" };
+        var pool = new List<Track>
+        {
+            correct,
+            new() { Id = "b", Title = "Paradise", Artist = "Coldplay", FilePath = "audio/b.mp3" },
+            NouveauTrack("c"),
+            NouveauTrack("d")
+        };
+        var config = new GameConfig { ProbabiliteQcmPiege = 0 };
+
+        var result = _generator.GenererOptions(correct, pool, config, new Random(5));
+
+        Assert.Equal(4, result.OptionsTrackIds.Count);
+        Assert.Contains("b", result.OptionsTrackIds);
+    }
+
+    [Fact]
     public void GenererOptions_ProbabiliteMaximale_UtiliseUnPiegeSiDisponible()
     {
         var correct = NouveauTrack("a", genres: ["pop"], trapWith: ["piege"]);

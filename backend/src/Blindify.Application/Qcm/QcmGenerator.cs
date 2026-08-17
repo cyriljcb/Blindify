@@ -23,8 +23,12 @@ public class QcmGenerator : IQcmGenerator
 
         var dejaChoisis = new HashSet<string>(distracteurs) { correct.Id };
 
+        // Évite si possible un distracteur du même auteur que la bonne réponse (retour
+        // utilisateur : deux options du même artiste, illisible en cible Auteur puisqu'elles
+        // afficheraient alors un texte identique). Best-effort seulement — voir filet de
+        // sécurité plus bas, jamais au prix de bloquer le round faute d'options.
         var poolGenreTag = pool
-            .Where(t => !dejaChoisis.Contains(t.Id) && PartageGenreOuTag(t, correct))
+            .Where(t => !dejaChoisis.Contains(t.Id) && t.Artist != correct.Artist && PartageGenreOuTag(t, correct))
             .Select(t => t.Id)
             .ToList();
 
@@ -33,11 +37,23 @@ public class QcmGenerator : IQcmGenerator
         if (distracteurs.Count < NombreDistracteurs)
         {
             var poolGlobal = pool
-                .Where(t => !dejaChoisis.Contains(t.Id))
+                .Where(t => !dejaChoisis.Contains(t.Id) && t.Artist != correct.Artist)
                 .Select(t => t.Id)
                 .ToList();
 
             distracteurs.AddRange(TirerSansRemise(poolGlobal, NombreDistracteurs - distracteurs.Count, dejaChoisis, random));
+        }
+
+        // Filet de sécurité : catalogue trop restreint pour exclure le même auteur -> on retombe
+        // sur le pool complet plutôt que de livrer un round avec moins de 4 options.
+        if (distracteurs.Count < NombreDistracteurs)
+        {
+            var poolSansExclusion = pool
+                .Where(t => !dejaChoisis.Contains(t.Id))
+                .Select(t => t.Id)
+                .ToList();
+
+            distracteurs.AddRange(TirerSansRemise(poolSansExclusion, NombreDistracteurs - distracteurs.Count, dejaChoisis, random));
         }
 
         var options = new List<string>(distracteurs) { correct.Id };

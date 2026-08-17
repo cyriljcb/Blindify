@@ -216,6 +216,77 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     }
 
     [Fact]
+    public async Task QcmFeinteChamp_ProbabiliteMaximale_UnDistracteurAfficheLeChampOpposeDuMorceauCorrect()
+    {
+        // Catalogue de test (GameHubTestFactory) : 4 morceaux, artistes tous distincts.
+        var titresParId = new Dictionary<string, string>
+        {
+            ["t1"] = "Under the Sea",
+            ["t2"] = "Circle of Life",
+            ["t3"] = "Let It Go",
+            ["t4"] = "Hakuna Matata"
+        };
+        var auteursParId = new Dictionary<string, string>
+        {
+            ["t1"] = "Samuel E. Wright",
+            ["t2"] = "Elton John",
+            ["t3"] = "Idina Menzel",
+            ["t4"] = "Nathan Lane"
+        };
+
+        RoundStartedForPlayersDto? roundStartedPlayer = null;
+        RoundStartedForHostDto? roundStartedHost = null;
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
+        _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
+
+        var config = new GameConfig { ProbabiliteQcmPiege = 0, ProbabiliteQcmFeinteChamp = 1.0 };
+        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
+            Tags: [],
+            ModeEquipe: false,
+            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
+            Config: config));
+
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+
+        var correctId = roundStartedHost!.TrackId;
+        var champAttendu = roundStartedHost.Cible == RoundCible.Titre ? auteursParId[correctId] : titresParId[correctId];
+
+        var distracteurs = roundStartedPlayer!.QcmOptions!.Where(o => o.TrackId != correctId).ToList();
+        var champAffiche = roundStartedHost.Cible == RoundCible.Titre
+            ? distracteurs.Select(o => o.Title)
+            : distracteurs.Select(o => o.Artist);
+
+        Assert.Contains(champAttendu, champAffiche);
+    }
+
+    [Fact]
+    public async Task JoinGame_RenvoieLeRosterCompletYComprisSoiMeme()
+    {
+        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
+            Tags: [],
+            ModeEquipe: false,
+            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
+            Config: null));
+
+        // Retour utilisateur : un joueur seul se voyait comme "0 joueur connecté" (PlayerJoined
+        // n'est diffusé qu'aux AUTRES joueurs déjà présents) — le roster renvoyé par JoinGame
+        // doit inclure le joueur qui vient de rejoindre, pas seulement ceux déjà là avant lui.
+        var joinAlice = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        Assert.Single(joinAlice.Joueurs);
+        Assert.Equal("player-1", joinAlice.Joueurs[0].PlayerId);
+
+        await using var autreConnexion = _factory.CreateHubConnection();
+        await autreConnexion.StartAsync();
+        var joinBob = await autreConnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Bob", "player-2");
+
+        Assert.Equal(2, joinBob.Joueurs.Count);
+        Assert.Contains(joinBob.Joueurs, p => p.PlayerId == "player-1");
+        Assert.Contains(joinBob.Joueurs, p => p.PlayerId == "player-2");
+    }
+
+    [Fact]
     public async Task JoinGame_CodeInconnu_RetourneUnEchec()
     {
         var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", "ZZZZZ", "Bob", "player-2");

@@ -120,6 +120,9 @@ public class GameHub(
             .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist))
             .ToList();
 
+        if (qcmOptions is not null)
+            AppliquerFeinteEventuelle(qcmOptions, track, round.Cible, session.Config);
+
         if (session.HostConnectionId is not null)
         {
             await Clients.Client(session.HostConnectionId)
@@ -287,7 +290,7 @@ public class GameHub(
     public async Task<JoinGameResultDto> JoinGame(string code, string nom, string playerId)
     {
         var session = sessionStore.Get(code);
-        if (session is null) return new JoinGameResultDto(false, "Partie introuvable.", 0, null, []);
+        if (session is null) return new JoinGameResultDto(false, "Partie introuvable.", 0, null, [], []);
 
         var joueur = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
         var estReconnexion = joueur is not null;
@@ -312,7 +315,8 @@ public class GameHub(
             await Clients.OthersInGroup(code).SendAsync("PlayerJoined", new PlayerJoinedDto(joueur.PlayerId, joueur.Nom));
 
         var teams = session.Teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList();
-        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams);
+        var joueurs = session.Players.Select(p => new PlayerSummaryDto(p.PlayerId, p.Nom, p.EstConnecte, p.TeamId)).ToList();
+        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs);
     }
 
     /// <summary>Rejoint (ou change) d'équipe — autorisé à tout moment, pas seulement au lobby, pour
@@ -415,6 +419,24 @@ public class GameHub(
         if (session.HostConnectionId != Context.ConnectionId)
             throw new HubException("Seul le host peut effectuer cette action.");
         return session;
+    }
+
+    /// <summary>Feinte QCM purement visuelle (retour utilisateur) — voir GameConfig.ProbabiliteQcmFeinteChamp.
+    /// Remplace le champ affiché d'un distracteur tiré au sort par le champ opposé du morceau
+    /// correct, sans toucher à son TrackId : le sélectionner reste une mauvaise réponse normale.</summary>
+    private static void AppliquerFeinteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
+    {
+        if (Random.Shared.NextDouble() >= config.ProbabiliteQcmFeinteChamp) return;
+
+        var distracteurs = options.Where(o => o.TrackId != correct.Id).ToList();
+        if (distracteurs.Count == 0) return;
+
+        var optionChoisie = distracteurs[Random.Shared.Next(distracteurs.Count)];
+        var index = options.IndexOf(optionChoisie);
+
+        options[index] = cible == RoundCible.Titre
+            ? optionChoisie with { Title = correct.Artist }
+            : optionChoisie with { Artist = correct.Title };
     }
 
     private static long CalculerTempsEcouleMs(GameSession session, Round round)
