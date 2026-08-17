@@ -35,6 +35,24 @@ API_BASE = "https://api.spotify.com/v1"
 ARTIST_BATCH_SIZE = 50
 PLAYLIST_PAGE_SIZE = 100
 
+# Suffixes d'édition qui rendent le titre trop long/complexe à deviner en mode "réponse
+# tapée" ou "première lettre" (retour utilisateur : un titre avec "feat." + "Remix" +
+# plusieurs auteurs devient impossible à taper). Retirés à la source, pas seulement affichés.
+_TITRE_FEAT = re.compile(r"\s*[\(\[]\s*feat\.[^\)\]]*[\)\]]", re.IGNORECASE)
+_TITRE_SUFFIXES = re.compile(
+    r"\s*[-–]\s*(?:"
+    r"radio edit|remaster(?:ed)?(?: \d{4})?|single version|"
+    r"original mix|extended mix|live|acoustic|mono|stereo|[^-]*\bremix\b"
+    r")\s*$",
+    re.IGNORECASE,
+)
+
+
+def nettoyer_titre(titre: str) -> str:
+    """Retire les suffixes d'édition ('- Radio Edit', '- ... Remix', '(feat. ...)') du titre brut Spotify."""
+    sans_feat = _TITRE_FEAT.sub("", titre)
+    return _TITRE_SUFFIXES.sub("", sans_feat).strip()
+
 
 def get_access_token(client_id: str, client_secret: str) -> str:
     response = requests.post(
@@ -128,7 +146,7 @@ def build_track_entries(
         entries.append(
             {
                 "id": track["id"],
-                "title": track["name"],
+                "title": nettoyer_titre(track["name"]),
                 "artist": ", ".join(a["name"] for a in track["artists"]),
                 "album": track["album"].get("name"),
                 "spotifyId": track["id"],

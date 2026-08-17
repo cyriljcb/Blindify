@@ -17,7 +17,7 @@
   },
   {
     "id": "2GYHyAoLWpkxLVa4oYTVko",
-    "title": "Alors on danse - Radio Edit",
+    "title": "Alors on danse",
     "artist": "Stromae",
     "album": "Cheese",
     "spotifyId": "2GYHyAoLWpkxLVa4oYTVko",
@@ -35,7 +35,7 @@
   },
   {
     "id": "5bjFSjfotRhjHnbHoBYhsW",
-    "title": "Gone Gone Gone (Done Done Done) [feat. Teddy Swims] - David Guetta Remix",
+    "title": "Gone Gone Gone (Done Done Done)",
     "artist": "David Guetta, Tones And I, Teddy Swims",
     "album": "Gone Gone Gone (Done Done Done) [feat. Teddy Swims] [David Guetta Remix]",
     "spotifyId": "5bjFSjfotRhjHnbHoBYhsW",
@@ -50,5 +50,41 @@
     "filePath": "audio/5bjFSjfotRhjHnbHoBYhsW.mp3",
     "coverPath": "covers/5bjFSjfotRhjHnbHoBYhsW.jpg",
     "addedAt": "2026-08-17T16:10:53.383746+00:00"
+  },
+  {
+    "id": "0Wr98MVkENZXddiLB3bPb0",
+    "title": "J't'emmène au vent",
+    "artist": "Louise Attaque",
+    "album": "Louise Attaque",
+    "spotifyId": "0Wr98MVkENZXddiLB3bPb0",
+    "youtubeId": "BRTDC9Z5UdE",
+    "durationMs": 184173,
+    "genres": [
+      "chanson",
+      "french pop",
+      "variété française"
+    ],
+    "tags": [],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/0Wr98MVkENZXddiLB3bPb0.mp3",
+    "coverPath": "covers/0Wr98MVkENZXddiLB3bPb0.jpg",
+    "addedAt": "2026-08-17T16:24:36.658620+00:00"
+  },
+  {
+    "id": "3Fcfwhm8oRrBvBZ8KGhtea",
+    "title": "Viva La Vida",
+    "artist": "Coldplay",
+    "album": "Viva La Vida or Death and All His Friends",
+    "spotifyId": "3Fcfwhm8oRrBvBZ8KGhtea",
+    "youtubeId": "dvgZkm1xWPE",
+    "durationMs": 242373,
+    "genres": [],
+    "tags": [],
+    "trapWith": [],
+    "year": 2008,
+    "filePath": "audio/3Fcfwhm8oRrBvBZ8KGhtea.mp3",
+    "coverPath": "covers/3Fcfwhm8oRrBvBZ8KGhtea.jpg",
+    "addedAt": "2026-08-17T16:24:46.578891+00:00"
   }
 ]
