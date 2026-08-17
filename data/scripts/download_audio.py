@@ -1,8 +1,9 @@
 """
 Étape 2 du pipeline (docs/architecture.md section 3) : à partir d'un export produit par
 fetch_spotify_playlist.py, télécharge l'audio depuis YouTube (via yt-dlp) et la cover
-depuis Spotify pour chaque morceau, puis fusionne les entrées complètes dans
-data/tracks.json (la source de vérité).
+depuis Spotify pour chaque morceau, égalise le niveau sonore (ffmpeg loudnorm) et devine
+le point de départ du refrain (pychorus, voir refrainStartMs dans architecture.md section 4),
+puis fusionne les entrées complètes dans data/tracks.json (la source de vérité).
 
 Usage :
     python download_audio.py <export.json> [--limit N] [--tolerance-seconds 8]
@@ -24,6 +25,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -31,12 +34,24 @@ from pathlib import Path
 
 import requests
 import yt_dlp
+from pychorus import find_and_output_chorus
 
 SCRIPTS_DIR = Path(__file__).parent
 DATA_DIR = SCRIPTS_DIR.parent
 AUDIO_DIR = DATA_DIR / "audio"
 COVERS_DIR = DATA_DIR / "covers"
 TRACKS_JSON_PATH = DATA_DIR / "tracks.json"
+
+# Cible de normalisation (EBU R128, standard streaming) — retour utilisateur : le volume
+# variait trop d'un morceau a l'autre pendant une partie.
+_LOUDNORM_I = "-16"
+_LOUDNORM_LRA = "11"
+_LOUDNORM_TP = "-1.5"
+
+# Duree minimum de piste qu'il doit rester apres le refrain pour que la lecture au round
+# (fenetre de reponse) ait le temps de se dérouler entierement.
+_REFRAIN_MARGE_FIN_SEC = 20
+_REFRAIN_CLIP_LENGTH_SEC = 15
 
 
 def charger_tracks_json() -> list[dict]:
@@ -88,6 +103,63 @@ def telecharger_cover(url: str, destination: Path) -> None:
     response = requests.get(url, timeout=15)
     response.raise_for_status()
     destination.write_bytes(response.content)
+
+
+def _chemin_ffmpeg(ffmpeg_location: str | None) -> str:
+    if not ffmpeg_location:
+        return "ffmpeg"
+    return str(Path(ffmpeg_location) / ("ffmpeg.exe" if os.name == "nt" else "ffmpeg"))
+
+
+def normaliser_volume(chemin_mp3: Path, ffmpeg_location: str | None) -> None:
+    """Egalise le niveau sonore (loudnorm EBU R128, deux passes) — sans ca, le volume
+    variait trop d'un morceau a l'autre pendant une partie (retour utilisateur)."""
+    ffmpeg = _chemin_ffmpeg(ffmpeg_location)
+    filtre_mesure = f"loudnorm=I={_LOUDNORM_I}:LRA={_LOUDNORM_LRA}:TP={_LOUDNORM_TP}:print_format=json"
+
+    mesure = subprocess.run(
+        [ffmpeg, "-i", str(chemin_mp3), "-af", filtre_mesure, "-f", "null", "-"],
+        capture_output=True, text=True, check=True,
+    )
+    bloc_json = mesure.stderr[mesure.stderr.rindex("{"): mesure.stderr.rindex("}") + 1]
+    stats = json.loads(bloc_json)
+
+    filtre_application = (
+        f"loudnorm=I={_LOUDNORM_I}:LRA={_LOUDNORM_LRA}:TP={_LOUDNORM_TP}:"
+        f"measured_I={stats['input_i']}:measured_LRA={stats['input_lra']}:"
+        f"measured_TP={stats['input_tp']}:measured_thresh={stats['input_thresh']}:"
+        f"offset={stats['target_offset']}:linear=true"
+    )
+
+    chemin_tmp = chemin_mp3.with_suffix(".normalise.mp3")
+    subprocess.run(
+        [ffmpeg, "-y", "-i", str(chemin_mp3), "-af", filtre_application,
+         "-ar", "44100", "-c:a", "libmp3lame", "-q:a", "2", str(chemin_tmp)],
+        capture_output=True, text=True, check=True,
+    )
+    chemin_tmp.replace(chemin_mp3)
+
+
+def estimer_refrain_start_ms(chemin_mp3: Path, duree_ms: int) -> int | None:
+    """Devine le point de depart du refrain par analyse de similarite audio (pychorus —
+    trouve la section la plus repetee, meme principe que les outils karaoke/DJ). None si
+    rien de fiable trouve, ou si le passage detecte laisserait trop peu de morceau apres
+    lui pour dérouler une fenetre de reponse complete — a affiner manuellement dans
+    tracks.json si le resultat ne convient pas (voir architecture.md section 4)."""
+    try:
+        debut_sec = find_and_output_chorus(str(chemin_mp3), None, clip_length=_REFRAIN_CLIP_LENGTH_SEC)
+    except Exception as e:  # noqa: BLE001 — une estimation ratee ne doit pas bloquer l'import
+        print(f"  estimation du refrain impossible : {e}", file=sys.stderr)
+        return None
+
+    if debut_sec is None:
+        return None
+
+    duree_sec = duree_ms / 1000
+    if duree_sec - debut_sec < _REFRAIN_MARGE_FIN_SEC:
+        return None
+
+    return round(debut_sec * 1000)
 
 
 def main() -> None:
@@ -157,6 +229,7 @@ def main() -> None:
                     continue
 
                 telecharger_audio(args.ffmpeg_location, resultat["id"], AUDIO_DIR / track_id)
+                normaliser_volume(audio_path, args.ffmpeg_location)
                 youtube_id = resultat["id"]
             else:
                 youtube_id = entry.get("youtubeId")  # reprise : fichier déjà là, on ne re-cherche pas
@@ -164,6 +237,8 @@ def main() -> None:
             cover_path = COVERS_DIR / f"{track_id}.jpg"
             if entry.get("spotifyCoverUrl") and not cover_path.exists():
                 telecharger_cover(entry["spotifyCoverUrl"], cover_path)
+
+            refrain_start_ms = estimer_refrain_start_ms(audio_path, entry["durationMs"])
 
             tracks.append(
                 {
@@ -180,6 +255,7 @@ def main() -> None:
                     "year": entry.get("year"),
                     "filePath": f"audio/{track_id}.mp3",
                     "coverPath": f"covers/{track_id}.jpg" if cover_path.exists() else None,
+                    "refrainStartMs": refrain_start_ms,
                     "addedAt": datetime.now(timezone.utc).isoformat(),
                 }
             )

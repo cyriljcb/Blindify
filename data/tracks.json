@@ -13,6 +13,7 @@
     "year": 1986,
     "filePath": "audio/0NJdtoQ3RX5ckBjJlNXhlP.mp3",
     "coverPath": "covers/0NJdtoQ3RX5ckBjJlNXhlP.jpg",
+    "refrainStartMs": 181664,
     "addedAt": "2026-08-16T19:33:57.891584+00:00"
   },
   {
@@ -31,6 +32,7 @@
     "year": 2010,
     "filePath": "audio/2GYHyAoLWpkxLVa4oYTVko.mp3",
     "coverPath": "covers/2GYHyAoLWpkxLVa4oYTVko.jpg",
+    "refrainStartMs": 151529,
     "addedAt": "2026-08-16T19:55:50.270769+00:00"
   },
   {
@@ -49,6 +51,7 @@
     "year": 2025,
     "filePath": "audio/5bjFSjfotRhjHnbHoBYhsW.mp3",
     "coverPath": "covers/5bjFSjfotRhjHnbHoBYhsW.jpg",
+    "refrainStartMs": 124516,
     "addedAt": "2026-08-17T16:10:53.383746+00:00"
   },
   {
@@ -69,6 +72,7 @@
     "year": 1997,
     "filePath": "audio/0Wr98MVkENZXddiLB3bPb0.mp3",
     "coverPath": "covers/0Wr98MVkENZXddiLB3bPb0.jpg",
+    "refrainStartMs": 100226,
     "addedAt": "2026-08-17T16:24:36.658620+00:00"
   },
   {
@@ -85,6 +89,7 @@
     "year": 2008,
     "filePath": "audio/3Fcfwhm8oRrBvBZ8KGhtea.mp3",
     "coverPath": "covers/3Fcfwhm8oRrBvBZ8KGhtea.jpg",
+    "refrainStartMs": 195874,
     "addedAt": "2026-08-17T16:24:46.578891+00:00"
   }
 ]
