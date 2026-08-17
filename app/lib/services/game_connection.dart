@@ -4,12 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
+import '../models/bonus_question_started.dart';
+import '../models/bonus_result.dart';
+import '../models/bonus_stake_options.dart';
 import '../models/join_result.dart';
 import '../models/round_ended.dart';
 import '../models/round_started.dart';
 import '../models/score_update.dart';
 
-enum AppScreen { connect, join, lobby, round, roundEnded, ended }
+enum AppScreen { connect, join, lobby, round, roundEnded, bonusStake, bonusQuestion, bonusResult, ended }
 
 class PlayerInfo {
   PlayerInfo({required this.playerId, required this.nom, this.estConnecte = true});
@@ -53,6 +56,15 @@ class GameConnection extends ChangeNotifier {
   ScoreUpdate? leaderboard;
   bool showLeaderboard = false;
   ScoreUpdate? finalScores;
+
+  BonusStakeOptions? bonusStakeOptions;
+  int? bonusPalierSelectionne;
+  bool bonusStakeEnvoyee = false;
+
+  BonusQuestionStarted? bonusQuestion;
+  bool bonusAnswered = false;
+
+  BonusResult? lastBonusResult;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -214,7 +226,37 @@ class GameConnection extends ChangeNotifier {
       lastRoundResult = null;
       scoreUpdate = null;
       finalScores = null;
+      bonusStakeOptions = null;
+      bonusPalierSelectionne = null;
+      bonusStakeEnvoyee = false;
+      bonusQuestion = null;
+      bonusAnswered = false;
+      lastBonusResult = null;
       screen = AppScreen.lobby;
+      notifyListeners();
+    });
+
+    hub.on('BonusStakeOptions', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      bonusStakeOptions = BonusStakeOptions.fromJson(data);
+      bonusPalierSelectionne = null;
+      bonusStakeEnvoyee = false;
+      screen = AppScreen.bonusStake;
+      notifyListeners();
+    });
+
+    hub.on('BonusQuestionStarted', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      bonusQuestion = BonusQuestionStarted.fromJson(data);
+      bonusAnswered = false;
+      screen = AppScreen.bonusQuestion;
+      notifyListeners();
+    });
+
+    hub.on('BonusResult', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      lastBonusResult = BonusResult.fromJson(data);
+      screen = AppScreen.bonusResult;
       notifyListeners();
     });
   }
@@ -284,6 +326,41 @@ class GameConnection extends ChangeNotifier {
 
     try {
       await _hub!.invoke('SubmitAnswer', args: [
+        {'reponse': reponse}
+      ]);
+    } catch (e) {
+      errorMessage = 'Erreur : ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  /// Choix du palier de mise, à l'aveugle avant de découvrir la question — un seul essai
+  /// par round bonus, déjà appliqué côté serveur (voir BonusRoundService.EnregistrerMise).
+  Future<void> selectStake(int palierIndex) async {
+    if (bonusStakeEnvoyee || paused) return;
+
+    bonusPalierSelectionne = palierIndex;
+    bonusStakeEnvoyee = true;
+    notifyListeners();
+
+    try {
+      await _hub!.invoke('SelectStake', args: [
+        {'palierIndex': palierIndex}
+      ]);
+    } catch (e) {
+      errorMessage = 'Erreur : ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  Future<void> submitBonusAnswer(String reponse) async {
+    if (bonusAnswered || paused) return;
+
+    bonusAnswered = true;
+    notifyListeners();
+
+    try {
+      await _hub!.invoke('SubmitBonusAnswer', args: [
         {'reponse': reponse}
       ]);
     } catch (e) {

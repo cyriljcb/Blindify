@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'screens/bonus_question_screen.dart';
+import 'screens/bonus_result_screen.dart';
+import 'screens/bonus_stake_screen.dart';
 import 'screens/connect_screen.dart';
 import 'screens/ended_screen.dart';
 import 'screens/join_screen.dart';
@@ -43,6 +46,9 @@ class _RootScreen extends StatelessWidget {
       AppScreen.lobby => const LobbyScreen(),
       AppScreen.round => const RoundScreen(),
       AppScreen.roundEnded => const RoundEndedScreen(),
+      AppScreen.bonusStake => const BonusStakeScreen(),
+      AppScreen.bonusQuestion => const BonusQuestionScreen(),
+      AppScreen.bonusResult => const BonusResultScreen(),
       AppScreen.ended => const EndedScreen(),
     };
 
