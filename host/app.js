@@ -15,6 +15,10 @@ let timerPausedRemainingMs = null;
 let autoNextTimeoutId = null;
 let autoNextIntervalId = null;
 
+let refrainCourantMs = null;
+let nombreRoundsTotal = 0;
+let roundsDemarres = 0;
+
 // ----- Éléments DOM -----
 
 const el = (id) => document.getElementById(id);
@@ -151,24 +155,25 @@ function stopTimer() {
 
 // ----- Audio -----
 
-function playAudio(filePath, refrainStartMs) {
+function playAudio(filePath) {
   audioEl.src = `${serverBaseUrl}/files/${filePath}`;
+  // Force un rechargement propre même si l'URL est identique au morceau précédent (le
+  // catalogue étant petit, "Rejouer" retombe facilement sur le même fichier) — sans ça,
+  // certains navigateurs ne redéclenchent pas leurs événements de chargement et la lecture
+  // reste bloquée sur l'état du round précédent.
+  audioEl.load();
   manualPlayBtn.classList.add("hidden");
+  const playPromise = audioEl.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => manualPlayBtn.classList.remove("hidden"));
+  }
+}
 
-  const demarrerLecture = () => {
-    if (refrainStartMs) audioEl.currentTime = refrainStartMs / 1000;
-    const playPromise = audioEl.play();
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch(() => manualPlayBtn.classList.remove("hidden"));
-    }
-  };
-
-  // currentTime n'est fiable qu'une fois les métadonnées (durée/seekable) chargées —
-  // pas besoin d'attendre quand il n'y a pas de refrain à cibler (lecture immédiate depuis 0).
-  if (refrainStartMs) {
-    audioEl.addEventListener("loadedmetadata", demarrerLecture, { once: true });
-  } else {
-    demarrerLecture();
+function jouerRefrain(refrainStartMs) {
+  audioEl.currentTime = refrainStartMs / 1000;
+  const playPromise = audioEl.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => manualPlayBtn.classList.remove("hidden"));
   }
 }
 
@@ -214,8 +219,10 @@ function registerHandlers() {
     el("btn-pause").classList.remove("hidden");
     el("btn-resume").classList.add("hidden");
     showScreen("screen-round");
-    playAudio(payload.filePath, payload.refrainStartMs);
+    refrainCourantMs = payload.refrainStartMs ?? null;
+    playAudio(payload.filePath); // toujours depuis le début pendant la découverte — le refrain n'est joué qu'au reveal
     startTimer(payload.dureeFenetreReponseMs);
+    roundsDemarres++;
   });
 
   connection.on("ScoreUpdate", (dto) => {
@@ -224,7 +231,13 @@ function registerHandlers() {
 
   connection.on("RoundEnded", (payload) => {
     stopTimer();
-    if (!el("setup-audio-continu").checked) audioEl.pause();
+    // Au reveal (tout le monde a répondu) : on saute au refrain si on en connaît un pour ce
+    // morceau, sinon on retombe sur le comportement "musique continue" habituel.
+    if (refrainCourantMs !== null) {
+      jouerRefrain(refrainCourantMs);
+    } else if (!el("setup-audio-continu").checked) {
+      audioEl.pause();
+    }
     el("reveal-title").textContent = payload.title;
     el("reveal-artist").textContent = payload.artist;
     el("round-ended-note").textContent = "";
@@ -261,6 +274,7 @@ function registerHandlers() {
   });
 
   connection.on("GameRestarted", () => {
+    roundsDemarres = 0;
     el("lobby-code").textContent = gameCode;
     renderPlayers();
     showScreen("screen-lobby");
@@ -350,6 +364,8 @@ el("btn-create-game").addEventListener("click", async () => {
     const payload = buildCreateGameRequest();
     const result = await connection.invoke("CreateGame", payload);
     gameCode = result.code;
+    nombreRoundsTotal = payload.seriesSetups[0].config.nombreRoundsClassiques;
+    roundsDemarres = 0;
     players = [];
     el("lobby-code").textContent = gameCode;
     renderPlayers();
@@ -374,20 +390,35 @@ function cancelAutoNext() {
   el("auto-next-note").textContent = "";
 }
 
+const MESSAGE_SERIE_EPUISEE =
+  "Plus de round classique dans cette série — cliquez sur \"Terminer la partie\" (la question bonus n'est pas encore gérée par cette page).";
+
 async function avancerRoundSuivant() {
   el("round-ended-note").textContent = "";
+
+  // Vérifié côté client avant d'appeler le serveur : évite de systématiquement déclencher
+  // (et journaliser) une HubException attendue à chaque fin de série.
+  if (roundsDemarres >= nombreRoundsTotal) {
+    el("round-ended-note").textContent = MESSAGE_SERIE_EPUISEE;
+    return;
+  }
+
   try {
     await connection.invoke("NextRound");
     await connection.invoke("StartRound");
   } catch (err) {
     console.error(err);
-    el("round-ended-note").textContent =
-      "Plus de round classique dans cette série — cliquez sur \"Terminer la partie\" (la question bonus n'est pas encore gérée par cette page).";
+    el("round-ended-note").textContent = MESSAGE_SERIE_EPUISEE;
   }
 }
 
 function scheduleAutoNext() {
   cancelAutoNext();
+
+  if (roundsDemarres >= nombreRoundsTotal) {
+    avancerRoundSuivant(); // affiche directement la note de fin de série, sans décompte inutile
+    return;
+  }
 
   const delaiMs = Math.max(1, parseInt(el("setup-delai-enchainement").value, 10) || 6) * 1000;
   const finA = Date.now() + delaiMs;
