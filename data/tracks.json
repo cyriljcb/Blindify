@@ -1,0 +1,54 @@
+[
+  {
+    "id": "0NJdtoQ3RX5ckBjJlNXhlP",
+    "title": "La Isla Bonita",
+    "artist": "Madonna",
+    "album": "True Blue",
+    "spotifyId": "0NJdtoQ3RX5ckBjJlNXhlP",
+    "youtubeId": "zpzdgmqIHOQ",
+    "durationMs": 242733,
+    "genres": [],
+    "tags": [],
+    "trapWith": [],
+    "year": 1986,
+    "filePath": "audio/0NJdtoQ3RX5ckBjJlNXhlP.mp3",
+    "coverPath": "covers/0NJdtoQ3RX5ckBjJlNXhlP.jpg",
+    "addedAt": "2026-08-16T19:33:57.891584+00:00"
+  },
+  {
+    "id": "2GYHyAoLWpkxLVa4oYTVko",
+    "title": "Alors on danse - Radio Edit",
+    "artist": "Stromae",
+    "album": "Cheese",
+    "spotifyId": "2GYHyAoLWpkxLVa4oYTVko",
+    "youtubeId": "GPoPKwXybY4",
+    "durationMs": 206066,
+    "genres": [
+      "french pop"
+    ],
+    "tags": [],
+    "trapWith": [],
+    "year": 2010,
+    "filePath": "audio/2GYHyAoLWpkxLVa4oYTVko.mp3",
+    "coverPath": "covers/2GYHyAoLWpkxLVa4oYTVko.jpg",
+    "addedAt": "2026-08-16T19:55:50.270769+00:00"
+  },
+  {
+    "id": "5bjFSjfotRhjHnbHoBYhsW",
+    "title": "Gone Gone Gone (Done Done Done) [feat. Teddy Swims] - David Guetta Remix",
+    "artist": "David Guetta, Tones And I, Teddy Swims",
+    "album": "Gone Gone Gone (Done Done Done) [feat. Teddy Swims] [David Guetta Remix]",
+    "spotifyId": "5bjFSjfotRhjHnbHoBYhsW",
+    "youtubeId": "6rn--YORols",
+    "durationMs": 168549,
+    "genres": [
+      "edm"
+    ],
+    "tags": [],
+    "trapWith": [],
+    "year": 2025,
+    "filePath": "audio/5bjFSjfotRhjHnbHoBYhsW.mp3",
+    "coverPath": "covers/5bjFSjfotRhjHnbHoBYhsW.jpg",
+    "addedAt": "2026-08-17T16:10:53.383746+00:00"
+  }
+]
