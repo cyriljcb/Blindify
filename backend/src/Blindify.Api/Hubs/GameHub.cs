@@ -46,6 +46,10 @@ public class GameHub(
             seriesList.Add(new Series { Index = seriesList.Count, Config = setup.Config, Rounds = rounds });
         }
 
+        var teams = request.ModeEquipe
+            ? (request.NomsEquipes ?? []).Select(nom => new Team { Id = Guid.NewGuid().ToString("N")[..8], Nom = nom }).ToList()
+            : [];
+
         string code;
         do { code = codeGenerator.GenererCode(); } while (sessionStore.Exists(code));
 
@@ -57,6 +61,7 @@ public class GameHub(
             Config = config,
             Tags = request.Tags,
             SeriesList = seriesList,
+            Teams = teams,
             HostConnectionId = Context.ConnectionId
         };
 
@@ -64,7 +69,7 @@ public class GameHub(
         sessionStore.AssocierConnexion(Context.ConnectionId, code);
         await Groups.AddToGroupAsync(Context.ConnectionId, code);
 
-        return new CreateGameResultDto(code);
+        return new CreateGameResultDto(code, teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList());
     }
 
     public async Task<HostStateSnapshotDto> RejoinAsHost(string code)
@@ -282,7 +287,7 @@ public class GameHub(
     public async Task<JoinGameResultDto> JoinGame(string code, string nom, string playerId)
     {
         var session = sessionStore.Get(code);
-        if (session is null) return new JoinGameResultDto(false, "Partie introuvable.", 0, null);
+        if (session is null) return new JoinGameResultDto(false, "Partie introuvable.", 0, null, []);
 
         var joueur = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
         var estReconnexion = joueur is not null;
@@ -306,7 +311,24 @@ public class GameHub(
         else
             await Clients.OthersInGroup(code).SendAsync("PlayerJoined", new PlayerJoinedDto(joueur.PlayerId, joueur.Nom));
 
-        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId);
+        var teams = session.Teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList();
+        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams);
+    }
+
+    /// <summary>Rejoint (ou change) d'équipe — autorisé à tout moment, pas seulement au lobby, pour
+    /// rester tolérant à une reconnexion tardive ou un choix corrigé.</summary>
+    public async Task JoinTeam(string teamId)
+    {
+        var session = ResoudreSession();
+        var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
+                     ?? throw new HubException("Joueur non reconnu dans cette partie.");
+
+        var team = session.Teams.FirstOrDefault(t => t.Id == teamId)
+                   ?? throw new HubException("Équipe introuvable.");
+
+        joueur.TeamId = team.Id;
+
+        await Clients.Group(session.Id).SendAsync("PlayerTeamChanged", new PlayerTeamChangedDto(joueur.PlayerId, team.Id));
     }
 
     public async Task<RoundAnswerResultDto> SubmitAnswer(SubmitAnswerRequestDto request)

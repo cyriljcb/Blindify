@@ -238,7 +238,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 
 | Méthode | Effet |
 |---|---|
-| `CreateGame(tags, séries)` | Crée la partie, sélectionne le pool de morceaux |
+| `CreateGame(tags, séries, nomsÉquipes?)` | Crée la partie, sélectionne le pool de morceaux. `nomsÉquipes` : une `Team` créée par nom fourni, uniquement si `modeÉquipe` actif (ignoré sinon). Retourne les équipes créées (id + nom) |
 | `RejoinAsHost(code)` | Resynchronise le host après un refresh/crash de l'onglet : renvoie l'état courant complet (morceau en cours, mode, position audio théorique calculée depuis `débutRound`/`duréeEnPauseMs`, `enPause`) pour reprendre la lecture au bon endroit sans redémarrer le morceau |
 | `StartRound()` | Démarre un round classique, horodate `débutRound` |
 | `StartBonusRound()` | Démarre la phase de mise d'une question bonus |
@@ -254,7 +254,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 | Méthode | Effet |
 |---|---|
 | `JoinGame(code, nom, playerId)` | Rejoint la partie. `playerId` est un identifiant stable généré et persisté côté client Flutter (pas le `connectionId` SignalR, qui change à chaque reconnexion). Si ce `playerId` existe déjà dans la partie (reconnexion après coupure réseau), le serveur réassocie simplement le nouveau `connectionId` au `Player` existant et renvoie son état (score, équipe) au lieu de créer un nouveau joueur |
-| `JoinTeam(teamId)` | Rejoint une équipe (si `modeÉquipe` actif) |
+| `JoinTeam(teamId)` | Rejoint (ou change d')équipe — autorisé à tout moment, pas seulement au lobby. La liste des équipes disponibles est renvoyée par `JoinGame`, pas besoin d'appel séparé pour les découvrir |
 | `SubmitAnswer(payload)` | Soumet une réponse (round classique) |
 | `SelectStake(index)` | Choisit un palier de mise (phase 1 bonus) |
 | `SubmitBonusAnswer(payload)` | Soumet une réponse (phase 2 bonus) |
@@ -265,6 +265,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 |---|---|
 | `PlayerJoined` | Infos du joueur (nouveau joueur) |
 | `PlayerReconnected` / `PlayerDisconnected` | Changement d'état `estConnecté` d'un joueur existant (perte réseau, reconnexion) |
+| `PlayerTeamChanged` | Un joueur a rejoint (ou changé d')équipe |
 | `RoundStarted` | Morceau (mode-dépendant), mode, cible (Titre/Auteur — voir section 6), URL audio + `refrainStartMs` (host uniquement — mémorisé côté host, appliqué au moment du `RoundEnded`, pas pendant la découverte) |
 | `ScoreUpdate` | Scores à jour de tous les joueurs |
 | `RoundEnded` | Réponse correcte, détail des points de chacun |

@@ -168,6 +168,54 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     }
 
     [Fact]
+    public async Task ModeEquipe_CreationEtJoinTeam_AgregeLeScoreParEquipe()
+    {
+        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
+            Tags: [],
+            ModeEquipe: true,
+            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
+            Config: null,
+            NomsEquipes: ["Rouge", "Bleu"]));
+
+        Assert.Equal(2, creation.Teams.Count);
+        Assert.Contains(creation.Teams, t => t.Nom == "Rouge");
+        var equipeRouge = creation.Teams.First(t => t.Nom == "Rouge");
+
+        var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        Assert.Equal(2, join.Teams.Count);
+        Assert.Null(join.TeamId); // pas encore rejoint d'équipe
+
+        var teamChangedTcs = new TaskCompletionSource<PlayerTeamChangedDto>();
+        _hostConnection.On<PlayerTeamChangedDto>("PlayerTeamChanged", payload => teamChangedTcs.TrySetResult(payload));
+
+        await _playerConnection.InvokeAsync("JoinTeam", equipeRouge.Id);
+        var teamChanged = await AvecTimeout(teamChangedTcs.Task, TimeSpan.FromSeconds(5));
+        Assert.Equal("player-1", teamChanged.PlayerId);
+        Assert.Equal(equipeRouge.Id, teamChanged.TeamId);
+
+        RoundStartedForPlayersDto? roundStartedPlayer = null;
+        RoundStartedForHostDto? roundStartedHost = null;
+        var scoreUpdates = new List<ScoreUpdateDto>();
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
+        _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
+        _playerConnection.On<ScoreUpdateDto>("ScoreUpdate", scores => scoreUpdates.Add(scores));
+
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+
+        var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
+        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
+
+        await AttendreAsync(() => scoreUpdates.Count > 0);
+        var dernier = scoreUpdates[^1];
+        Assert.NotNull(dernier.Equipes);
+        var scoreRouge = dernier.Equipes!.Single(e => e.TeamId == equipeRouge.Id);
+        Assert.Equal(resultat.Points, scoreRouge.Score);
+        var scoreBleu = dernier.Equipes!.Single(e => e.Nom == "Bleu");
+        Assert.Equal(0, scoreBleu.Score);
+    }
+
+    [Fact]
     public async Task JoinGame_CodeInconnu_RetourneUnEchec()
     {
         var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", "ZZZZZ", "Bob", "player-2");
