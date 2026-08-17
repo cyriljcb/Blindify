@@ -61,7 +61,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-const DUREE_TRANSITION_MS = 180;
+const DUREE_TRANSITION_MS = 350;
 
 function showScreen(id) {
   gameControlsEl.classList.toggle("hidden", !ECRANS_AVEC_CONTROLES.has(id));
@@ -265,21 +265,21 @@ function playAudio(filePath) {
   manualPlayBtn.classList.add("hidden");
   audioEl.volume = 0;
   lancerLecture();
-  fadeAudioVolume(1, 300);
+  fadeAudioVolume(1, 450);
 }
 
 // Au reveal (round classique ou question bonus) : petit fondu avant de sauter au refrain,
 // pour éviter la coupure sèche entre la découverte et la révélation.
 function jouerRefrain(refrainStartMs) {
-  fadeAudioVolume(0, 150, () => {
+  fadeAudioVolume(0, 280, () => {
     audioEl.currentTime = refrainStartMs / 1000;
     lancerLecture();
-    fadeAudioVolume(1, 300);
+    fadeAudioVolume(1, 450);
   });
 }
 
 function pauseAudioEnDouceur() {
-  fadeAudioVolume(0, 200, () => audioEl.pause());
+  fadeAudioVolume(0, 320, () => audioEl.pause());
 }
 
 manualPlayBtn.addEventListener("click", () => {
@@ -362,7 +362,7 @@ function registerHandlers() {
 
   connection.on("GameResumed", () => {
     lancerLecture();
-    fadeAudioVolume(1, 300);
+    fadeAudioVolume(1, 450);
     resumeTimer();
     el("btn-pause").classList.remove("hidden");
     el("btn-resume").classList.add("hidden");
