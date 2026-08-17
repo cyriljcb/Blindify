@@ -245,6 +245,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 | `ValidateAnswerManually(playerId, correct)` | Override manuel pour les réponses texte ambiguës |
 | `NextRound()` | Passe au round suivant |
 | `EndGame()` | Termine la partie |
+| `RejouerPartie()` | Uniquement si la partie est `Terminée` : relance une nouvelle manche avec le même code et les mêmes joueurs — mêmes configs/modes de série qu'à la création mais nouvelle sélection de morceaux, scores remis à zéro, session repassée en `Lobby`. Évite aux joueurs de retaper le code entre deux manches. |
 
 ### Méthodes déclenchées par les joueurs
 
@@ -271,6 +272,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 | `LeaderboardShown` | Classement général, diffusé en fin de série |
 | `GamePaused` / `GameResumed` | État de pause |
 | `GameEnded` | Scores finaux |
+| `GameRestarted` | Diffusé après `RejouerPartie()` — ramène tous les clients à l'écran du lobby (même code, mêmes joueurs, scores à zéro) |
 
 ## 11. Paramètres de configuration
 

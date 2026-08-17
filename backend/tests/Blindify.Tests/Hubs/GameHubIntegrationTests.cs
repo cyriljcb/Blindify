@@ -122,6 +122,52 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     }
 
     [Fact]
+    public async Task RejouerPartie_ApresFinDePartie_ResetLesScoresEtPermetDeRedemarrer()
+    {
+        var roundEndedTcs = new TaskCompletionSource<RoundEndedDto>();
+        var gameRestartedTcs = new TaskCompletionSource();
+        RoundStartedForHostDto? roundStartedApresReplay = null;
+
+        _hostConnection.On<RoundEndedDto>("RoundEnded", payload => roundEndedTcs.TrySetResult(payload));
+        _hostConnection.On("GameRestarted", () => gameRestartedTcs.TrySetResult());
+
+        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
+            Tags: [],
+            ModeEquipe: false,
+            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
+            Config: null));
+
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+
+        RoundStartedForPlayersDto? roundStartedPlayer = null;
+        RoundStartedForHostDto? roundStartedHost = null;
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
+        _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+
+        var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
+        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
+        await AvecTimeout(roundEndedTcs.Task, TimeSpan.FromSeconds(5));
+
+        await _hostConnection.InvokeAsync("EndGame");
+        await _hostConnection.InvokeAsync("RejouerPartie");
+        await AttendreAsync(() => gameRestartedTcs.Task.IsCompleted);
+
+        // Reconnexion avec le même playerId : le score doit être remis à zéro.
+        var rejoin = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        Assert.Equal(0, rejoin.Score);
+
+        // La partie doit pouvoir redémarrer sans repasser par CreateGame.
+        _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedApresReplay = payload);
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedApresReplay is not null);
+
+        Assert.NotNull(roundStartedApresReplay);
+        Assert.True(resultat.Points > 0);
+    }
+
+    [Fact]
     public async Task JoinGame_CodeInconnu_RetourneUnEchec()
     {
         var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", "ZZZZZ", "Bob", "player-2");

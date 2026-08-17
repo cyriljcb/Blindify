@@ -238,6 +238,42 @@ public class GameHub(
         await Clients.Group(session.Id).SendAsync("GameEnded", ScoreDtoBuilder.Construire(session));
     }
 
+    /// <summary>Relance une partie terminée avec le même groupe (même code, mêmes joueurs) — mêmes
+    /// configs/modes de série qu'à la création, mais nouvelle sélection de morceaux et scores remis
+    /// à zéro. Évite aux joueurs de devoir retaper le code pour une nouvelle manche.</summary>
+    public async Task RejouerPartie()
+    {
+        var session = ResoudreSessionHost();
+        if (session.Etat != GameState.Termine)
+            throw new HubException("La partie doit être terminée avant de pouvoir être relancée.");
+
+        var catalogue = tracksRepository.GetAll();
+        var dejaUtilises = new HashSet<string>();
+        var nouvellesSeries = new List<Series>();
+
+        foreach (var serie in session.SeriesList)
+        {
+            var modes = serie.Rounds.Select(r => r.Mode).ToList();
+            var morceaux = roundService.SelectionnerMorceaux(catalogue, session.Tags, modes.Count, dejaUtilises);
+            if (morceaux.Count < modes.Count)
+                throw new HubException("Pas assez de morceaux disponibles dans le catalogue pour relancer cette série.");
+
+            var rounds = morceaux.Select((track, i) => new Round { TrackId = track.Id, Mode = modes[i] }).ToList();
+            nouvellesSeries.Add(new Series { Index = nouvellesSeries.Count, Config = serie.Config, Rounds = rounds });
+        }
+
+        session.SeriesList = nouvellesSeries;
+        session.SerieCouranteIndex = 0;
+        session.RoundCourantIndex = -1;
+        session.Etat = GameState.Lobby;
+        session.EnPause = false;
+        session.PauseDemarreeA = null;
+
+        foreach (var player in session.Players) player.Score = 0;
+
+        await Clients.Group(session.Id).SendAsync("GameRestarted");
+    }
+
     // ----- Méthodes joueur -----
 
     public async Task<JoinGameResultDto> JoinGame(string code, string nom, string playerId)
