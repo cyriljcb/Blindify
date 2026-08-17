@@ -204,6 +204,8 @@ Mécanique en deux phases, mise choisie **à l'aveugle** avant de découvrir la 
 3. **Résultat** — réponse juste : `+mise` ; réponse fausse ou absence de réponse : `-mise`.
 4. **Tableau général** — affiché **au moins une fois par partie** (pas systématiquement à chaque série). Par défaut, déclenché automatiquement après la série médiane (`⌈nombreDeSéries / 2⌉`), et le host peut aussi le déclencher manuellement à tout moment via une commande dédiée (`ShowLeaderboard()`).
 
+**Enchaînement côté host (`host/`)** — comportement de la page web, pas une règle du contrat serveur : une fois la dernière série classique épuisée, le host déclenche automatiquement `StartBonusRound()` (au lieu d'attendre une intervention), puis après réception de `BonusResult`, affiche un compte à rebours et déclenche automatiquement `EndGame()` (bouton "Terminer maintenant" disponible pour ne pas attendre). Le host garde la main pour interrompre cet enchaînement (pause, tableau général) à tout moment.
+
 Table de config des paliers par série (exemple, à ajuster) :
 
 ```
@@ -267,7 +269,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 | `ScoreUpdate` | Scores à jour de tous les joueurs |
 | `RoundEnded` | Réponse correcte, détail des points de chacun |
 | `BonusStakeOptions` | Les 4 paliers de la série courante |
-| `BonusQuestionStarted` | Morceau révélé, timer fixe démarré |
+| `BonusQuestionStarted` | Morceau révélé, timer fixe démarré + `refrainStartMs` (host uniquement — appliqué au `BonusResult`, pas pendant la devinette) |
 | `BonusResult` | Résultat de chaque joueur (mise gagnée/perdue) |
 | `LeaderboardShown` | Classement général, diffusé en fin de série |
 | `GamePaused` / `GameResumed` | État de pause |
