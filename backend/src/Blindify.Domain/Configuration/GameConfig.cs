@@ -5,7 +5,7 @@ namespace Blindify.Domain.Configuration;
 /// </summary>
 public class GameConfig
 {
-    public double ProbabiliteQcmPiege { get; set; } = 0.15;
+    public double ProbabiliteQcmPiege { get; set; } = 0.05;
 
     /// <summary>Retour utilisateur : piège purement visuel, distinct de ProbabiliteQcmPiege (qui
     /// pioche un VRAI morceau souvent confondu, trapWith). Ici, un des distracteurs affiche le
@@ -13,6 +13,13 @@ public class GameConfig
     /// correct comme s'il s'agissait d'un titre). L'ID du distracteur ne change pas, donc le
     /// cliquer reste compté comme une mauvaise réponse normalement.</summary>
     public double ProbabiliteQcmFeinteChamp { get; set; } = 0.10;
+
+    /// <summary>Feinte texte inventé (retour utilisateur, ex. Bastille - Pompéi -> "Baptiste") :
+    /// distincte de ProbabiliteQcmPiege (vrai morceau, trapWith) et de ProbabiliteQcmFeinteChamp
+    /// (champ opposé du morceau correct). Ici le texte vient de Track.TrapTexteArtiste, un
+    /// leurre écrit à la main, sans rapport avec un morceau réel du catalogue. Volontairement
+    /// basse : un leurre inventé trop fréquent devient injuste plutôt qu'amusant.</summary>
+    public double ProbabiliteQcmFeinteTexteArtiste { get; set; } = 0.05;
 
     /// <summary>Ratio utilisé dans seuil = max(1, floor(longueur(texteNormalisé) × ratio)).</summary>
     public double SeuilToleranceLevenshteinRatio { get; set; } = 0.2;

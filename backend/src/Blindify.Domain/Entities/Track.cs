@@ -19,6 +19,11 @@ public class Track
     /// <summary>IDs de morceaux fréquemment confondus, utilisés pour générer des QCM pièges.</summary>
     public List<string> TrapWith { get; set; } = [];
 
+    /// <summary>Leurre texte inventé pour la cible Auteur (ex. Bastille - Pompéi -> "Baptiste") :
+    /// nom d'artiste plausible mais fictif, écrit à la main, sans rapport avec un morceau réel du
+    /// catalogue — voir GameConfig.ProbabiliteQcmFeinteTexteArtiste.</summary>
+    public string? TrapTextArtist { get; set; }
+
     public int? Year { get; set; }
     public required string FilePath { get; set; }
     public string? CoverPath { get; set; }

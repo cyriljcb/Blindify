@@ -16,6 +16,7 @@ internal static class TrackMapper
         Genres = dto.Genres,
         Tags = dto.Tags,
         TrapWith = dto.TrapWith,
+        TrapTextArtist = dto.TrapTextArtist,
         Year = dto.Year,
         FilePath = dto.FilePath,
         CoverPath = dto.CoverPath,

@@ -1,11 +1,11 @@
 {
-    "name": "app",
-    "short_name": "app",
+    "name": "Blindify",
+    "short_name": "Blindify",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#7C8FFF",
+    "theme_color": "#7C8FFF",
+    "description": "Blindtest local multijoueur.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

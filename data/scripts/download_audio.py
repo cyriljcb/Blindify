@@ -64,12 +64,21 @@ def sauvegarder_tracks_json(tracks: list[dict]) -> None:
     TRACKS_JSON_PATH.write_text(json.dumps(tracks, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def rechercher_sur_youtube(ffmpeg_location: str | None, requete: str) -> dict | None:
-    """Récupère les métadonnées du premier résultat de recherche, sans télécharger."""
+_RECHERCHE_NB_CANDIDATS = 5
+
+
+def rechercher_sur_youtube(ffmpeg_location: str | None, requete: str) -> list[dict]:
+    """Récupère les métadonnées des premiers résultats de recherche, sans télécharger.
+
+    Plusieurs candidats (pas juste le premier résultat) car les clips YouTube officiels
+    ont souvent une intro/outro différente de la version streaming Spotify — se limiter
+    au 1er résultat faisait flaguer "à vérifier" la majorité des morceaux (retour
+    playtest sur un lot de 20 : 13/20 alors que c'étaient les bonnes vidéos officielles).
+    """
     options = {
         "quiet": True,
         "no_warnings": True,
-        "default_search": "ytsearch1",
+        "default_search": f"ytsearch{_RECHERCHE_NB_CANDIDATS}",
         "noplaylist": True,
         "skip_download": True,
     }
@@ -79,7 +88,17 @@ def rechercher_sur_youtube(ffmpeg_location: str | None, requete: str) -> dict | 
     with yt_dlp.YoutubeDL(options) as ydl:
         resultat = ydl.extract_info(requete, download=False)
         entries = resultat.get("entries") if resultat and "entries" in resultat else [resultat]
-        return entries[0] if entries else None
+        return [e for e in entries if e]
+
+
+def meilleur_candidat(candidats: list[dict], duree_ms_attendue: int) -> tuple[dict, float]:
+    """Choisit, parmi les résultats de recherche, celui dont la durée colle le mieux à
+    la durée Spotify. Retourne le candidat et son écart en secondes."""
+    meilleur = min(
+        candidats, key=lambda c: abs((c.get("duration") or 0) * 1000 - duree_ms_attendue)
+    )
+    ecart_s = abs((meilleur.get("duration") or 0) * 1000 - duree_ms_attendue) / 1000
+    return meilleur, ecart_s
 
 
 def telecharger_audio(ffmpeg_location: str | None, video_id: str, destination_sans_extension: Path) -> None:
@@ -209,13 +228,12 @@ def main() -> None:
         try:
             if not audio_path.exists():
                 requete = f"{artiste} {titre}"
-                resultat = rechercher_sur_youtube(args.ffmpeg_location, requete)
-                if resultat is None:
+                candidats = rechercher_sur_youtube(args.ffmpeg_location, requete)
+                if not candidats:
                     echecs.append({"id": track_id, "titre": titre, "artiste": artiste, "raison": "aucun résultat"})
                     continue
 
-                duree_youtube_ms = (resultat.get("duration") or 0) * 1000
-                ecart_s = abs(duree_youtube_ms - entry["durationMs"]) / 1000
+                resultat, ecart_s = meilleur_candidat(candidats, entry["durationMs"])
                 if ecart_s > args.tolerance_seconds:
                     a_verifier.append(
                         {

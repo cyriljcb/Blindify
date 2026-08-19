@@ -38,20 +38,42 @@ PLAYLIST_PAGE_SIZE = 100
 # Suffixes d'édition qui rendent le titre trop long/complexe à deviner en mode "réponse
 # tapée" ou "première lettre" (retour utilisateur : un titre avec "feat." + "Remix" +
 # plusieurs auteurs devient impossible à taper). Retirés à la source, pas seulement affichés.
+#
+# Le "remaster" est le cas le plus irrégulier chez Spotify : l'année peut précéder ou suivre
+# le mot ("2015 Remaster" vs "Remastered 2008"), avec ou sans tiret entre les deux, et la
+# variante française ajoute "-isé(e)". Les branches génériques remix/edit/mix/version
+# couvrent les innombrables noms de mix ("Klaas Vocal Edit", "Nalin & Kane Mix"...) sans les
+# lister un par un.
 _TITRE_FEAT = re.compile(r"\s*[\(\[]\s*feat\.[^\)\]]*[\)\]]", re.IGNORECASE)
-_TITRE_SUFFIXES = re.compile(
-    r"\s*[-–]\s*(?:"
-    r"radio edit|remaster(?:ed)?(?: \d{4})?|single version|"
-    r"original mix|extended mix|live|acoustic|mono|stereo|[^-]*\bremix\b"
-    r")\s*$",
-    re.IGNORECASE,
+
+_SUFFIXE_ALTS = (
+    r"acoustic|mono|stereo|version originale(?:\s*\d{4})?|"
+    r"(?:\d{4}\s*[-–]?\s*)?remaster(?:e?d|is[ée]e?d?)?(?:\s+en)?(?:\s*[-–]?\s*\d{4})?|"
+    r"live(?:\s+from\b.*)?|"
+    r"[^()-]*\b(?:remix|edit|mix|version)\b(?:\s*\d{4})?"
+)
+# Séparateur exigeant un espace de chaque côté du tiret : un tiret collé ("Re-Mix", "K-Mix")
+# fait partie du mot et ne doit jamais être traité comme un séparateur de suffixe.
+_TITRE_SUFFIXES_TIRET = re.compile(
+    r"\s+[-–]\s+(?:" + _SUFFIXE_ALTS + r")\s*$", re.IGNORECASE
+)
+_TITRE_SUFFIXES_PARENTHESES = re.compile(
+    r"\s*\(\s*(?:" + _SUFFIXE_ALTS + r")\s*\)\s*$", re.IGNORECASE
 )
 
 
 def nettoyer_titre(titre: str) -> str:
-    """Retire les suffixes d'édition ('- Radio Edit', '- ... Remix', '(feat. ...)') du titre brut Spotify."""
-    sans_feat = _TITRE_FEAT.sub("", titre)
-    return _TITRE_SUFFIXES.sub("", sans_feat).strip()
+    """Retire les suffixes d'édition ('- Radio Edit', '(2022 Remaster)', '- ... Remix',
+    '(feat. ...)') du titre brut Spotify. Appliqué en boucle car un titre peut cumuler
+    plusieurs suffixes (ex. '- 2015 - Remaster')."""
+    resultat = _TITRE_FEAT.sub("", titre)
+    while True:
+        sans_suffixe = _TITRE_SUFFIXES_TIRET.sub("", resultat)
+        sans_suffixe = _TITRE_SUFFIXES_PARENTHESES.sub("", sans_suffixe)
+        if sans_suffixe == resultat:
+            break
+        resultat = sans_suffixe
+    return resultat.strip()
 
 
 def get_access_token(client_id: str, client_secret: str) -> str:

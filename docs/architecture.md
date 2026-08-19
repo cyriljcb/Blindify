@@ -116,6 +116,7 @@ Pour ~1000 morceaux en MP3 192 kbps (largement suffisant pour un blindtest, surt
   "genres": ["disney", "soundtrack"],
   "tags": ["disney", "annees-90", "dessin-anime"],
   "trapWith": ["idAutreMorceau1", "idAutreMorceau2"],
+  "trapTextArtist": null,
   "year": 1989,
   "filePath": "audio/a1b2c3.mp3",
   "coverPath": "covers/a1b2c3.jpg",
@@ -127,6 +128,7 @@ Pour ~1000 morceaux en MP3 192 kbps (largement suffisant pour un blindtest, surt
 - `genres` : rempli automatiquement depuis Spotify (par artiste).
 - `tags` : thèmes personnalisés, remplis manuellement ou semi-automatiquement.
 - `trapWith` : IDs de morceaux fréquemment confondus (ex. Axel F / Crazy Frog), utilisés pour générer des QCM pièges.
+- `trapTextArtist` : optionnel, `null` par défaut. Leurre texte **inventé à la main** pour la cible Auteur (ex. Bastille - Pompéi -> "Baptiste") — contrairement à `trapWith`, ne référence aucun morceau réel du catalogue, juste un nom d'artiste plausible mais fictif affiché à la place d'un distracteur tiré au sort. Voir section 6 (probabilité dédiée, volontairement basse pour ne pas devenir injuste).
 - `coverPath` : pochette d'album téléchargée localement depuis Spotify, utilisée sur les écrans de jeu pour l'esthétique.
 - `title` : nettoyé à l'import (voir section 3) des suffixes d'édition ("- Radio Edit", "- ... Remix", "(feat. ...)") — trop de bruit dans le titre le rend impossible à taper en mode `TapeReponse`/`PremiereLettre`.
 - `refrainStartMs` : optionnel, `null` par défaut. Deviné automatiquement à l'import (voir section 3, analyse de similarité audio) ou renseigné manuellement — point de départ (ms) où le host saute pour jouer le refrain **au reveal** (une fois que tout le monde a répondu), pas pendant la découverte du round qui reste toujours jouée depuis le début du fichier.
@@ -192,8 +194,17 @@ Chaque round tire aléatoirement (50/50, indépendamment du mode QCM/TapeReponse
 ### Génération des QCM
 
 - Par défaut : 3 distracteurs tirés aléatoirement dans le même pool genre/tag que le morceau à deviner.
-- Si le morceau a des `trapWith` définis : probabilité configurable (~15-20 %) d'utiliser un piège plutôt qu'un distracteur aléatoire, pour ne pas que ça tombe trop souvent sur plusieurs parties.
 - **Fallback pool insuffisant** : si le pool genre/tag ne contient pas assez de morceaux distincts pour compléter les 3 distracteurs (thème trop niche, ou série mal configurée), compléter avec des morceaux tirés du pool global (tout `tracks.json`), même hors thème — garantit toujours 4 options valides plutôt qu'un crash ou un round bloqué. Le QCM est alors un peu plus facile dans ce cas limite, ce qui est préférable à l'absence de round.
+
+Trois niveaux de piège indépendants, chacun avec sa propre probabilité (`GameConfig`), pour ne pas que ça tombe trop souvent sur plusieurs parties :
+
+| Niveau | Source du leurre | Cliquer dessus | Config |
+|---|---|---|---|
+| Piège réel | Un autre vrai morceau du catalogue (`trapWith`) | Compte comme ce morceau réel | `ProbabiliteQcmPiege` (5 % par défaut) |
+| Feinte champ croisé | Le champ opposé du morceau correct lui-même (ex. cible Auteur -> affiche son propre titre) | Mauvaise réponse normale contre le distracteur tiré au sort | `ProbabiliteQcmFeinteChamp` (10 % par défaut) |
+| Feinte texte inventé | Un texte écrit à la main (`trapTextArtist`), sans rapport avec un morceau réel (ex. Bastille - Pompéi -> "Baptiste") | Mauvaise réponse normale contre le distracteur tiré au sort | `ProbabiliteQcmFeinteTexteArtiste` (5 % par défaut, cible Auteur uniquement) |
+
+Dans les deux cas de feinte, le `TrackId` du distracteur affiché ne change jamais — seul le texte affiché (titre ou artiste) est substitué, le scoring reste celui du distracteur réellement tiré.
 
 ## 7. Question bonus (fin de série)
 
@@ -288,7 +299,9 @@ Tous ces éléments sont des paramètres de partie/série, pas des valeurs figé
 | Durée de la phase mise (question bonus) | Série | Délai avant application du palier "safe" par défaut |
 | Durée de la phase question (question bonus) | Série | Pas de dégressivité, juste une limite dure |
 | Paliers de mise (4 valeurs) | Série | Table de config croissante, voir section 7 |
-| Probabilité d'un QCM piège | Global | ~15-20 % par défaut, ajustable |
+| Probabilité d'un QCM piège réel (`trapWith`) | Global | 5 % par défaut, ajustable |
+| Probabilité d'une feinte champ croisé | Global | 10 % par défaut, ajustable |
+| Probabilité d'une feinte texte inventé (`trapTextArtist`) | Global | 5 % par défaut, ajustable, cible Auteur uniquement |
 | Seuil de tolérance Levenshtein | Global | Voir recommandation ci-dessous |
 | Ralentissement audio (question bonus) | Global | Activé/désactivé + facteur de ralentissement (ex. 0.8), voir section 7 |
 | Affichage du tableau général | Partie | Au moins une fois par partie, par défaut après la série médiane, déclenchable aussi manuellement par le host |

@@ -262,6 +262,44 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     }
 
     [Fact]
+    public async Task QcmFeinteTexteArtiste_ProbabiliteMaximale_UnDistracteurAfficheLeLeurreInvente()
+    {
+        // Seul t1 (voir GameHubTestFactory) a un TrapTextArtist renseigné. Le morceau du round est
+        // tiré au hasard dans les 4 morceaux du catalogue (RoundService.SelectionnerMorceaux), et la
+        // cible (Titre/Auteur) l'est aussi séparément à 50/50 (RoundService.DemarrerRound) : on relance
+        // des parties jusqu'à tomber sur (t1, Auteur), seule combinaison où la feinte s'applique.
+        RoundStartedForPlayersDto? roundStartedPlayer = null;
+        RoundStartedForHostDto? roundStartedHost = null;
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
+        _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
+
+        var config = new GameConfig { ProbabiliteQcmPiege = 0, ProbabiliteQcmFeinteChamp = 0, ProbabiliteQcmFeinteTexteArtiste = 1.0 };
+
+        bool Trouve() => roundStartedHost is { Cible: RoundCible.Auteur, TrackId: "t1" };
+
+        for (var tentative = 0; tentative < 200 && !Trouve(); tentative++)
+        {
+            roundStartedPlayer = null;
+            roundStartedHost = null;
+
+            var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
+                Tags: [],
+                ModeEquipe: false,
+                SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
+                Config: config));
+
+            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", $"player-texte-{tentative}");
+            await _hostConnection.InvokeAsync("StartRound");
+            await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+        }
+
+        Assert.True(Trouve(), "Pas obtenu (t1, Auteur) en 200 tentatives.");
+
+        var distracteurs = roundStartedPlayer!.QcmOptions!.Where(o => o.TrackId != roundStartedHost!.TrackId);
+        Assert.Contains("Faux Artiste Test", distracteurs.Select(o => o.Artist));
+    }
+
+    [Fact]
     public async Task JoinGame_RenvoieLeRosterCompletYComprisSoiMeme()
     {
         var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(

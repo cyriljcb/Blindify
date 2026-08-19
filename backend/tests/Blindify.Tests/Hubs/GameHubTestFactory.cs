@@ -19,7 +19,7 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
     {
         File.WriteAllText(TracksPath, """
             [
-              { "id": "t1", "title": "Under the Sea", "artist": "Samuel E. Wright", "filePath": "audio/t1.mp3", "genres": ["disney"], "tags": [] },
+              { "id": "t1", "title": "Under the Sea", "artist": "Samuel E. Wright", "filePath": "audio/t1.mp3", "genres": ["disney"], "tags": [], "trapTextArtist": "Faux Artiste Test" },
               { "id": "t2", "title": "Circle of Life", "artist": "Elton John", "filePath": "audio/t2.mp3", "genres": ["disney"], "tags": [] },
               { "id": "t3", "title": "Let It Go", "artist": "Idina Menzel", "filePath": "audio/t3.mp3", "genres": ["disney"], "tags": [] },
               { "id": "t4", "title": "Hakuna Matata", "artist": "Nathan Lane", "filePath": "audio/t4.mp3", "genres": ["disney"], "tags": [] }

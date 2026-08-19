@@ -13,6 +13,7 @@ public class TrackDto
     public List<string> Genres { get; set; } = [];
     public List<string> Tags { get; set; } = [];
     public List<string> TrapWith { get; set; } = [];
+    public string? TrapTextArtist { get; set; }
     public int? Year { get; set; }
     public required string FilePath { get; set; }
     public string? CoverPath { get; set; }

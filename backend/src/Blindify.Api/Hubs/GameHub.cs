@@ -121,7 +121,10 @@ public class GameHub(
             .ToList();
 
         if (qcmOptions is not null)
+        {
             AppliquerFeinteEventuelle(qcmOptions, track, round.Cible, session.Config);
+            AppliquerFeinteTexteEventuelle(qcmOptions, track, round.Cible, session.Config);
+        }
 
         if (session.HostConnectionId is not null)
         {
@@ -437,6 +440,26 @@ public class GameHub(
         options[index] = cible == RoundCible.Titre
             ? optionChoisie with { Title = correct.Artist }
             : optionChoisie with { Artist = correct.Title };
+    }
+
+    /// <summary>Feinte texte inventé (retour utilisateur, ex. Bastille - Pompéi -> "Baptiste") —
+    /// voir GameConfig.ProbabiliteQcmFeinteTexteArtiste. Contrairement à AppliquerFeinteEventuelle,
+    /// le texte de substitution ne vient pas d'un champ réel du morceau correct mais de
+    /// Track.TrapTextArtist, un leurre écrit à la main. Ne s'applique qu'en cible Auteur, et
+    /// seulement si le morceau correct a un TrapTextArtist renseigné. Le TrackId du distracteur
+    /// ne change pas : le sélectionner reste une mauvaise réponse normale.</summary>
+    private static void AppliquerFeinteTexteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
+    {
+        if (cible != RoundCible.Auteur || string.IsNullOrEmpty(correct.TrapTextArtist)) return;
+        if (Random.Shared.NextDouble() >= config.ProbabiliteQcmFeinteTexteArtiste) return;
+
+        var distracteurs = options.Where(o => o.TrackId != correct.Id).ToList();
+        if (distracteurs.Count == 0) return;
+
+        var optionChoisie = distracteurs[Random.Shared.Next(distracteurs.Count)];
+        var index = options.IndexOf(optionChoisie);
+
+        options[index] = optionChoisie with { Artist = correct.TrapTextArtist };
     }
 
     private static long CalculerTempsEcouleMs(GameSession session, Round round)
