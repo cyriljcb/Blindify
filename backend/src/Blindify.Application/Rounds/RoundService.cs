@@ -36,7 +36,12 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     public void DemarrerRound(Round round, Track track, IReadOnlyList<Track> catalogueComplet, GameConfig config, DateTimeOffset maintenant)
     {
         round.DebutRound = maintenant;
-        round.Cible = Random.Shared.Next(2) == 0 ? RoundCible.Titre : RoundCible.Auteur;
+        // Cible forcée à Titre pour les morceaux "disney" : l'artist crédité est souvent la voix/l'acteur
+        // (ex. "Jason Weaver, Rowan Atkinson, Laura Williams"), imprévisible à deviner pour un joueur —
+        // toujours affiché à l'écran de révélation, mais jamais demandé comme réponse.
+        round.Cible = track.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)
+            ? RoundCible.Titre
+            : Random.Shared.Next(2) == 0 ? RoundCible.Titre : RoundCible.Auteur;
 
         if (round.Mode == RoundMode.Qcm)
         {

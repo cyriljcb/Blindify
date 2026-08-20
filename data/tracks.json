@@ -20685,5 +20685,1942 @@
     "coverPath": "covers/1FsIoCTWHx6lB0f3PgYdtz.jpg",
     "refrainStartMs": 134554,
     "addedAt": "2026-08-19T08:19:25.593341+00:00"
+  },
+  {
+    "id": "2stkLJ0JNcXkIRDNF3ld6c",
+    "title": "You've Got a Friend in Me",
+    "artist": "Randy Newman",
+    "album": "Toy Story (Original Motion Picture Soundtrack)",
+    "spotifyId": "2stkLJ0JNcXkIRDNF3ld6c",
+    "youtubeId": "7vhA4KWXil0",
+    "durationMs": 124160,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1995,
+    "filePath": "audio/2stkLJ0JNcXkIRDNF3ld6c.mp3",
+    "coverPath": "covers/2stkLJ0JNcXkIRDNF3ld6c.jpg",
+    "refrainStartMs": 44352,
+    "addedAt": "2026-08-20T18:29:03.405162+00:00"
+  },
+  {
+    "id": "6H0JqH391qbGqe0zs3oZJW",
+    "title": "You're Welcome",
+    "artist": "Dwayne Johnson, Disney",
+    "album": "Moana (Original Motion Picture Soundtrack)",
+    "spotifyId": "6H0JqH391qbGqe0zs3oZJW",
+    "youtubeId": "0gnrlQu0_k4",
+    "durationMs": 167186,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2026,
+    "filePath": "audio/6H0JqH391qbGqe0zs3oZJW.mp3",
+    "coverPath": "covers/6H0JqH391qbGqe0zs3oZJW.jpg",
+    "refrainStartMs": 77823,
+    "addedAt": "2026-08-20T18:29:24.645244+00:00"
+  },
+  {
+    "id": "7o9qVPLe7MI7XhdAS1PkrN",
+    "title": "Zoo - From \"Zootopia 2\"",
+    "artist": "Disney, Shakira",
+    "album": "Zoo (From \"Zootopia 2\")",
+    "spotifyId": "7o9qVPLe7MI7XhdAS1PkrN",
+    "youtubeId": "Xry6B0I3pT8",
+    "durationMs": 190822,
+    "genres": [
+      "latin pop"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2025,
+    "filePath": "audio/7o9qVPLe7MI7XhdAS1PkrN.mp3",
+    "coverPath": "covers/7o9qVPLe7MI7XhdAS1PkrN.jpg",
+    "refrainStartMs": 155963,
+    "addedAt": "2026-08-20T18:29:47.733232+00:00"
+  },
+  {
+    "id": "5uPaqMMt59KGrdKIitDRqa",
+    "title": "I Knew It, I Knew You - From \"Toy Story 5\"",
+    "artist": "Taylor Swift",
+    "album": "I Knew It, I Knew You (From \"Toy Story 5\")",
+    "spotifyId": "5uPaqMMt59KGrdKIitDRqa",
+    "youtubeId": "mRFDNwDrW5w",
+    "durationMs": 178186,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2026,
+    "filePath": "audio/5uPaqMMt59KGrdKIitDRqa.mp3",
+    "coverPath": "covers/5uPaqMMt59KGrdKIitDRqa.jpg",
+    "refrainStartMs": 115819,
+    "addedAt": "2026-08-20T18:30:19.127778+00:00"
+  },
+  {
+    "id": "3oNTJ5qiAQx8xfIbYWWB7W",
+    "title": "I Always Wanted A Brother",
+    "artist": "Braelyn Rankins, Theo Somolu, Aaron Pierre, Kelvin Harrison Jr., Disney",
+    "album": "Mufasa: The Lion King (Original Motion Picture Soundtrack)",
+    "spotifyId": "3oNTJ5qiAQx8xfIbYWWB7W",
+    "youtubeId": "LnqikN644lM",
+    "durationMs": 214506,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2024,
+    "filePath": "audio/3oNTJ5qiAQx8xfIbYWWB7W.mp3",
+    "coverPath": "covers/3oNTJ5qiAQx8xfIbYWWB7W.jpg",
+    "refrainStartMs": 138858,
+    "addedAt": "2026-08-20T18:30:42.622203+00:00"
+  },
+  {
+    "id": "52xJxFP6TqMuO4Yt0eOkMz",
+    "title": "We Don't Talk About Bruno",
+    "artist": "Carolina Gaitán - La Gaita, Mauro Castillo, Adassa, Rhenzy Feliz, Diane Guerrero, Stephanie Beatriz, Encanto - Cast",
+    "album": "Encanto (Original Motion Picture Soundtrack)",
+    "spotifyId": "52xJxFP6TqMuO4Yt0eOkMz",
+    "youtubeId": "myzHJx320jI",
+    "durationMs": 216120,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2021,
+    "filePath": "audio/52xJxFP6TqMuO4Yt0eOkMz.mp3",
+    "coverPath": "covers/52xJxFP6TqMuO4Yt0eOkMz.jpg",
+    "refrainStartMs": 164927,
+    "addedAt": "2026-08-20T18:31:03.276165+00:00"
+  },
+  {
+    "id": "0L7dpG5vvfPxrhJnEZ5zg1",
+    "title": "How Far I'll Go",
+    "artist": "Catherine Laga'aia, Disney",
+    "album": "Moana (Original Motion Picture Soundtrack)",
+    "spotifyId": "0L7dpG5vvfPxrhJnEZ5zg1",
+    "youtubeId": "yhIzOYcJWoI",
+    "durationMs": 171040,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2026,
+    "filePath": "audio/0L7dpG5vvfPxrhJnEZ5zg1.mp3",
+    "coverPath": "covers/0L7dpG5vvfPxrhJnEZ5zg1.jpg",
+    "refrainStartMs": 118015,
+    "addedAt": "2026-08-20T18:31:26.849517+00:00"
+  },
+  {
+    "id": "70b5Sq3ePOu3Gqg0hjlOtR",
+    "title": "For the First Time in Forever",
+    "artist": "Kristen Bell, Idina Menzel",
+    "album": "Frozen (Original Motion Picture Soundtrack / Deluxe Edition)",
+    "spotifyId": "70b5Sq3ePOu3Gqg0hjlOtR",
+    "youtubeId": "IgcmAh4SYHg",
+    "durationMs": 225080,
+    "genres": [
+      "musicals"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2013,
+    "filePath": "audio/70b5Sq3ePOu3Gqg0hjlOtR.mp3",
+    "coverPath": "covers/70b5Sq3ePOu3Gqg0hjlOtR.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:31:47.187589+00:00"
+  },
+  {
+    "id": "4qqfI5oNO53a6W7nWfutKH",
+    "title": "Under the Sea",
+    "artist": "Samuel E. Wright, Disney",
+    "album": "The Little Mermaid (Original Motion Picture Soundtrack)",
+    "spotifyId": "4qqfI5oNO53a6W7nWfutKH",
+    "youtubeId": "ChNJ_FMtSnk",
+    "durationMs": 195146,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/4qqfI5oNO53a6W7nWfutKH.mp3",
+    "coverPath": "covers/4qqfI5oNO53a6W7nWfutKH.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:32:08.015819+00:00"
+  },
+  {
+    "id": "1N3dZ7TTWO6VcD4Y3hHYLZ",
+    "title": "Try Everything",
+    "artist": "Shakira",
+    "album": "Zootopia (Original Motion Picture Soundtrack)",
+    "spotifyId": "1N3dZ7TTWO6VcD4Y3hHYLZ",
+    "youtubeId": "jpqV3dzYOgk",
+    "durationMs": 196853,
+    "genres": [
+      "latin pop"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2016,
+    "filePath": "audio/1N3dZ7TTWO6VcD4Y3hHYLZ.mp3",
+    "coverPath": "covers/1N3dZ7TTWO6VcD4Y3hHYLZ.jpg",
+    "refrainStartMs": 131417,
+    "addedAt": "2026-08-20T18:32:27.263445+00:00"
+  },
+  {
+    "id": "0OFknyqxmSQ42SoKxWVTok",
+    "title": "Un Poco Loco",
+    "artist": "Anthony Gonzalez, Gael Garcia Bernal",
+    "album": "Coco (Original Motion Picture Soundtrack)",
+    "spotifyId": "0OFknyqxmSQ42SoKxWVTok",
+    "youtubeId": "MalsRkzmnWU",
+    "durationMs": 112205,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2017,
+    "filePath": "audio/0OFknyqxmSQ42SoKxWVTok.mp3",
+    "coverPath": "covers/0OFknyqxmSQ42SoKxWVTok.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:32:44.593451+00:00"
+  },
+  {
+    "id": "5J4pDyvjRrYfcgHetKjKSj",
+    "title": "Part of Your World",
+    "artist": "Jodi Benson, Disney",
+    "album": "The Little Mermaid (Original Motion Picture Soundtrack)",
+    "spotifyId": "5J4pDyvjRrYfcgHetKjKSj",
+    "youtubeId": "sg1Y6Vxl6Nk",
+    "durationMs": 195493,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/5J4pDyvjRrYfcgHetKjKSj.mp3",
+    "coverPath": "covers/5J4pDyvjRrYfcgHetKjKSj.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:33:06.959927+00:00"
+  },
+  {
+    "id": "760jhRscwGbIIe1m1IIQpU",
+    "title": "Surface Pressure",
+    "artist": "Jessica Darrow",
+    "album": "Encanto (Original Motion Picture Soundtrack)",
+    "spotifyId": "760jhRscwGbIIe1m1IIQpU",
+    "youtubeId": "ErY3eeRFTFg",
+    "durationMs": 202226,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2021,
+    "filePath": "audio/760jhRscwGbIIe1m1IIQpU.mp3",
+    "coverPath": "covers/760jhRscwGbIIe1m1IIQpU.jpg",
+    "refrainStartMs": 174145,
+    "addedAt": "2026-08-20T18:33:29.518855+00:00"
+  },
+  {
+    "id": "0qcr5FMsEO85NAQjrlDRKo",
+    "title": "Let It Go",
+    "artist": "Idina Menzel",
+    "album": "Frozen (Original Motion Picture Soundtrack / Deluxe Edition)",
+    "spotifyId": "0qcr5FMsEO85NAQjrlDRKo",
+    "youtubeId": "L0MK7qz13bU",
+    "durationMs": 223840,
+    "genres": [
+      "musicals"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2013,
+    "filePath": "audio/0qcr5FMsEO85NAQjrlDRKo.mp3",
+    "coverPath": "covers/0qcr5FMsEO85NAQjrlDRKo.jpg",
+    "refrainStartMs": 189982,
+    "addedAt": "2026-08-20T18:33:55.251465+00:00"
+  },
+  {
+    "id": "0qxtQ8rf3W1nId3D2r0xH4",
+    "title": "I Just Can't Wait to Be King",
+    "artist": "Jason Weaver, Rowan Atkinson, Laura Williams",
+    "album": "The Lion King",
+    "spotifyId": "0qxtQ8rf3W1nId3D2r0xH4",
+    "youtubeId": "INugjPMaOWs",
+    "durationMs": 170880,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1994,
+    "filePath": "audio/0qxtQ8rf3W1nId3D2r0xH4.mp3",
+    "coverPath": "covers/0qxtQ8rf3W1nId3D2r0xH4.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:34:14.421116+00:00"
+  },
+  {
+    "id": "1hwdPQtFHISvZ9SXMkNrIK",
+    "title": "A Whole New World",
+    "artist": "Lea Salonga, Brad Kane, Disney",
+    "album": "Aladdin Special Edition",
+    "spotifyId": "1hwdPQtFHISvZ9SXMkNrIK",
+    "youtubeId": "xYjFxFFdyyk",
+    "durationMs": 160800,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2004,
+    "filePath": "audio/1hwdPQtFHISvZ9SXMkNrIK.mp3",
+    "coverPath": "covers/1hwdPQtFHISvZ9SXMkNrIK.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:34:38.137426+00:00"
+  },
+  {
+    "id": "6klpXs2uAjagnZMFkt4qkl",
+    "title": "I See the Light",
+    "artist": "Mandy Moore, Zachary Levi",
+    "album": "Tangled",
+    "spotifyId": "6klpXs2uAjagnZMFkt4qkl",
+    "youtubeId": "hYbHzzWmKUs",
+    "durationMs": 224240,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2010,
+    "filePath": "audio/6klpXs2uAjagnZMFkt4qkl.mp3",
+    "coverPath": "covers/6klpXs2uAjagnZMFkt4qkl.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:35:00.972299+00:00"
+  },
+  {
+    "id": "5B9NXrba4LAq1oaABEe9ML",
+    "title": "Where You Are",
+    "artist": "John Tui, Frankie Adams, Emma Puahi-Shapazian, Amaya Masoli, Rena Owen, Catherine Laga'aia, Te Vaka, Disney",
+    "album": "Moana (Original Motion Picture Soundtrack)",
+    "spotifyId": "5B9NXrba4LAq1oaABEe9ML",
+    "youtubeId": "-DvJ0rEZwN8",
+    "durationMs": 221133,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2026,
+    "filePath": "audio/5B9NXrba4LAq1oaABEe9ML.mp3",
+    "coverPath": "covers/5B9NXrba4LAq1oaABEe9ML.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:35:23.383516+00:00"
+  },
+  {
+    "id": "3IPnBzGRMg6BfViFxxa0Gq",
+    "title": "Love Is an Open Door",
+    "artist": "Kristen Bell, Santino Fontana",
+    "album": "Frozen (Original Motion Picture Soundtrack / Deluxe Edition)",
+    "spotifyId": "3IPnBzGRMg6BfViFxxa0Gq",
+    "youtubeId": "kQDw88hEr2c",
+    "durationMs": 124733,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2013,
+    "filePath": "audio/3IPnBzGRMg6BfViFxxa0Gq.mp3",
+    "coverPath": "covers/3IPnBzGRMg6BfViFxxa0Gq.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:35:40.570483+00:00"
+  },
+  {
+    "id": "28UMEtwyUUy5u0UWOVHwiI",
+    "title": "I'll Make a Man Out of You",
+    "artist": "Donny Osmond, Chorus - Mulan, Disney",
+    "album": "Mulan (Original Soundtrack)",
+    "spotifyId": "28UMEtwyUUy5u0UWOVHwiI",
+    "youtubeId": "elBKil5zE2g",
+    "durationMs": 201680,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1998,
+    "filePath": "audio/28UMEtwyUUy5u0UWOVHwiI.mp3",
+    "coverPath": "covers/28UMEtwyUUy5u0UWOVHwiI.jpg",
+    "refrainStartMs": 50141,
+    "addedAt": "2026-08-20T18:36:04.361504+00:00"
+  },
+  {
+    "id": "6Z0F3Mqj7tq1CBZo5qMlUg",
+    "title": "The Best of Both Worlds",
+    "artist": "Hannah Montana",
+    "album": "Hannah Montana",
+    "spotifyId": "6Z0F3Mqj7tq1CBZo5qMlUg",
+    "youtubeId": "4yG_1jnwFxg",
+    "durationMs": 174120,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2006,
+    "filePath": "audio/6Z0F3Mqj7tq1CBZo5qMlUg.mp3",
+    "coverPath": "covers/6Z0F3Mqj7tq1CBZo5qMlUg.jpg",
+    "refrainStartMs": 76855,
+    "addedAt": "2026-08-20T18:36:22.698315+00:00"
+  },
+  {
+    "id": "5pomCBdsTZSDCFHH8BAUQe",
+    "title": "This Is Me",
+    "artist": "Demi Lovato, Joe Jonas",
+    "album": "Camp Rock",
+    "spotifyId": "5pomCBdsTZSDCFHH8BAUQe",
+    "youtubeId": "kocLt9yLxfE",
+    "durationMs": 189173,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2008,
+    "filePath": "audio/5pomCBdsTZSDCFHH8BAUQe.mp3",
+    "coverPath": "covers/5pomCBdsTZSDCFHH8BAUQe.jpg",
+    "refrainStartMs": 81659,
+    "addedAt": "2026-08-20T18:36:43.153253+00:00"
+  },
+  {
+    "id": "4Y8vb1uy9IjM2V1hqvrAid",
+    "title": "You'll Be In My Heart",
+    "artist": "Phil Collins",
+    "album": "Tarzan (Original Motion Picture Soundtrack)",
+    "spotifyId": "4Y8vb1uy9IjM2V1hqvrAid",
+    "youtubeId": "w0ZHlp6atUQ",
+    "durationMs": 256733,
+    "genres": [
+      "soft rock"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1999,
+    "filePath": "audio/4Y8vb1uy9IjM2V1hqvrAid.mp3",
+    "coverPath": "covers/4Y8vb1uy9IjM2V1hqvrAid.jpg",
+    "refrainStartMs": 112309,
+    "addedAt": "2026-08-20T18:37:03.588687+00:00"
+  },
+  {
+    "id": "2cFGv8v5DcbJXHEdzouFne",
+    "title": "Remember Me (Lullaby)",
+    "artist": "Gael Garcia Bernal, Gabriella Flores, Libertad García Fonzi",
+    "album": "Coco (Original Motion Picture Soundtrack)",
+    "spotifyId": "2cFGv8v5DcbJXHEdzouFne",
+    "youtubeId": "Ju0pseKeuY8",
+    "durationMs": 69813,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2017,
+    "filePath": "audio/2cFGv8v5DcbJXHEdzouFne.mp3",
+    "coverPath": "covers/2cFGv8v5DcbJXHEdzouFne.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:37:18.339673+00:00"
+  },
+  {
+    "id": "4Yxc55NX3tAXC2mHRAhtcW",
+    "title": "All I Want - From \"High School Musical: The Musical: The Series\"",
+    "artist": "Olivia Rodrigo, Disney",
+    "album": "All I Want (From \"High School Musical: The Musical: The Series\")",
+    "spotifyId": "4Yxc55NX3tAXC2mHRAhtcW",
+    "youtubeId": "RK1V6T5YNpI",
+    "durationMs": 177322,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2019,
+    "filePath": "audio/4Yxc55NX3tAXC2mHRAhtcW.mp3",
+    "coverPath": "covers/4Yxc55NX3tAXC2mHRAhtcW.jpg",
+    "refrainStartMs": 46809,
+    "addedAt": "2026-08-20T18:37:39.136690+00:00"
+  },
+  {
+    "id": "3Z0oQ8r78OUaHvGPiDBR3W",
+    "title": "Into the Unknown",
+    "artist": "Idina Menzel, AURORA",
+    "album": "Frozen 2 (Original Motion Picture Soundtrack/Deluxe Edition)",
+    "spotifyId": "3Z0oQ8r78OUaHvGPiDBR3W",
+    "youtubeId": "l1uoTMkhUiE",
+    "durationMs": 194848,
+    "genres": [
+      "art pop",
+      "musicals",
+      "norwegian pop"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2019,
+    "filePath": "audio/3Z0oQ8r78OUaHvGPiDBR3W.mp3",
+    "coverPath": "covers/3Z0oQ8r78OUaHvGPiDBR3W.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:38:01.828820+00:00"
+  },
+  {
+    "id": "2GLyruWagsv8o7aGNXboH1",
+    "title": "Almost There",
+    "artist": "Anika Noni Rose",
+    "album": "The Princess and the Frog (Original Motion Picture Soundtrack)",
+    "spotifyId": "2GLyruWagsv8o7aGNXboH1",
+    "youtubeId": "ThMwHKfzz1I",
+    "durationMs": 144426,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2009,
+    "filePath": "audio/2GLyruWagsv8o7aGNXboH1.mp3",
+    "coverPath": "covers/2GLyruWagsv8o7aGNXboH1.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:38:26.412943+00:00"
+  },
+  {
+    "id": "1uAl1ygEbZfWvHMW90t0dW",
+    "title": "Someday",
+    "artist": "ZOMBIES – Cast, Disney",
+    "album": "ZOMBIES 3 (Original Soundtrack)",
+    "spotifyId": "1uAl1ygEbZfWvHMW90t0dW",
+    "youtubeId": "EVYPt97q3vc",
+    "durationMs": 95981,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2022,
+    "filePath": "audio/1uAl1ygEbZfWvHMW90t0dW.mp3",
+    "coverPath": "covers/1uAl1ygEbZfWvHMW90t0dW.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:38:47.355587+00:00"
+  },
+  {
+    "id": "0V8FYVlBFuXXTIvRnMbZyS",
+    "title": "The Climb",
+    "artist": "Miley Cyrus",
+    "album": "Hannah Montana The Movie",
+    "spotifyId": "0V8FYVlBFuXXTIvRnMbZyS",
+    "youtubeId": "LWL5v2y_dOI",
+    "durationMs": 236066,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2009,
+    "filePath": "audio/0V8FYVlBFuXXTIvRnMbZyS.mp3",
+    "coverPath": "covers/0V8FYVlBFuXXTIvRnMbZyS.jpg",
+    "refrainStartMs": 159104,
+    "addedAt": "2026-08-20T18:39:05.879225+00:00"
+  },
+  {
+    "id": "03xWMkKEbeO4SnylA53ipj",
+    "title": "When Will My Life Begin?",
+    "artist": "Mandy Moore",
+    "album": "Tangled",
+    "spotifyId": "03xWMkKEbeO4SnylA53ipj",
+    "youtubeId": "EUC8fhuPMaM",
+    "durationMs": 152333,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2010,
+    "filePath": "audio/03xWMkKEbeO4SnylA53ipj.mp3",
+    "coverPath": "covers/03xWMkKEbeO4SnylA53ipj.jpg",
+    "refrainStartMs": 64229,
+    "addedAt": "2026-08-20T18:39:25.739913+00:00"
+  },
+  {
+    "id": "7GmiJVBAzWNikX5VkNQg85",
+    "title": "Hawaiian Roller Coaster Ride",
+    "artist": "Mark Keali'i Ho'omalu, Kamehameha Schools Children's Chorus",
+    "album": "Lilo & Stitch",
+    "spotifyId": "7GmiJVBAzWNikX5VkNQg85",
+    "youtubeId": "-mHtizddaUQ",
+    "durationMs": 208226,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2002,
+    "filePath": "audio/7GmiJVBAzWNikX5VkNQg85.mp3",
+    "coverPath": "covers/7GmiJVBAzWNikX5VkNQg85.jpg",
+    "refrainStartMs": 163925,
+    "addedAt": "2026-08-20T18:39:45.223237+00:00"
+  },
+  {
+    "id": "0SccFtYdj75y6lL2OW10Cf",
+    "title": "Steal The Show",
+    "artist": "LAUV",
+    "album": "Elemental (Original Motion Picture Soundtrack)",
+    "spotifyId": "0SccFtYdj75y6lL2OW10Cf",
+    "youtubeId": "DwuJeGYlYyw",
+    "durationMs": 192506,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2023,
+    "filePath": "audio/0SccFtYdj75y6lL2OW10Cf.mp3",
+    "coverPath": "covers/0SccFtYdj75y6lL2OW10Cf.jpg",
+    "refrainStartMs": 163184,
+    "addedAt": "2026-08-20T18:40:10.171534+00:00"
+  },
+  {
+    "id": "2yi7HZrBOC4bMUSTcs4VK6",
+    "title": "Do You Want to Build a Snowman?",
+    "artist": "Kristen Bell, Agatha Lee Monn, Katie Lopez",
+    "album": "Frozen (Original Motion Picture Soundtrack / Deluxe Edition)",
+    "spotifyId": "2yi7HZrBOC4bMUSTcs4VK6",
+    "youtubeId": "SeEGfkqGR9Y",
+    "durationMs": 206506,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2013,
+    "filePath": "audio/2yi7HZrBOC4bMUSTcs4VK6.mp3",
+    "coverPath": "covers/2yi7HZrBOC4bMUSTcs4VK6.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:40:30.911648+00:00"
+  },
+  {
+    "id": "09002VzEaxqBuwzdY2KQv2",
+    "title": "Can I Get A Chee Hoo?",
+    "artist": "Dwayne Johnson, Disney",
+    "album": "Moana 2 (Original Motion Picture Soundtrack)",
+    "spotifyId": "09002VzEaxqBuwzdY2KQv2",
+    "youtubeId": "A2PdCFG6gnk",
+    "durationMs": 169560,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2024,
+    "filePath": "audio/09002VzEaxqBuwzdY2KQv2.mp3",
+    "coverPath": "covers/09002VzEaxqBuwzdY2KQv2.jpg",
+    "refrainStartMs": 130374,
+    "addedAt": "2026-08-20T18:40:49.448381+00:00"
+  },
+  {
+    "id": "5k3U0OGYBccHdKJJu3HrUN",
+    "title": "Hakuna Matata",
+    "artist": "Nathan Lane, Ernie Sabella, Jason Weaver, Joseph Williams",
+    "album": "The Lion King",
+    "spotifyId": "5k3U0OGYBccHdKJJu3HrUN",
+    "youtubeId": "MBIWFTXQbi4",
+    "durationMs": 213600,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1994,
+    "filePath": "audio/5k3U0OGYBccHdKJJu3HrUN.mp3",
+    "coverPath": "covers/5k3U0OGYBccHdKJJu3HrUN.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:41:14.095517+00:00"
+  },
+  {
+    "id": "5gB2IrxOCX2j9bMnHKP38i",
+    "title": "Life is a Highway",
+    "artist": "Rascal Flatts",
+    "album": "Cars (Original Motion Picture Soundtrack)",
+    "spotifyId": "5gB2IrxOCX2j9bMnHKP38i",
+    "youtubeId": "2FX5DKRt2xg",
+    "durationMs": 275640,
+    "genres": [
+      "country"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2006,
+    "filePath": "audio/5gB2IrxOCX2j9bMnHKP38i.mp3",
+    "coverPath": "covers/5gB2IrxOCX2j9bMnHKP38i.jpg",
+    "refrainStartMs": 123844,
+    "addedAt": "2026-08-20T18:41:34.677264+00:00"
+  },
+  {
+    "id": "4zDfgax6Ihb0UWdour1ZEs",
+    "title": "Zero To Hero",
+    "artist": "Chorus - Hercules, Lillias White, Cheryl Freeman, LaChanze, Roz Ryan, Vaneese Thomas, Tawatha Agee, Disney",
+    "album": "Hercules (Original Motion Picture Soundtrack)",
+    "spotifyId": "4zDfgax6Ihb0UWdour1ZEs",
+    "youtubeId": "woO9FidFa6o",
+    "durationMs": 140573,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/4zDfgax6Ihb0UWdour1ZEs.mp3",
+    "coverPath": "covers/4zDfgax6Ihb0UWdour1ZEs.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:41:53.752746+00:00"
+  },
+  {
+    "id": "2rJFFUEl1LURkV0b0OARXx",
+    "title": "Beauty and the Beast",
+    "artist": "Angela Lansbury, Disney",
+    "album": "Beauty and the Beast",
+    "spotifyId": "2rJFFUEl1LURkV0b0OARXx",
+    "youtubeId": "-bwlEdFui00",
+    "durationMs": 166306,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1991,
+    "filePath": "audio/2rJFFUEl1LURkV0b0OARXx.mp3",
+    "coverPath": "covers/2rJFFUEl1LURkV0b0OARXx.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:42:12.471873+00:00"
+  },
+  {
+    "id": "50WeOnXhM1H7AZEeIDoWfZ",
+    "title": "Show Yourself",
+    "artist": "Idina Menzel, Evan Rachel Wood",
+    "album": "Frozen 2 (Original Motion Picture Soundtrack/Deluxe Edition)",
+    "spotifyId": "50WeOnXhM1H7AZEeIDoWfZ",
+    "youtubeId": "md7dK5-qvHc",
+    "durationMs": 260906,
+    "genres": [
+      "musicals"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2019,
+    "filePath": "audio/50WeOnXhM1H7AZEeIDoWfZ.mp3",
+    "coverPath": "covers/50WeOnXhM1H7AZEeIDoWfZ.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:42:39.728342+00:00"
+  },
+  {
+    "id": "28NuQOBWZGX9jG647T6vWV",
+    "title": "Beyond",
+    "artist": "Auli'i Cravalho, Disney, Rachel House",
+    "album": "Moana 2 (Original Motion Picture Soundtrack)",
+    "spotifyId": "28NuQOBWZGX9jG647T6vWV",
+    "youtubeId": "DUnpoR30wLQ",
+    "durationMs": 230266,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2024,
+    "filePath": "audio/28NuQOBWZGX9jG647T6vWV.mp3",
+    "coverPath": "covers/28NuQOBWZGX9jG647T6vWV.jpg",
+    "refrainStartMs": 89135,
+    "addedAt": "2026-08-20T18:43:02.945690+00:00"
+  },
+  {
+    "id": "4bV5sf2B4hWBBd5HQ8S7KB",
+    "title": "Nobody Like U",
+    "artist": "4*TOWN (From Disney and Pixar’s Turning Red), Jordan Fisher, Topher Ngo, Grayson Villanueva, Josh Levi",
+    "album": "Turning Red (Original Motion Picture Soundtrack)",
+    "spotifyId": "4bV5sf2B4hWBBd5HQ8S7KB",
+    "youtubeId": "mT0kN0_XumA",
+    "durationMs": 160946,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2022,
+    "filePath": "audio/4bV5sf2B4hWBBd5HQ8S7KB.mp3",
+    "coverPath": "covers/4bV5sf2B4hWBBd5HQ8S7KB.jpg",
+    "refrainStartMs": 77789,
+    "addedAt": "2026-08-20T18:43:23.172200+00:00"
+  },
+  {
+    "id": "7kh64k3P9Fk4EsA6vOdwmj",
+    "title": "Dig a Little Deeper",
+    "artist": "Jenifer Lewis, The Pinnacle Gospel Choir",
+    "album": "The Princess and the Frog (Original Motion Picture Soundtrack)",
+    "spotifyId": "7kh64k3P9Fk4EsA6vOdwmj",
+    "youtubeId": "V1U5si-Rcss",
+    "durationMs": 167933,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2009,
+    "filePath": "audio/7kh64k3P9Fk4EsA6vOdwmj.mp3",
+    "coverPath": "covers/7kh64k3P9Fk4EsA6vOdwmj.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:43:41.253422+00:00"
+  },
+  {
+    "id": "6btdYzQ8eZFBrOlUKVHuz0",
+    "title": "Be Our Guest",
+    "artist": "Angela Lansbury, Jerry Orbach, Chorus - Beauty And the Beast, Disney",
+    "album": "Beauty and the Beast",
+    "spotifyId": "6btdYzQ8eZFBrOlUKVHuz0",
+    "youtubeId": "npJa14mxCVY",
+    "durationMs": 224733,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1991,
+    "filePath": "audio/6btdYzQ8eZFBrOlUKVHuz0.mp3",
+    "coverPath": "covers/6btdYzQ8eZFBrOlUKVHuz0.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:44:11.344729+00:00"
+  },
+  {
+    "id": "3T74kgnbHw8JqkYGJKD4Tl",
+    "title": "Strangers Like Me",
+    "artist": "Phil Collins",
+    "album": "Tarzan (Original Motion Picture Soundtrack)",
+    "spotifyId": "3T74kgnbHw8JqkYGJKD4Tl",
+    "youtubeId": "NkbjpZMFYCk",
+    "durationMs": 180520,
+    "genres": [
+      "soft rock"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1999,
+    "filePath": "audio/3T74kgnbHw8JqkYGJKD4Tl.mp3",
+    "coverPath": "covers/3T74kgnbHw8JqkYGJKD4Tl.jpg",
+    "refrainStartMs": 80549,
+    "addedAt": "2026-08-20T18:44:30.025948+00:00"
+  },
+  {
+    "id": "1fvc8FP8MUrIbHGYb4kF89",
+    "title": "Down in New Orleans (Finale)",
+    "artist": "Anika Noni Rose",
+    "album": "The Princess and the Frog (Original Motion Picture Soundtrack)",
+    "spotifyId": "1fvc8FP8MUrIbHGYb4kF89",
+    "youtubeId": "bR7VnYQkZy4",
+    "durationMs": 95493,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2009,
+    "filePath": "audio/1fvc8FP8MUrIbHGYb4kF89.mp3",
+    "coverPath": "covers/1fvc8FP8MUrIbHGYb4kF89.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:44:43.975644+00:00"
+  },
+  {
+    "id": "5f2TWu6R2YYCJtLQ0fP78H",
+    "title": "Friend Like Me",
+    "artist": "Will Smith",
+    "album": "Aladdin (Original Motion Picture Soundtrack)",
+    "spotifyId": "5f2TWu6R2YYCJtLQ0fP78H",
+    "youtubeId": "DYxrVBu2_gc",
+    "durationMs": 155531,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2019,
+    "filePath": "audio/5f2TWu6R2YYCJtLQ0fP78H.mp3",
+    "coverPath": "covers/5f2TWu6R2YYCJtLQ0fP78H.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:45:04.767793+00:00"
+  },
+  {
+    "id": "5E8yddtSG3sH4hw2SfwcgW",
+    "title": "Can You Feel the Love Tonight",
+    "artist": "Joseph Williams, Sally Dworsky, Nathan Lane, Ernie Sabella, Kristle Edwards",
+    "album": "The Lion King",
+    "spotifyId": "5E8yddtSG3sH4hw2SfwcgW",
+    "youtubeId": "EgjJk9hPzw8",
+    "durationMs": 177786,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1994,
+    "filePath": "audio/5E8yddtSG3sH4hw2SfwcgW.mp3",
+    "coverPath": "covers/5E8yddtSG3sH4hw2SfwcgW.jpg",
+    "refrainStartMs": 84837,
+    "addedAt": "2026-08-20T18:45:32.202912+00:00"
+  },
+  {
+    "id": "4Xbotg4PCLJw9cDx2dtZLK",
+    "title": "Some Things Never Change",
+    "artist": "Kristen Bell, Idina Menzel, Josh Gad, Jonathan Groff, Cast of Frozen 2",
+    "album": "Frozen 2 (Original Motion Picture Soundtrack/Deluxe Edition)",
+    "spotifyId": "4Xbotg4PCLJw9cDx2dtZLK",
+    "youtubeId": "T1E0CAGdQb0",
+    "durationMs": 209964,
+    "genres": [
+      "musicals"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2019,
+    "filePath": "audio/4Xbotg4PCLJw9cDx2dtZLK.mp3",
+    "coverPath": "covers/4Xbotg4PCLJw9cDx2dtZLK.jpg",
+    "refrainStartMs": 64252,
+    "addedAt": "2026-08-20T18:45:53.230592+00:00"
+  },
+  {
+    "id": "0CKmN3Wwk8W4zjU0pqq2cv",
+    "title": "Arabian Nights",
+    "artist": "Bruce Adler, Disney",
+    "album": "Aladdin (Original Motion Picture Soundtrack)",
+    "spotifyId": "0CKmN3Wwk8W4zjU0pqq2cv",
+    "youtubeId": "1K6gj2nSIvM",
+    "durationMs": 79293,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1992,
+    "filePath": "audio/0CKmN3Wwk8W4zjU0pqq2cv.mp3",
+    "coverPath": "covers/0CKmN3Wwk8W4zjU0pqq2cv.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:46:10.125680+00:00"
+  },
+  {
+    "id": "5yyqx4brn6Bm9U1Rj9ENnz",
+    "title": "Touch The Sky",
+    "artist": "Julie Fowlis",
+    "album": "Brave (Original Soundtrack)",
+    "spotifyId": "5yyqx4brn6Bm9U1Rj9ENnz",
+    "youtubeId": "-8Q_OpCE-4k",
+    "durationMs": 151400,
+    "genres": [
+      "celtic"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2012,
+    "filePath": "audio/5yyqx4brn6Bm9U1Rj9ENnz.mp3",
+    "coverPath": "covers/5yyqx4brn6Bm9U1Rj9ENnz.jpg",
+    "refrainStartMs": 92399,
+    "addedAt": "2026-08-20T18:46:29.228613+00:00"
+  },
+  {
+    "id": "3wjgPeXocinhLyPL37p70e",
+    "title": "A Girl Worth Fighting For",
+    "artist": "Lea Salonga, Harvey Fierstein, Matthew Wilder, James Hong, Jerry Tondo, Disney",
+    "album": "Mulan (Original Soundtrack)",
+    "spotifyId": "3wjgPeXocinhLyPL37p70e",
+    "youtubeId": "0RCMM4qwz3U",
+    "durationMs": 146053,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1998,
+    "filePath": "audio/3wjgPeXocinhLyPL37p70e.mp3",
+    "coverPath": "covers/3wjgPeXocinhLyPL37p70e.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:46:47.354579+00:00"
+  },
+  {
+    "id": "0cqNGWvuukhCiKvEX7utys",
+    "title": "We're All In This Together",
+    "artist": "High School Musical Cast, Disney",
+    "album": "High School Musical",
+    "spotifyId": "0cqNGWvuukhCiKvEX7utys",
+    "youtubeId": "Bz73c8rz4QA",
+    "durationMs": 231426,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2006,
+    "filePath": "audio/0cqNGWvuukhCiKvEX7utys.mp3",
+    "coverPath": "covers/0cqNGWvuukhCiKvEX7utys.jpg",
+    "refrainStartMs": 137444,
+    "addedAt": "2026-08-20T18:47:08.815679+00:00"
+  },
+  {
+    "id": "0PKmDncVOiNQLO6D1P6PXi",
+    "title": "I Won't Say (I'm In Love)",
+    "artist": "Susan Egan, Cheryl Freeman, LaChanze, Vaneese Thomas, Lillias White, Disney",
+    "album": "Hercules (Original Motion Picture Soundtrack)",
+    "spotifyId": "0PKmDncVOiNQLO6D1P6PXi",
+    "youtubeId": "E4R_5-qppQM",
+    "durationMs": 140226,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/0PKmDncVOiNQLO6D1P6PXi.mp3",
+    "coverPath": "covers/0PKmDncVOiNQLO6D1P6PXi.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:47:26.718756+00:00"
+  },
+  {
+    "id": "7J1S5n6Kn4wZEu6xrBT0gk",
+    "title": "What Dreams Are Made Of",
+    "artist": "Hilary Duff",
+    "album": "The Lizzie McGuire Movie (Original Motion Picture Soundtrack)",
+    "spotifyId": "7J1S5n6Kn4wZEu6xrBT0gk",
+    "youtubeId": "nvju-ZY8peo",
+    "durationMs": 242160,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2021,
+    "filePath": "audio/7J1S5n6Kn4wZEu6xrBT0gk.mp3",
+    "coverPath": "covers/7J1S5n6Kn4wZEu6xrBT0gk.jpg",
+    "refrainStartMs": 75025,
+    "addedAt": "2026-08-20T18:47:45.950346+00:00"
+  },
+  {
+    "id": "0HU5JnVaKNTWf6GykV9Zn8",
+    "title": "Circle of Life",
+    "artist": "Carmen Twillie, Lebo M.",
+    "album": "The Lion King",
+    "spotifyId": "0HU5JnVaKNTWf6GykV9Zn8",
+    "youtubeId": "VHk1hqvcEgQ",
+    "durationMs": 239146,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1994,
+    "filePath": "audio/0HU5JnVaKNTWf6GykV9Zn8.mp3",
+    "coverPath": "covers/0HU5JnVaKNTWf6GykV9Zn8.jpg",
+    "refrainStartMs": 168031,
+    "addedAt": "2026-08-20T18:48:09.714102+00:00"
+  },
+  {
+    "id": "1mRBJdpIgc3jZH8C3cN2WV",
+    "title": "If Only",
+    "artist": "Dove Cameron, Disney",
+    "album": "Descendants (Original TV Movie Soundtrack)",
+    "spotifyId": "1mRBJdpIgc3jZH8C3cN2WV",
+    "youtubeId": "Dyheq5S1-GE",
+    "durationMs": 229813,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2015,
+    "filePath": "audio/1mRBJdpIgc3jZH8C3cN2WV.mp3",
+    "coverPath": "covers/1mRBJdpIgc3jZH8C3cN2WV.jpg",
+    "refrainStartMs": 164145,
+    "addedAt": "2026-08-20T18:48:29.841184+00:00"
+  },
+  {
+    "id": "5ZkAx8zjLiSs1nMmBwJoZS",
+    "title": "When Can I See You Again? - From \"Wreck-It Ralph\"/Soundtrack Version",
+    "artist": "Owl City",
+    "album": "Wreck-It Ralph",
+    "spotifyId": "5ZkAx8zjLiSs1nMmBwJoZS",
+    "youtubeId": "RsAOWlSMnaI",
+    "durationMs": 218093,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2012,
+    "filePath": "audio/5ZkAx8zjLiSs1nMmBwJoZS.mp3",
+    "coverPath": "covers/5ZkAx8zjLiSs1nMmBwJoZS.jpg",
+    "refrainStartMs": 157212,
+    "addedAt": "2026-08-20T18:48:48.807959+00:00"
+  },
+  {
+    "id": "7lPxGs556PD8H3bUd9LzHp",
+    "title": "I2I",
+    "artist": "Tevin Campbell, Rosie Gaines",
+    "album": "A Goofy Movie",
+    "spotifyId": "7lPxGs556PD8H3bUd9LzHp",
+    "youtubeId": "j4asUD0Ip5c",
+    "durationMs": 241386,
+    "genres": [
+      "new jack swing",
+      "quiet storm"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1995,
+    "filePath": "audio/7lPxGs556PD8H3bUd9LzHp.mp3",
+    "coverPath": "covers/7lPxGs556PD8H3bUd9LzHp.jpg",
+    "refrainStartMs": 77801,
+    "addedAt": "2026-08-20T18:49:07.046833+00:00"
+  },
+  {
+    "id": "05miM6U3bpqzG5BRr0C8FF",
+    "title": "Supercalifragilisticexpialidocious - From \"Mary Poppins\" Soundtrack",
+    "artist": "Julie Andrews, Dick Van Dyke, The Pearlie Chorus",
+    "album": "Mary Poppins",
+    "spotifyId": "05miM6U3bpqzG5BRr0C8FF",
+    "youtubeId": "XH-dPy9JJMY",
+    "durationMs": 123026,
+    "genres": [
+      "musicals"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/05miM6U3bpqzG5BRr0C8FF.mp3",
+    "coverPath": "covers/05miM6U3bpqzG5BRr0C8FF.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:49:23.132377+00:00"
+  },
+  {
+    "id": "6P316E7tFylzpVrDrXVF9s",
+    "title": "Just Around the Riverbend",
+    "artist": "Judy Kuhn",
+    "album": "Pocahontas",
+    "spotifyId": "6P316E7tFylzpVrDrXVF9s",
+    "youtubeId": "18Hi_Q7HKyw",
+    "durationMs": 147706,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1995,
+    "filePath": "audio/6P316E7tFylzpVrDrXVF9s.mp3",
+    "coverPath": "covers/6P316E7tFylzpVrDrXVF9s.jpg",
+    "refrainStartMs": 66802,
+    "addedAt": "2026-08-20T18:49:41.229054+00:00"
+  },
+  {
+    "id": "50ssiEHx556vul2XyUbxwU",
+    "title": "Bibbidi-Bobbidi-Boo - From \"Cinderella\" Soundtrack",
+    "artist": "Verna Felton",
+    "album": "Disney's Greatest Volume 1",
+    "spotifyId": "50ssiEHx556vul2XyUbxwU",
+    "youtubeId": "XuUezgpmVQM",
+    "durationMs": 77933,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2001,
+    "filePath": "audio/50ssiEHx556vul2XyUbxwU.mp3",
+    "coverPath": "covers/50ssiEHx556vul2XyUbxwU.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:49:55.616823+00:00"
+  },
+  {
+    "id": "0D1OY0M5A0qD5HGBvFmFid",
+    "title": "Go the Distance",
+    "artist": "Roger Bart, Disney",
+    "album": "Hercules (Original Motion Picture Soundtrack)",
+    "spotifyId": "0D1OY0M5A0qD5HGBvFmFid",
+    "youtubeId": "wdxQc3Ilg-g",
+    "durationMs": 194160,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/0D1OY0M5A0qD5HGBvFmFid.mp3",
+    "coverPath": "covers/0D1OY0M5A0qD5HGBvFmFid.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:50:14.312684+00:00"
+  },
+  {
+    "id": "1OYOLWqKmhkFIx2KC9ek1a",
+    "title": "Colors of the Wind",
+    "artist": "Judy Kuhn",
+    "album": "Pocahontas",
+    "spotifyId": "1OYOLWqKmhkFIx2KC9ek1a",
+    "youtubeId": "Qjflm_QsR84",
+    "durationMs": 214400,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1995,
+    "filePath": "audio/1OYOLWqKmhkFIx2KC9ek1a.mp3",
+    "coverPath": "covers/1OYOLWqKmhkFIx2KC9ek1a.jpg",
+    "refrainStartMs": 153192,
+    "addedAt": "2026-08-20T18:50:45.826067+00:00"
+  },
+  {
+    "id": "6PiTsEEiNYU9a9xXowi9i5",
+    "title": "A Dream Is a Wish Your Heart Makes",
+    "artist": "Ilene Woods, Mice Chorus",
+    "album": "Cinderella Special Edition (Original Motion Picture Soundtrack/Japanese Version)",
+    "spotifyId": "6PiTsEEiNYU9a9xXowi9i5",
+    "youtubeId": "5SbYwzHj46M",
+    "durationMs": 274480,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2005,
+    "filePath": "audio/6PiTsEEiNYU9a9xXowi9i5.mp3",
+    "coverPath": "covers/6PiTsEEiNYU9a9xXowi9i5.jpg",
+    "refrainStartMs": 250511,
+    "addedAt": "2026-08-20T18:51:08.906389+00:00"
+  },
+  {
+    "id": "0XPsOSYzDJZJArevQNm2AR",
+    "title": "Speechless (Full)",
+    "artist": "Naomi Scott",
+    "album": "Aladdin (Original Motion Picture Soundtrack)",
+    "spotifyId": "0XPsOSYzDJZJArevQNm2AR",
+    "youtubeId": "DwTogmKwYWo",
+    "durationMs": 208800,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2019,
+    "filePath": "audio/0XPsOSYzDJZJArevQNm2AR.mp3",
+    "coverPath": "covers/0XPsOSYzDJZJArevQNm2AR.jpg",
+    "refrainStartMs": 96924,
+    "addedAt": "2026-08-20T18:51:32.330561+00:00"
+  },
+  {
+    "id": "1OzSfjFW08DTD51XoNnog7",
+    "title": "That's How You Know",
+    "artist": "Amy Adams",
+    "album": "Enchanted",
+    "spotifyId": "1OzSfjFW08DTD51XoNnog7",
+    "youtubeId": "KNZI96ni66U",
+    "durationMs": 228960,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2007,
+    "filePath": "audio/1OzSfjFW08DTD51XoNnog7.mp3",
+    "coverPath": "covers/1OzSfjFW08DTD51XoNnog7.jpg",
+    "refrainStartMs": 157839,
+    "addedAt": "2026-08-20T18:51:52.519566+00:00"
+  },
+  {
+    "id": "29bQPrp6BT0w3kaXTqIo8A",
+    "title": "A Spoonful of Sugar",
+    "artist": "Julie Andrews",
+    "album": "Mary Poppins",
+    "spotifyId": "29bQPrp6BT0w3kaXTqIo8A",
+    "youtubeId": "dKzqc54g0z4",
+    "durationMs": 249040,
+    "genres": [
+      "musicals"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/29bQPrp6BT0w3kaXTqIo8A.mp3",
+    "coverPath": "covers/29bQPrp6BT0w3kaXTqIo8A.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:52:13.966978+00:00"
+  },
+  {
+    "id": "0E2ARPr6Anq8l4dwsu8hbP",
+    "title": "Some Day My Prince Will Come",
+    "artist": "Adriana Caselotti",
+    "album": "Snow White and the Seven Dwarfs (Original Motion Picture Soundtrack)",
+    "spotifyId": "0E2ARPr6Anq8l4dwsu8hbP",
+    "youtubeId": "tbHfdSZMco8",
+    "durationMs": 114306,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/0E2ARPr6Anq8l4dwsu8hbP.mp3",
+    "coverPath": "covers/0E2ARPr6Anq8l4dwsu8hbP.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:52:28.429301+00:00"
+  },
+  {
+    "id": "7h5crXBSY5SSpXRIlklv74",
+    "title": "The Bare Necessities",
+    "artist": "Phil Harris, Bruce Reitherman",
+    "album": "The Jungle Book",
+    "spotifyId": "7h5crXBSY5SSpXRIlklv74",
+    "youtubeId": "knpSFo9buP4",
+    "durationMs": 291466,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/7h5crXBSY5SSpXRIlklv74.mp3",
+    "coverPath": "covers/7h5crXBSY5SSpXRIlklv74.jpg",
+    "refrainStartMs": 98433,
+    "addedAt": "2026-08-20T18:52:53.766154+00:00"
+  },
+  {
+    "id": "7iocNjLrxPHLl8njgRlv5U",
+    "title": "Married Life",
+    "artist": "Michael Giacchino",
+    "album": "Up (Original Motion Picture Soundtrack)",
+    "spotifyId": "7iocNjLrxPHLl8njgRlv5U",
+    "youtubeId": "2rn-vMbFglI",
+    "durationMs": 250573,
+    "genres": [
+      "score",
+      "soundtrack"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2009,
+    "filePath": "audio/7iocNjLrxPHLl8njgRlv5U.mp3",
+    "coverPath": "covers/7iocNjLrxPHLl8njgRlv5U.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:53:16.919624+00:00"
+  },
+  {
+    "id": "4J7SCXbz18duODAQYjtzI2",
+    "title": "Proud Corazón",
+    "artist": "Anthony Gonzalez",
+    "album": "Coco (Original Motion Picture Soundtrack)",
+    "spotifyId": "4J7SCXbz18duODAQYjtzI2",
+    "youtubeId": "sLkDCF_EbqI",
+    "durationMs": 123703,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2017,
+    "filePath": "audio/4J7SCXbz18duODAQYjtzI2.mp3",
+    "coverPath": "covers/4J7SCXbz18duODAQYjtzI2.jpg",
+    "refrainStartMs": 96931,
+    "addedAt": "2026-08-20T18:53:38.429721+00:00"
+  },
+  {
+    "id": "1WrPa4lrIddctGWAIYYfP9",
+    "title": "When You Wish Upon a Star",
+    "artist": "Cliff Edwards, Disney Studio Chorus",
+    "album": "Pinocchio",
+    "spotifyId": "1WrPa4lrIddctGWAIYYfP9",
+    "youtubeId": "U2oZ97MqPLg",
+    "durationMs": 195066,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1992,
+    "filePath": "audio/1WrPa4lrIddctGWAIYYfP9.mp3",
+    "coverPath": "covers/1WrPa4lrIddctGWAIYYfP9.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:53:56.596343+00:00"
+  },
+  {
+    "id": "7bG6SQBGZthPDG5QJL5Gf7",
+    "title": "In Summer",
+    "artist": "Josh Gad",
+    "album": "Frozen (Original Motion Picture Soundtrack / Deluxe Edition)",
+    "spotifyId": "7bG6SQBGZthPDG5QJL5Gf7",
+    "youtubeId": "9tcaM06eGrY",
+    "durationMs": 110986,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2013,
+    "filePath": "audio/7bG6SQBGZthPDG5QJL5Gf7.mp3",
+    "coverPath": "covers/7bG6SQBGZthPDG5QJL5Gf7.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:54:17.048847+00:00"
+  },
+  {
+    "id": "4b1yxSdlumA8N4fEk4UOZp",
+    "title": "The Family Madrigal",
+    "artist": "Stephanie Beatriz, Olga Merediz, Encanto - Cast",
+    "album": "Encanto (Original Motion Picture Soundtrack)",
+    "spotifyId": "4b1yxSdlumA8N4fEk4UOZp",
+    "youtubeId": "aVfHTH81Xwk",
+    "durationMs": 257213,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2021,
+    "filePath": "audio/4b1yxSdlumA8N4fEk4UOZp.mp3",
+    "coverPath": "covers/4b1yxSdlumA8N4fEk4UOZp.jpg",
+    "refrainStartMs": 80761,
+    "addedAt": "2026-08-20T18:54:38.408037+00:00"
+  },
+  {
+    "id": "1IZwCzAmaFmmdJj0cmhaax",
+    "title": "Shiny",
+    "artist": "Jemaine Clement, Disney",
+    "album": "Moana (Original Motion Picture Soundtrack/Deluxe Edition)",
+    "spotifyId": "1IZwCzAmaFmmdJj0cmhaax",
+    "youtubeId": "t3_7GycTpu4",
+    "durationMs": 185466,
+    "genres": [
+      "comedy"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2016,
+    "filePath": "audio/1IZwCzAmaFmmdJj0cmhaax.mp3",
+    "coverPath": "covers/1IZwCzAmaFmmdJj0cmhaax.jpg",
+    "refrainStartMs": 98034,
+    "addedAt": "2026-08-20T18:54:58.789909+00:00"
+  },
+  {
+    "id": "6q2r0n2ph4w2p7fLbh5TKK",
+    "title": "Prince Ali",
+    "artist": "Robin Williams, Disney",
+    "album": "Aladdin (Original Motion Picture Soundtrack)",
+    "spotifyId": "6q2r0n2ph4w2p7fLbh5TKK",
+    "youtubeId": "WKXWpB86Owc",
+    "durationMs": 171773,
+    "genres": [
+      "comedy"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1992,
+    "filePath": "audio/6q2r0n2ph4w2p7fLbh5TKK.mp3",
+    "coverPath": "covers/6q2r0n2ph4w2p7fLbh5TKK.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:55:19.745283+00:00"
+  },
+  {
+    "id": "0Q4a3PdGEME9w8Jgqa0Gf3",
+    "title": "Belle",
+    "artist": "Richard White, Paige O'Hara, Chorus - Beauty And the Beast, Disney",
+    "album": "Beauty and the Beast",
+    "spotifyId": "0Q4a3PdGEME9w8Jgqa0Gf3",
+    "youtubeId": "ql3cEeM5HFI",
+    "durationMs": 309133,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1991,
+    "filePath": "audio/0Q4a3PdGEME9w8Jgqa0Gf3.mp3",
+    "coverPath": "covers/0Q4a3PdGEME9w8Jgqa0Gf3.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:55:47.430091+00:00"
+  },
+  {
+    "id": "5rohUzwEoRsUvAA1Bf3DLo",
+    "title": "Dos Oruguitas",
+    "artist": "Sebastian Yatra",
+    "album": "Encanto (Original Motion Picture Soundtrack)",
+    "spotifyId": "5rohUzwEoRsUvAA1Bf3DLo",
+    "youtubeId": "ELsgRAGIgw0",
+    "durationMs": 214613,
+    "genres": [
+      "colombian pop",
+      "reggaeton"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2021,
+    "filePath": "audio/5rohUzwEoRsUvAA1Bf3DLo.mp3",
+    "coverPath": "covers/5rohUzwEoRsUvAA1Bf3DLo.jpg",
+    "refrainStartMs": 76706,
+    "addedAt": "2026-08-20T18:56:14.690540+00:00"
+  },
+  {
+    "id": "6mDxu0xwhv5tn1oMTNUypu",
+    "title": "Something There",
+    "artist": "Robby Benson, Jerry Orbach, Paige O'Hara, Angela Lansbury, David Ogden Stiers, Disney",
+    "album": "Beauty and the Beast",
+    "spotifyId": "6mDxu0xwhv5tn1oMTNUypu",
+    "youtubeId": "6wWlPptRWU8",
+    "durationMs": 138986,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1991,
+    "filePath": "audio/6mDxu0xwhv5tn1oMTNUypu.mp3",
+    "coverPath": "covers/6mDxu0xwhv5tn1oMTNUypu.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:56:34.067098+00:00"
+  },
+  {
+    "id": "4wN8Ov3kPZdkJ8XcYxYUGz",
+    "title": "One Jump Ahead",
+    "artist": "Brad Kane, Disney",
+    "album": "Aladdin (Original Motion Picture Soundtrack)",
+    "spotifyId": "4wN8Ov3kPZdkJ8XcYxYUGz",
+    "youtubeId": "Jtvc8DXNO4Q",
+    "durationMs": 142440,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1992,
+    "filePath": "audio/4wN8Ov3kPZdkJ8XcYxYUGz.mp3",
+    "coverPath": "covers/4wN8Ov3kPZdkJ8XcYxYUGz.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:56:54.141127+00:00"
+  },
+  {
+    "id": "4HGIPyqDxSf863tPOwXiLJ",
+    "title": "Kiss the Girl",
+    "artist": "Alan Menken, Howard Ashman, Samuel E. Wright, Disney",
+    "album": "The Little Mermaid Special Edition",
+    "spotifyId": "4HGIPyqDxSf863tPOwXiLJ",
+    "youtubeId": "3BNpW7cxzrw",
+    "durationMs": 163400,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2006,
+    "filePath": "audio/4HGIPyqDxSf863tPOwXiLJ.mp3",
+    "coverPath": "covers/4HGIPyqDxSf863tPOwXiLJ.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:57:12.574797+00:00"
+  },
+  {
+    "id": "2wCRJwiL1WSrW0Dwfco7Nj",
+    "title": "Know Who You Are",
+    "artist": "Auli'i Cravalho, Vai Mahina, Olivia Foa'i, Opetaia Foa'i, Matthew Ineleo, Disney",
+    "album": "Moana (Original Motion Picture Soundtrack/Deluxe Edition)",
+    "spotifyId": "2wCRJwiL1WSrW0Dwfco7Nj",
+    "youtubeId": "8Sd8WF6fS7k",
+    "durationMs": 72626,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2016,
+    "filePath": "audio/2wCRJwiL1WSrW0Dwfco7Nj.mp3",
+    "coverPath": "covers/2wCRJwiL1WSrW0Dwfco7Nj.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:57:28.437595+00:00"
+  },
+  {
+    "id": "0TCt7OFRdD8PQ6vTRQxNgQ",
+    "title": "I've Got a Dream",
+    "artist": "Mandy Moore, Brad Garrett, Ensemble - Tangled, Zachary Levi, Jeffrey Tambor",
+    "album": "Tangled",
+    "spotifyId": "0TCt7OFRdD8PQ6vTRQxNgQ",
+    "youtubeId": "l-TYoSh-HeI",
+    "durationMs": 191413,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2010,
+    "filePath": "audio/0TCt7OFRdD8PQ6vTRQxNgQ.mp3",
+    "coverPath": "covers/0TCt7OFRdD8PQ6vTRQxNgQ.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:57:47.883046+00:00"
+  },
+  {
+    "id": "6uW03WHG3qv2FzxPIW6SUP",
+    "title": "The Gospel Truth I / Main Titles - Hercules",
+    "artist": "Cheryl Freeman, LaChanze, Vaneese Thomas, Lillias White, Roz Ryan, Disney",
+    "album": "Hercules (Original Motion Picture Soundtrack)",
+    "spotifyId": "6uW03WHG3qv2FzxPIW6SUP",
+    "youtubeId": "9K14U34OyaA",
+    "durationMs": 145640,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1997,
+    "filePath": "audio/6uW03WHG3qv2FzxPIW6SUP.mp3",
+    "coverPath": "covers/6uW03WHG3qv2FzxPIW6SUP.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:58:07.100185+00:00"
+  },
+  {
+    "id": "3G9ZnSjGYyHx7e221v0qse",
+    "title": "He Mele No Lilo",
+    "artist": "Mark Keali'i Ho'omalu, Kamehameha Schools Children's Chorus",
+    "album": "Lilo & Stitch",
+    "spotifyId": "3G9ZnSjGYyHx7e221v0qse",
+    "youtubeId": "kvznYJEFh1w",
+    "durationMs": 148133,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2002,
+    "filePath": "audio/3G9ZnSjGYyHx7e221v0qse.mp3",
+    "coverPath": "covers/3G9ZnSjGYyHx7e221v0qse.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:58:24.683005+00:00"
+  },
+  {
+    "id": "7zsw78LtXUD7JfEwH64HK2",
+    "title": "Poor Unfortunate Souls",
+    "artist": "Howard Ashman, Alan Menken, Pat Carroll, Disney, J.A.C. Redford",
+    "album": "The Little Mermaid Special Edition",
+    "spotifyId": "7zsw78LtXUD7JfEwH64HK2",
+    "youtubeId": "N-9B9x5YCcI",
+    "durationMs": 291693,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2006,
+    "filePath": "audio/7zsw78LtXUD7JfEwH64HK2.mp3",
+    "coverPath": "covers/7zsw78LtXUD7JfEwH64HK2.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:58:48.366743+00:00"
+  },
+  {
+    "id": "1r6jjBkaAjGp09h2R6heZp",
+    "title": "Kingdom Dance",
+    "artist": "Alan Menken",
+    "album": "Enredados",
+    "spotifyId": "1r6jjBkaAjGp09h2R6heZp",
+    "youtubeId": "0X0sLw63KLU",
+    "durationMs": 140160,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2010,
+    "filePath": "audio/1r6jjBkaAjGp09h2R6heZp.mp3",
+    "coverPath": "covers/1r6jjBkaAjGp09h2R6heZp.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:59:07.443637+00:00"
+  },
+  {
+    "id": "4LwrgltRSrddxeyhIPSoqa",
+    "title": "Start of Something New",
+    "artist": "Troy, Gabriella, Disney",
+    "album": "High School Musical",
+    "spotifyId": "4LwrgltRSrddxeyhIPSoqa",
+    "youtubeId": "vsGjdVbCxRU",
+    "durationMs": 196773,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2006,
+    "filePath": "audio/4LwrgltRSrddxeyhIPSoqa.mp3",
+    "coverPath": "covers/4LwrgltRSrddxeyhIPSoqa.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T18:59:28.342602+00:00"
+  },
+  {
+    "id": "4qEoqyPbLYnLOii6mKlIjI",
+    "title": "Determinate - From \"Lemonade Mouth\"",
+    "artist": "Adam Hicks, Bridgit Mendler, Naomi Scott, Hayley Kiyoko",
+    "album": "Lemonade Mouth",
+    "spotifyId": "4qEoqyPbLYnLOii6mKlIjI",
+    "youtubeId": "o9fE2o4ddM8",
+    "durationMs": 198106,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2011,
+    "filePath": "audio/4qEoqyPbLYnLOii6mKlIjI.mp3",
+    "coverPath": "covers/4qEoqyPbLYnLOii6mKlIjI.jpg",
+    "refrainStartMs": 155403,
+    "addedAt": "2026-08-20T18:59:46.777574+00:00"
+  },
+  {
+    "id": "2dAOKHKapOngJv8sMI8GGZ",
+    "title": "Ev'rybody Wants to Be a Cat",
+    "artist": "Scatman Crothers, Phil Harris, Thurl Ravenscroft, Liz English",
+    "album": "Songs From The Aristocats",
+    "spotifyId": "2dAOKHKapOngJv8sMI8GGZ",
+    "youtubeId": "nDJockBnjYs",
+    "durationMs": 123000,
+    "genres": [
+      "christmas"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 1996,
+    "filePath": "audio/2dAOKHKapOngJv8sMI8GGZ.mp3",
+    "coverPath": "covers/2dAOKHKapOngJv8sMI8GGZ.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T19:00:04.015451+00:00"
+  },
+  {
+    "id": "780W6YW5HFANQLR77Owern",
+    "title": "When She Loved Me",
+    "artist": "Sarah McLachlan",
+    "album": "Toy Story Favorites",
+    "spotifyId": "780W6YW5HFANQLR77Owern",
+    "youtubeId": "-31VzjC50dY",
+    "durationMs": 183440,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2010,
+    "filePath": "audio/780W6YW5HFANQLR77Owern.mp3",
+    "coverPath": "covers/780W6YW5HFANQLR77Owern.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T19:00:22.166526+00:00"
+  },
+  {
+    "id": "0d83zVs3OmdjrhfoAxg1dE",
+    "title": "U Know What's Up",
+    "artist": "4*TOWN (From Disney and Pixar’s Turning Red), Jordan Fisher, Topher Ngo, Grayson Villanueva, Josh Levi",
+    "album": "Turning Red (Original Motion Picture Soundtrack)",
+    "spotifyId": "0d83zVs3OmdjrhfoAxg1dE",
+    "youtubeId": "DQQRjFzB8gY",
+    "durationMs": 188893,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2022,
+    "filePath": "audio/0d83zVs3OmdjrhfoAxg1dE.mp3",
+    "coverPath": "covers/0d83zVs3OmdjrhfoAxg1dE.jpg",
+    "refrainStartMs": 91492,
+    "addedAt": "2026-08-20T19:00:45.020365+00:00"
+  },
+  {
+    "id": "3eTgg18rKBD30Hef1gv0wz",
+    "title": "Bundle of Joy",
+    "artist": "Michael Giacchino",
+    "album": "Inside Out (Original Motion Picture Soundtrack)",
+    "spotifyId": "3eTgg18rKBD30Hef1gv0wz",
+    "youtubeId": "O4N0Fsnsr4I",
+    "durationMs": 168760,
+    "genres": [
+      "score",
+      "soundtrack"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2015,
+    "filePath": "audio/3eTgg18rKBD30Hef1gv0wz.mp3",
+    "coverPath": "covers/3eTgg18rKBD30Hef1gv0wz.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-08-20T19:01:09.708226+00:00"
+  },
+  {
+    "id": "5zQ1Wq6HNYjGZWkVv5P8Eg",
+    "title": "Breaking Free",
+    "artist": "Troy, Gabriella, Disney",
+    "album": "High School Musical",
+    "spotifyId": "5zQ1Wq6HNYjGZWkVv5P8Eg",
+    "youtubeId": "RD4keQ7Gejo",
+    "durationMs": 207200,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2006,
+    "filePath": "audio/5zQ1Wq6HNYjGZWkVv5P8Eg.mp3",
+    "coverPath": "covers/5zQ1Wq6HNYjGZWkVv5P8Eg.jpg",
+    "refrainStartMs": 94138,
+    "addedAt": "2026-08-20T19:01:32.735718+00:00"
+  },
+  {
+    "id": "0wqeaDeaKq14IuQESPqBEJ",
+    "title": "Lava",
+    "artist": "Kuana Torres Kahele, Napua Greig, James Ford Murphy",
+    "album": "Lava (From \"Lava\")",
+    "spotifyId": "0wqeaDeaKq14IuQESPqBEJ",
+    "youtubeId": "ZZfugePKpMI",
+    "durationMs": 346493,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2015,
+    "filePath": "audio/0wqeaDeaKq14IuQESPqBEJ.mp3",
+    "coverPath": "covers/0wqeaDeaKq14IuQESPqBEJ.jpg",
+    "refrainStartMs": 129971,
+    "addedAt": "2026-08-20T19:01:59.694364+00:00"
+  },
+  {
+    "id": "7xf3S6Bv8hDqOtevZou602",
+    "title": "If I Didn't Have You",
+    "artist": "Billy Crystal, John Goodman",
+    "album": "Monsters, Inc. (Original Motion Picture Soundtrack)",
+    "spotifyId": "7xf3S6Bv8hDqOtevZou602",
+    "youtubeId": "41ill-Bq5UI",
+    "durationMs": 217786,
+    "genres": [],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2001,
+    "filePath": "audio/7xf3S6Bv8hDqOtevZou602.mp3",
+    "coverPath": "covers/7xf3S6Bv8hDqOtevZou602.jpg",
+    "refrainStartMs": 94133,
+    "addedAt": "2026-08-20T19:02:18.312275+00:00"
+  },
+  {
+    "id": "0HL3y3bsKSARBSP0qaImwb",
+    "title": "Carried Me With You",
+    "artist": "Brandi Carlile",
+    "album": "Onward (Original Motion Picture Soundtrack)",
+    "spotifyId": "0HL3y3bsKSARBSP0qaImwb",
+    "youtubeId": "1ttzLzQO5mM",
+    "durationMs": 213732,
+    "genres": [
+      "americana",
+      "folk"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2020,
+    "filePath": "audio/0HL3y3bsKSARBSP0qaImwb.mp3",
+    "coverPath": "covers/0HL3y3bsKSARBSP0qaImwb.jpg",
+    "refrainStartMs": 168457,
+    "addedAt": "2026-08-20T19:02:39.267045+00:00"
+  },
+  {
+    "id": "5zeaIcBVA0Ta8JVp1S5zDM",
+    "title": "Define Dancing",
+    "artist": "Thomas Newman",
+    "album": "WALL-E (Original Motion Picture Soundtrack)",
+    "spotifyId": "5zeaIcBVA0Ta8JVp1S5zDM",
+    "youtubeId": "JgSc53D-VPc",
+    "durationMs": 143373,
+    "genres": [
+      "score",
+      "soundtrack"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2008,
+    "filePath": "audio/5zeaIcBVA0Ta8JVp1S5zDM.mp3",
+    "coverPath": "covers/5zeaIcBVA0Ta8JVp1S5zDM.jpg",
+    "refrainStartMs": 53089,
+    "addedAt": "2026-08-20T19:02:55.668093+00:00"
+  },
+  {
+    "id": "02JIdsrod3BYucThfUFDUX",
+    "title": "Le Festin",
+    "artist": "Camille, Michael Giacchino",
+    "album": "Ratatouille (Original Motion Picture Soundtrack)",
+    "spotifyId": "02JIdsrod3BYucThfUFDUX",
+    "youtubeId": "BiWFAjAA0gM",
+    "durationMs": 170786,
+    "genres": [
+      "french jazz",
+      "score",
+      "soundtrack"
+    ],
+    "tags": [
+      "disney"
+    ],
+    "trapWith": [],
+    "year": 2007,
+    "filePath": "audio/02JIdsrod3BYucThfUFDUX.mp3",
+    "coverPath": "covers/02JIdsrod3BYucThfUFDUX.jpg",
+    "refrainStartMs": 116567,
+    "addedAt": "2026-08-20T19:03:13.211659+00:00"
   }
 ]

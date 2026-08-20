@@ -202,6 +202,19 @@ public class RoundServiceTests
     }
 
     [Fact]
+    public void DemarrerRound_MorceauDisney_CibleToujoursTitre()
+    {
+        var correct = NouveauTrack("a", tags: ["disney"]);
+
+        for (var i = 0; i < 20; i++)
+        {
+            var round = new Round { TrackId = correct.Id, Mode = RoundMode.TapeReponse };
+            _service.DemarrerRound(round, correct, [correct], new GameConfig(), DateTimeOffset.UtcNow);
+            Assert.Equal(RoundCible.Titre, round.Cible);
+        }
+    }
+
+    [Fact]
     public void SoumettreReponse_CibleAuteur_UnSeulDesPlusieursAuteursSuffit()
     {
         var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
