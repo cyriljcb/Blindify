@@ -50,7 +50,9 @@ Le backend reste toujours actif sur le Raspberry Pi (déjà utilisé comme homel
 
 ### Dockerisation
 
-Seul le **backend** est dockerisé. Le frontend (app Flutter et page web du host) n'est jamais containerisé — ce sont des clients qui tournent nativement (téléphone / navigateur) et consomment le backend via le réseau. La dockerisation ne change donc rien au modèle de jeu ni au contrat SignalR ; c'est purement une question de déploiement.
+Seul le **backend** est dockerisé. Le frontend (app Flutter et page web du host) n'est jamais construit/transformé par Docker — ce sont de simples fichiers consommés nativement (téléphone / navigateur) via le réseau. La dockerisation ne change donc rien au modèle de jeu ni au contrat SignalR ; c'est purement une question de déploiement.
+
+Depuis le retour utilisateur du 2026-08-24, `host/` (page web du panneau de contrôle) est monté en volume comme `tracks.json`/audio/covers et servi tel quel en fichiers statiques par le backend — pas besoin de gérer ce dossier séparément sur le PC du host, un navigateur pointé sur `http://<ip-du-pi>:5000/` suffit (`display.html` à `http://<ip-du-pi>:5000/display.html`). Ça reste de simples fichiers statiques, aucune étape de build : ce n'est pas "dockeriser le frontend" au sens de CLAUDE.md, juste les servir au même titre que `/files` ci-dessous. Voir `docs` : ce mapping est optionnel (`Host:StaticPath` absent ou dossier introuvable = ignoré silencieusement), donc sans effet sur les tests d'intégration (`WebApplicationFactory`) ni sur qui lance juste l'API sans avoir `host/` sous la main.
 
 Points d'attention :
 
@@ -59,7 +61,7 @@ Points d'attention :
 - **Politique de redémarrage** : `restart: unless-stopped` pour survivre à un reboot du Pi, cohérent avec le reste du homelab.
 - **CORS** : le backend doit autoriser les origines des clients LAN (IP du PC host, éventuellement de l'app Flutter si elle passe par du HTTP avant l'upgrade WebSocket) — pas besoin d'un CORS ouvert à tout internet vu l'usage strictement local.
 
-Exemple de `docker-compose.yml` :
+`docker-compose.yml` (à la racine du repo, voir ce fichier pour la version à jour) :
 
 ```yaml
 services:
@@ -74,6 +76,7 @@ services:
       - /mnt/hdd2to/blindify/stats.json:/data/stats.json
       - /mnt/hdd2to/blindify/audio:/data/audio:ro
       - /mnt/hdd2to/blindify/covers:/data/covers:ro
+      - ./host:/host:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - Data__TracksPath=/data/tracks.json
@@ -81,21 +84,32 @@ services:
       - Data__AudioPath=/data/audio
       - Data__CoversPath=/data/covers
       - Data__RootPath=/data
+      - Host__StaticPath=/host
 ```
 
-`Data__RootPath` est servi en fichiers statiques sous `/files` par le backend — c'est ce qui permet au host de lire l'audio par HTTP (`GET /files/audio/xxx.mp3`), les chemins de `tracks.json` étant déjà relatifs à cette racine. Seul le host y accède, jamais les joueurs.
+`Data__RootPath` est servi en fichiers statiques sous `/files` par le backend — c'est ce qui permet au host de lire l'audio par HTTP (`GET /files/audio/xxx.mp3`), les chemins de `tracks.json` étant déjà relatifs à cette racine. Seul le host y accède, jamais les joueurs. `Host__StaticPath` (`./host` monté sur `/host`) est servi à la racine (`/`) — `index.html` en document par défaut, `display.html` et les autres fichiers (`app.js`, `style.css`, `vendor/`...) à leur chemin habituel.
 
-Les volumes audio/covers sont montés en lecture seule (`ro`) côté conteneur — les scripts de préparation des données (sync Spotify, téléchargement YouTube, export/import CSV) écrivent directement sur le HDD, en dehors de Docker, donc le conteneur n'a besoin que de lire.
+Les volumes audio/covers/host sont montés en lecture seule (`ro`) côté conteneur — les scripts de préparation des données (sync Spotify, téléchargement YouTube, export/import CSV) et les modifications de `host/` se font directement sur le disque/Git, en dehors de Docker, donc le conteneur n'a besoin que de lire.
 
 Le backend reste toujours actif sur le Raspberry Pi (déjà utilisé comme homelab). Aucune synchronisation de fichiers à faire avant une partie : le PC host et les téléphones se connectent simplement à l'IP du Pi sur le réseau local.
+
+### Nom local au lieu de l'IP (mDNS/Bonjour)
+
+Retour utilisateur (2026-08-25) : taper l'IP du Pi depuis un iPhone est pénible. Pas besoin d'un vrai serveur DNS local (overkill pour un usage familial) — le mDNS (Bonjour) suffit et est nativement supporté par iOS/Safari et macOS, sans rien installer côté client.
+
+- Sur le Pi : `sudo raspi-config` → *System Options* → *Hostname*, renommer en `blindify` (avahi-daemon, qui fait tourner le mDNS, est généralement déjà présent et actif par défaut sur Raspberry Pi OS — vérifier avec `systemctl status avahi-daemon`, sinon `sudo apt install avahi-daemon`).
+- L'app devient joignable en `http://blindify.local:5000` (panneau de contrôle) et `http://blindify.local:5000/display.html` (écran public), à la place de l'IP.
+- Config système sur le Pi, **aucun changement côté backend/Docker** : avahi tourne sur l'hôte, pas dans le conteneur, et n'a besoin de rien savoir du port publié.
+- Limite : dépend du support mDNS du réseau Wi-Fi — impeccable sur une box/routeur familial classique, plus capricieux si le réseau isole les clients entre eux (peu probable en usage domestique).
 
 ## 3. Pipeline de préparation des données
 
 1. **Récupération playlist** : appel API Spotify pour obtenir les morceaux d'une playlist (titre, artiste, album, ID Spotify).
 2. **Enrichissement automatique des genres** : pour chaque artiste unique, appel batché (jusqu'à 50 artistes/requête) à `GET /artists` pour récupérer le champ `genres`. Peu de requêtes nécessaires même pour ~1000 morceaux.
-3. **Tags thématiques manuels/semi-automatiques** : les genres Spotify ne couvrent pas les thèmes personnalisés (Disney, années 90, etc.) — à compléter à la main ou via un passage assisté (script/LLM), avec relecture humaine ensuite.
+3. **Tags thématiques manuels/semi-automatiques** : les genres Spotify (champ `genres`, trop nombreux/bruités — ~220 valeurs distinctes sur le catalogue actuel, voir section 6) ne conviennent pas tels quels à un sélecteur de thème joueur. `tags` regroupe ça en catégories grossières, peuplées via un passage assisté (script de bucketing par mots-clés sur `genres`, avec table d'exceptions pour les cas ambigus — ex. "singer-songwriter"/"folk" couvrent en pratique des artistes anglophones malgré l'intuition, pas de la chanson française) : une décennie (`annees-1970` … `annees-2020`, `avant-1970`) déduite de `year`, un genre large (`pop`, `rock`, `metal`, `rap`, `electro`, `rnb-funk-jazz`, `variete-francaise`, `latino`, `monde`) déduit de `genres`, plus des tags ad hoc posés à la main (`disney`). Un morceau peut porter plusieurs tags à la fois (ex. `["annees-2010", "variete-francaise"]`). Toujours avec relecture humaine du résultat avant mise en prod, le bucketing par mots-clés reste faillible sur les cas rares.
 4. **Téléchargement audio** : pour chaque morceau, recherche + téléchargement YouTube (ex. via yt-dlp), fichier stocké sur le HDD, chemin enregistré dans `tracks.json`.
-   - **Validation du matching** : après téléchargement, comparer la durée réelle du fichier audio à `durationMs` (Spotify), tolérance ±5-10s. Tout écart au-delà flague le morceau comme "à vérifier manuellement" plutôt que de l'intégrer tel quel au catalogue — évite qu'une mauvaise version (live, reprise, lyric video d'un autre artiste) se retrouve jouée en pleine partie.
+   - **Validation du matching** : parmi les résultats de recherche, ceux dont le titre sent la version live/acoustique/remix/cover sont écartés en priorité (`data/scripts/live_keywords.py`, retour utilisateur du 2026-08-25 — une version live coupée à la bonne durée n'était jamais repérée par le seul filtre de durée ci-dessous). Le candidat retenu doit ensuite avoir une durée proche de `durationMs` (Spotify), tolérance ±5-10s. Tout écart au-delà flague le morceau comme "à vérifier manuellement" plutôt que de l'intégrer tel quel au catalogue.
+   - **Audit du catalogue déjà téléchargé** : `data/scripts/audit_live_versions.py` récupère (sans les télécharger) les titres YouTube réels des morceaux déjà présents dans `tracks.json` et exporte en CSV ceux qui matchent un mot-clé suspect — pour repérer après coup ce que le filtre ci-dessus n'aurait pas attrapé avant sa mise en place. Résultats mis en cache (`output/live_audit_cache.json`), lecture seule sur `tracks.json`.
 5. **Téléchargement de la pochette d'album** : Spotify fournit l'URL de la cover via `album.images` (plusieurs résolutions). Téléchargée une fois et stockée localement à côté du fichier audio, chemin enregistré dans `tracks.json` — utilisée pour l'esthétique des écrans de jeu (écran de révélation, tableau général, etc.).
 
 ### Estimation espace disque
@@ -114,7 +128,7 @@ Pour ~1000 morceaux en MP3 192 kbps (largement suffisant pour un blindtest, surt
   "youtubeId": "PT2_F-1esPk",
   "durationMs": 174000,
   "genres": ["disney", "soundtrack"],
-  "tags": ["disney", "annees-90", "dessin-anime"],
+  "tags": ["disney", "annees-1990"],
   "trapWith": ["idAutreMorceau1", "idAutreMorceau2"],
   "trapTextArtist": null,
   "year": 1989,
@@ -126,7 +140,7 @@ Pour ~1000 morceaux en MP3 192 kbps (largement suffisant pour un blindtest, surt
 ```
 
 - `genres` : rempli automatiquement depuis Spotify (par artiste).
-- `tags` : thèmes personnalisés, remplis manuellement ou semi-automatiquement.
+- `tags` : thèmes personnalisés (décennie + genre large + ad hoc), remplis manuellement ou semi-automatiquement — voir section 3, point 3.
 - `trapWith` : IDs de morceaux fréquemment confondus (ex. Axel F / Crazy Frog), utilisés pour générer des QCM pièges.
 - `trapTextArtist` : optionnel, `null` par défaut. Leurre texte **inventé à la main** pour la cible Auteur (ex. Bastille - Pompéi -> "Baptiste") — contrairement à `trapWith`, ne référence aucun morceau réel du catalogue, juste un nom d'artiste plausible mais fictif affiché à la place d'un distracteur tiré au sort. Voir section 6 (probabilité dédiée, volontairement basse pour ne pas devenir injuste).
 - `coverPath` : pochette d'album téléchargée localement depuis Spotify, utilisée sur les écrans de jeu pour l'esthétique.
@@ -146,6 +160,8 @@ Pour ~1000 morceaux en MP3 192 kbps (largement suffisant pour un blindtest, surt
 ```
 
 **Raison de la séparation** : le backend tourne en continu (section 2) et doit persister `playCount` sur disque pour survivre à ses redémarrages — il a donc forcément besoin d'écrire quelque part. Si ce compteur vivait dans `tracks.json`, le backend aurait besoin d'un accès en écriture sur ce fichier, ce qui entrerait en collision avec le script d'import CSV (section 3bis) qui réécrit `tracks.json` en entier — potentiellement à tout moment, puisque le backend est toujours actif. En séparant les deux fichiers, cette collision disparaît complètement : le script de curation de tags ne touche jamais à `stats.json`, et le backend ne touche jamais à `tracks.json` en écriture (d'ailleurs monté `:ro` dans le conteneur, voir section 2). Conséquence pratique : grâce à cette séparation totale, le script d'import CSV peut être relancé à tout moment, y compris pendant une partie en cours, sans aucun risque pour les stats runtime — le backend charge `tracks.json` uniquement au démarrage, donc une réédition n'a d'effet qu'au redémarrage suivant.
+
+**Usage dans la sélection** (ajouté le 2026-08-25, retour utilisateur : le compteur s'incrémentait bien mais n'était lu nulle part, donc un même thème ressortait souvent avec les mêmes morceaux d'une partie à l'autre) : `RoundService.SelectionnerMorceaux` accepte un paramètre optionnel `Func<string, int> playCount` — quand fourni (c'est le cas dans `GameHub`, via `statsRepository.GetPlayCount`), le tirage n'est plus uniforme mais pondéré, poids `1/(playCount+1)`. Un morceau jamais joué a donc plus de chances de sortir qu'un morceau déjà joué plusieurs fois, sans jamais l'exclure totalement (pondération "douce", pas un anti-répétition strict). `RoundService` reste indépendant de `Blindify.Infrastructure` : il reçoit un délégué plutôt que `IStatsRepository` directement, cohérent avec le fait qu'il reçoit déjà le pool de morceaux en `IReadOnlyList<Track>` plutôt que `ITracksRepository`.
 
 ## 5. Modèle de données du jeu
 
@@ -183,13 +199,15 @@ pointsEnJeu(t) = max(min, max - (tempsÉcoulé / duréeFenêtre) × (max - min))
 
 **Pourquoi une pénalité asymétrique (×0.5) plutôt que symétrique** : ne pas répondre du tout coûte déjà -5 points fixes (étape 4), donc l'abstention n'est jamais "gratuite" — la question est seulement de savoir à partir de quel niveau de certitude tenter sa chance devient rentable. Avec une pénalité égale au gain (×1), deviner sur un QCM à 4 options sans aucun indice donne une espérance de `-0.5 × pointsEnJeu` : pire que les -5 fixes de l'abstention, donc un joueur hésitant a mathématiquement intérêt à ne jamais répondre — à l'encontre de l'esprit "tout le monde participe". Avec ×0.5, ce même guess à l'aveugle reste à espérance négative (`-0.125 × pointsEnJeu`, ce n'est pas un moyen de "rentabiliser le hasard pur"), mais dès que le joueur a éliminé ne serait-ce qu'une option parmi les 4 (3 candidats restants), l'espérance devient nulle, et à 2 candidats restants elle devient nettement positive (`+0.25 × pointsEnJeu`). Le rôle du ×0.5 est donc d'inciter à répondre dès qu'on a un minimum d'indice, pas de rendre le pur hasard profitable, tout en gardant un vrai coût à l'erreur.
 
-### Cible de la question (titre ou auteur)
+### Cible de la question (titre, auteur ou film)
 
 Chaque round tire aléatoirement (50/50, indépendamment du mode QCM/TapeReponse/PremiereLettre) une **cible** — `Titre` ou `Auteur` — annoncée au joueur ("trouve le titre" / "trouve l'artiste"). Ajouté suite à un retour de playtest : sans cible explicite, un morceau à plusieurs auteurs (ex. featurings) rendait le mode `TapeReponse` quasi injouable (fallait taper la liste complète) et le mode `PremiereLettre` ambigu (première lettre de quoi ?).
 
-- **QCM** : les options affichent uniquement le champ correspondant à la cible (titre ou un seul auteur par option), jamais les deux concaténés.
+**Exception — morceaux tagués `"disney"`** : la cible est **toujours forcée à `Film`**, jamais tirée au hasard. Ni le titre réel de la chanson ni l'artiste crédité (souvent la voix/l'acteur, ex. "Jason Weaver, Rowan Atkinson, Laura Williams") ne sont des questions jouables pour ce type de contenu — la question naturelle est le film dont est tiré le morceau. Le nom du film est déduit de `Track.Album` (nettoyé des suffixes de bande originale courants côté Spotify — "(Original Motion Picture Soundtrack)", "X Original Soundtrack (French Version)", etc. — voir `FilmNameResolver`), avec priorité à une mention explicite dans le titre lui-même quand elle existe (ex. `"Il vit en toi - Extrait de \"Le roi lion 2\""` → "Le roi lion 2") — plus fiable qu'un album de compilation qui ne nomme aucun film. Cette même règle s'applique à la question bonus (`BonusRoundService.CreerBonusRound`) : un morceau "disney" tiré en bonus demande aussi le film.
+
+- **QCM** : les options affichent uniquement le champ correspondant à la cible (titre, un seul auteur, ou film par option), jamais plusieurs champs concaténés.
 - **TapeReponse / PremiereLettre**, cible `Auteur` : le champ `artist` peut lister plusieurs noms séparés par des virgules (ex. `"David Guetta, Tones And I, Teddy Swims"`) — **n'importe lequel** des auteurs listés est accepté comme réponse correcte, pas besoin de tous les citer.
-- La cible n'affecte jamais la validation en mode QCM (toujours par sélection d'ID) ni l'écran de révélation (`RoundEnded` affiche toujours titre **et** artiste complets, quelle que soit la cible du round qui vient de se terminer).
+- La cible n'affecte jamais la validation en mode QCM (toujours par sélection d'ID). En revanche elle affecte bien l'écran de révélation : `RoundEnded`/`BonusResult` transportent la cible du round et le film déduit, et l'écran met en avant le film comme réponse quand `cible == Film` (le vrai titre/artiste restent affichés en dessous, à titre de trivia) — pour les cibles Titre/Auteur, le titre et l'artiste complets restent affichés normalement.
 
 ### Génération des QCM
 
@@ -215,16 +233,18 @@ Mécanique en deux phases, mise choisie **à l'aveugle** avant de découvrir la 
 3. **Résultat** — réponse juste : `+mise` ; réponse fausse ou absence de réponse : `-mise`.
 4. **Tableau général** — affiché **au moins une fois par partie** (pas systématiquement à chaque série). Par défaut, déclenché automatiquement après la série médiane (`⌈nombreDeSéries / 2⌉`), et le host peut aussi le déclencher manuellement à tout moment via une commande dédiée (`ShowLeaderboard()`).
 
-**Enchaînement côté host (`host/`)** — comportement de la page web, pas une règle du contrat serveur : une fois la dernière série classique épuisée, le host déclenche automatiquement `StartBonusRound()` (au lieu d'attendre une intervention), puis après réception de `BonusResult`, affiche un compte à rebours et déclenche automatiquement `EndGame()` (bouton "Terminer maintenant" disponible pour ne pas attendre). Le host garde la main pour interrompre cet enchaînement (pause, tableau général) à tout moment.
+**Enchaînement côté host (`host/`)** — comportement de la page web, pas une règle du contrat serveur : une fois la série classique **courante** épuisée, le host déclenche automatiquement `StartBonusRound()` (au lieu d'attendre une intervention) pour la question bonus de **cette** série. Après réception de `BonusResult`, deux cas : s'il reste une série suivante dans la partie, le host affiche un compte à rebours puis enchaîne automatiquement sur son premier round (`NextRound()` + `StartRound()`, bouton "Série suivante maintenant" disponible pour ne pas attendre) ; sinon (dernière série), le host affiche un compte à rebours et déclenche automatiquement `EndGame()` (bouton "Terminer maintenant"). Le host garde la main pour interrompre cet enchaînement (pause, tableau général) à tout moment.
 
-Table de config des paliers par série (exemple, à ajuster) :
+Table de config des paliers par série — chaque `SeriesConfig.PaliersDeMise` est fourni tel quel par le client dans `ConfigurerPartie` (jamais calculé côté serveur, voir section 11). Le panneau de contrôle (`host/app.js`, `paliersPourSerie`) génère par défaut une progression géométrique à partir de la série de base `[10, 20, 30, 50]`, avec une raison calculée pour que le palier le plus haut atteigne exactement 3000 pts à la **dernière** série de la partie — pas un facteur fixe : la raison dépend du nombre de séries réellement choisi pour cette partie (`raison = (3000/50)^(1/(nombreSéries-1))`). Exemple avec 10 séries (raison ≈ 1,576) :
 
 ```
-Série 1: [10, 20, 30, 50]
-Série 2: [50, 100, 150, 250]
-...
-Série N (dernière): [500, 1000, 2000, 3000]
+Série 1  (index 0) : [10, 20, 30, 50]
+Série 2  (index 1) : [16, 32, 47, 79]
+Série 5  (index 4) : [62, 123, 185, 309]
+Série 10 (index 9) : [600, 1200, 1800, 3000]
 ```
+
+Avec une seule série, pas de progression possible : les paliers restent `[10, 20, 30, 50]`.
 
 ## 8. Mode équipes (optionnel)
 
@@ -249,8 +269,10 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 
 | Méthode | Effet |
 |---|---|
-| `CreateGame(tags, séries, nomsÉquipes?)` | Crée la partie, sélectionne le pool de morceaux. `nomsÉquipes` : une `Team` créée par nom fourni, uniquement si `modeÉquipe` actif (ignoré sinon). Retourne les équipes créées (id + nom) |
-| `RejoinAsHost(code)` | Resynchronise le host après un refresh/crash de l'onglet : renvoie l'état courant complet (morceau en cours, mode, position audio théorique calculée depuis `débutRound`/`duréeEnPauseMs`, `enPause`) pour reprendre la lecture au bon endroit sans redémarrer le morceau |
+| `CreateGame(modeÉquipe, nomsÉquipes?)` | Crée le lobby (code, `hostSecret`) — volontairement minimal depuis le retour utilisateur du 2026-08-24 (voir juste en dessous), ne configure aucune série. `nomsÉquipes` : une `Team` créée par nom fourni, uniquement si `modeÉquipe` actif (ignoré sinon). Retourne les équipes créées (id + nom) et un `hostSecret` opaque (voir `RejoinAsHost`) |
+| `ConfigurerPartie(séries)` | Configure (ou reconfigure entièrement) le blindtest — sélectionne le pool de morceaux pour chaque série demandée. Séparé de `CreateGame` depuis le retour utilisateur du 2026-08-24 : auparavant, la configuration complète devait être soumise AVANT que le lobby n'existe, donc toute erreur de config forçait à recréer toute la partie — les joueurs devaient alors quitter et rouvrir l'app Flutter faute d'un moyen de rejoindre une nouvelle partie sans redémarrage complet. Rappelable autant de fois que nécessaire tant que la partie est encore `Lobby` (refusé sinon) ; chaque appel remplace entièrement la configuration précédente. `StartRound`/`StartBonusRound`/`AnnoncerSerieCourante` refusent tant qu'aucune série n'a été configurée |
+| `RejoinAsHost(code, hostSecret)` | Resynchronise le host après un refresh/crash de l'onglet : renvoie l'état courant complet (morceau en cours, mode, position audio théorique calculée depuis `débutRound`/`duréeEnPauseMs`, `enPause`) pour reprendre la lecture au bon endroit sans redémarrer le morceau. `hostSecret` — généré à `CreateGame`, distinct du code de partie (public, connu de tous les joueurs) — est exigé pour empêcher n'importe quel client du réseau local connaissant seulement le code de usurper le rôle host (pause, override, fin de partie) |
+| `AnnoncerSerieCourante()` | Diffuse l'annonce de la série en cours (`SerieAnnoncee`, index + tags) à tous les clients (host, écran public, joueurs) — appelé par le host au même moment où il affichait déjà cet écran localement, avant le premier round de chaque série (y compris la première) |
 | `StartRound()` | Démarre un round classique, horodate `débutRound` |
 | `StartBonusRound()` | Démarre la phase de mise d'une question bonus |
 | `ShowLeaderboard()` | Déclenche manuellement l'affichage du tableau général |
@@ -277,12 +299,13 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 | `PlayerJoined` | Infos du joueur (nouveau joueur) |
 | `PlayerReconnected` / `PlayerDisconnected` | Changement d'état `estConnecté` d'un joueur existant (perte réseau, reconnexion) |
 | `PlayerTeamChanged` | Un joueur a rejoint (ou changé d')équipe |
-| `RoundStarted` | Morceau (mode-dépendant), mode, cible (Titre/Auteur — voir section 6), URL audio + `refrainStartMs` (host uniquement — mémorisé côté host, appliqué au moment du `RoundEnded`, pas pendant la découverte) |
+| `SerieAnnoncee` | Index de la série qui commence + ses tags (thème) — voir `AnnoncerSerieCourante()`. Retour utilisateur du 2026-08-24 : auparavant affiché uniquement côté host/écran public, jamais diffusé aux joueurs |
+| `RoundStarted` | Morceau (mode-dépendant), mode, cible (Titre/Auteur/Film — voir section 6), URL audio + `refrainStartMs` (host uniquement — mémorisé côté host, appliqué au moment du `RoundEnded`, pas pendant la découverte). Options QCM (si applicable) incluent un champ `Film` par option, affiché à la place de titre/auteur quand la cible est Film |
 | `ScoreUpdate` | Scores à jour de tous les joueurs |
-| `RoundEnded` | Réponse correcte, détail des points de chacun |
+| `RoundEnded` | Réponse correcte (titre + artiste), détail des points de chacun, cible du round et film déduit (`Cible`/`Film`) — l'écran de révélation met le film en avant quand `Cible == Film` |
 | `BonusStakeOptions` | Les 4 paliers de la série courante |
-| `BonusQuestionStarted` | Morceau révélé, timer fixe démarré + `refrainStartMs` (host uniquement — appliqué au `BonusResult`, pas pendant la devinette) |
-| `BonusResult` | Résultat de chaque joueur (mise gagnée/perdue) |
+| `BonusQuestionStarted` | Morceau révélé, timer fixe démarré + `refrainStartMs` (host uniquement — appliqué au `BonusResult`, pas pendant la devinette). Version joueurs inclut la cible (Titre/Film) |
+| `BonusResult` | Résultat de chaque joueur (mise gagnée/perdue), cible et film déduit (mêmes champs `Cible`/`Film` que `RoundEnded`) |
 | `LeaderboardShown` | Classement général, diffusé en fin de série |
 | `GamePaused` / `GameResumed` | État de pause |
 | `GameEnded` | Scores finaux |
@@ -307,7 +330,7 @@ Tous ces éléments sont des paramètres de partie/série, pas des valeurs figé
 | Affichage du tableau général | Partie | Au moins une fois par partie, par défaut après la série médiane, déclenchable aussi manuellement par le host |
 | Mode équipe | Partie | Activé/désactivé, voir section 8 |
 
-Concrètement, ça se traduit par une classe `SeriesConfig` (nombre de rounds, durée réponse, paliers de mise, durées des phases bonus) instanciée par série au moment de `CreateGame`, plutôt que des constantes fixes dans le code.
+Concrètement, ça se traduit par une classe `SeriesConfig` (nombre de rounds, durée réponse, paliers de mise, durées des phases bonus) instanciée par série au moment de `ConfigurerPartie`, plutôt que des constantes fixes dans le code.
 
 ### Seuil de tolérance Levenshtein — recommandation
 
@@ -319,13 +342,13 @@ seuil = max(1, floor(longueur(texteNormalisé) × 0.2))
 
 Concrètement : ~20 % de caractères d'écart tolérés, avec un minimum de 1. Ça reste un point de départ — à ajuster après quelques parties de test si ça se montre trop laxiste (des réponses clairement fausses validées) ou trop strict (des réponses correctes rejetées pour une faute de frappe).
 
-### Outil de curation des tags — recommandation
+### Outil de curation des tags
 
-Plutôt que de construire une interface web dédiée (temps de dev pour un usage ponctuel), je recommande un aller-retour par tableur :
+Plutôt qu'une interface web dédiée (temps de dev pour un usage ponctuel), un aller-retour par tableur — implémenté dans `data/scripts/` suite au retour utilisateur du 2026-08-24 (morceaux "variété française" mal tagués "electro" par le bucketing automatique, voir section 3 point 3) :
 
-1. Script d'export : `tracks.json` → CSV avec colonnes `id`, `title`, `artist`, `genres` (déjà rempli par Spotify), `tags` (vide ou pré-rempli par heuristique).
-2. Édition dans Excel (que tu maîtrises déjà) — tri, filtre, remplissage par glisser-copier pour les morceaux d'un même thème, éventuellement une liste de validation de données pour les tags courants.
-3. Script d'import : CSV → réinjection dans `tracks.json`.
+1. `python data/scripts/export_tags_csv.py [--tag TAG]` : `tracks.json` → CSV avec colonnes `id`, `title`, `artist`, `year`, `genres` (lecture seule), `tags` (éditable) — `--tag` limite l'export à une seule catégorie à relire (ex. `--tag electro`).
+2. Édition de la colonne `tags` au tableur (Excel — encodage `utf-8-sig`) — tri, filtre, remplissage par glisser-copier pour les morceaux d'un même thème.
+3. `python data/scripts/import_tags_csv.py CHEMIN.csv [--dry-run]` : réinjecte uniquement la colonne `tags` par `id` (les autres colonnes du CSV sont ignorées) — un CSV filtré par `--tag` peut être réimporté tel quel sans toucher au reste du catalogue.
 
 Plus rapide à mettre en place qu'une UI web, et plus confortable pour l'édition en masse de ~1000 lignes.
 

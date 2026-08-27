@@ -19,11 +19,15 @@ Résumé opérationnel. Le détail complet (schémas, diagrammes, exemples JSON,
    Juste → `+pointsEnJeu`. Faux → `-pointsEnJeu × 0.5` (pénalité réduite pour inciter à toujours tenter une réponse plutôt qu'à s'abstenir — voir `docs/architecture.md` section 6 pour la justification). Pas de réponse en fin de round → `-5` fixe.
 4. `duréeEnPauseMs` neutralise le temps où la partie était en pause (voir plus bas).
 
+## Cible du round (Titre / Auteur / Film)
+
+Tirée à 50/50 (Titre/Auteur) au démarrage du round — sauf morceaux tagués `"disney"` dans `tracks.json`, où la cible est **toujours forcée à `Film`** : ni le titre réel de la chanson ni l'artiste crédité (souvent la voix/l'acteur, imprévisible) ne sont des questions jouables pour ce type de contenu. `Film` compare la réponse au nom du film déduit de `Track.Album` (nettoyé des suffixes de bande originale — voir `FilmNameResolver`), pas au titre de la chanson.
+
 ## QCM
 
-3 distracteurs par défaut, tirés du même pool genre/tag. Si le morceau a des `trapWith` définis dans `tracks.json`, ~15-20 % de chance d'utiliser un piège à la place — ne doit jamais devenir systématique (probabilité configurable).
+3 distracteurs par défaut, tirés du même pool genre/tag, **en excluant tout artiste déjà choisi** (correct ou distracteur précédent) — deux options créditées au même artiste sont illisibles en cible Auteur. Si le morceau a des `trapWith` définis dans `tracks.json`, ~15-20 % de chance d'utiliser un piège à la place — ne doit jamais devenir systématique (probabilité configurable).
 
-Si le pool genre/tag ne contient pas assez de morceaux pour compléter les 3 distracteurs (thème trop niche), compléter avec le pool global (`tracks.json` entier). Toujours 4 options, jamais de round bloqué.
+Si le pool genre/tag ne contient pas assez de morceaux pour compléter les 3 distracteurs (thème trop niche, ou morceau sans genre renseigné), repli sur la même décennie (`Track.Year`) avant de retomber sur le pool global (`tracks.json` entier) totalement aléatoire. Toujours 4 options, jamais de round bloqué — au pire, un même artiste peut réapparaître plutôt que de bloquer le round.
 
 ## Question bonus (fin de série)
 
@@ -40,7 +44,7 @@ Si `modeÉquipe` actif : chaque joueur répond toujours individuellement, mais l
 ## Reconnexion joueur et host
 
 - Un `Player` est identifié par un `playerId` **stable**, généré et persisté côté client Flutter — jamais par le `connectionId` SignalR, qui change à chaque reconnexion (coupure WiFi, verrouillage d'écran). `JoinGame(code, nom, playerId)` sert aussi bien à rejoindre qu'à se reconnecter : si le `playerId` existe déjà dans la partie, le serveur réassocie le nouveau `connectionId` et renvoie l'état existant du joueur (score, équipe) plutôt que d'en créer un nouveau.
-- Le host (page web PC) peut resynchroniser son état après un refresh/crash via `RejoinAsHost(code)`, qui renvoie l'état courant (morceau, mode, position audio théorique, `enPause`) pour reprendre la lecture sans redémarrer le morceau.
+- Le host (page web PC) peut resynchroniser son état après un refresh/crash via `RejoinAsHost(code, hostSecret)`, qui renvoie l'état courant (morceau, mode, position audio théorique, `enPause`) pour reprendre la lecture sans redémarrer le morceau. `hostSecret` (renvoyé par `CreateGame`, distinct du code public) empêche un joueur connaissant seulement le code de voler le contrôle host.
 
 ## Pause
 
