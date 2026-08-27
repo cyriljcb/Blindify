@@ -3,14 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Blindify — Host</title>
+  <title>Blindify — Panneau de contrôle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Anton (titres affiche) + Space Grotesk (texte) + Space Mono (chiffres/timer) — dégrade
+       proprement sur les polices système (voir --font-* dans style.css) si le PC n'a pas
+       internet au moment du chargement (partie strictement locale, voir CLAUDE.md). -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
     <h1>Blindify</h1>
-    <span id="connection-indicator" class="pill pill--off">déconnecté</span>
+    <div class="header-actions">
+      <button id="btn-open-display" class="btn-secondary">Ouvrir l'écran public</button>
+      <span id="display-indicator" class="pill pill--off">écran public : fermé</span>
+      <span id="connection-indicator" class="pill pill--off">déconnecté</span>
+    </div>
   </header>
+  <p class="control-note">
+    Ce panneau est réservé à l'organisateur (commandes, scores, override) — à garder sur ton écran privé.
+    Affiche <strong>l'écran public</strong> sur le vidéoprojecteur/TV pour les joueurs : il ne montre jamais
+    les informations à deviner ni les scores en continu.
+  </p>
 
   <main>
     <!-- Contrôles partagés (audio + pause/tableau général) — hors des écrans pour rester
@@ -34,29 +52,19 @@
       <p id="connect-error" class="error"></p>
     </section>
 
-    <!-- Écran 2 : création de partie -->
+    <!-- Écran 2 : création de partie — volontairement minimal (retour utilisateur du 2026-08-24) :
+         le lobby existe (code, QR) avant toute configuration de blindtest, pour que les joueurs
+         puissent rejoindre pendant que le host configure, et pour pouvoir reconfigurer sans tout
+         recréer si une config se révèle ratée (voir #blindtest-config dans l'écran lobby ci-dessous
+         et app.js:btn-configurer-partie). -->
     <section id="screen-setup" class="screen hidden">
       <h2>Nouvelle partie</h2>
-      <label for="setup-tags">Thèmes / tags (séparés par des virgules, vide = tout le catalogue)</label>
-      <input id="setup-tags" type="text" placeholder="disney, annees-90" />
-
-      <label for="setup-nombre-rounds">Nombre de rounds classiques</label>
-      <input id="setup-nombre-rounds" type="number" min="1" value="10" />
-
-      <label for="setup-duree-fenetre">Durée de la fenêtre de réponse (secondes)</label>
-      <input id="setup-duree-fenetre" type="number" min="1" value="15" />
-
       <label><input id="setup-mode-equipe" type="checkbox" /> Mode équipes</label>
 
       <div id="setup-equipes-wrapper" class="hidden">
         <label for="setup-noms-equipes">Noms des équipes (séparés par des virgules, au moins 2)</label>
         <input id="setup-noms-equipes" type="text" placeholder="Rouge, Bleu" />
       </div>
-
-      <label><input id="setup-audio-continu" type="checkbox" checked /> Musique continue entre les rounds</label>
-
-      <label for="setup-delai-enchainement">Délai avant le round suivant (secondes)</label>
-      <input id="setup-delai-enchainement" type="number" min="1" value="6" />
 
       <button id="btn-create-game">Créer la partie</button>
       <p id="setup-error" class="error"></p>
@@ -70,10 +78,64 @@
       </div>
       <h3>Joueurs connectés</h3>
       <ul id="lobby-players" class="player-list"></ul>
+
+      <!-- Configuration du blindtest — séparée de la création du lobby (retour utilisateur du
+           2026-08-24), rappelable autant de fois que nécessaire tant que la partie n'a pas démarré
+           (voir GameHub.ConfigurerPartie). "Démarrer la partie" reste désactivé tant qu'aucune
+           configuration n'a été validée avec succès (voir app.js:partieConfiguree). -->
+      <div id="blindtest-config">
+        <h3>Configuration du blindtest</h3>
+        <label>Thèmes</label>
+        <p class="field-hint">
+          Chaque case cochée est un thème candidat. Chaque série jouée reçoit UN SEUL thème, tiré au
+          sort parmi ceux cochés (sans répétition tant qu'il en reste) — coche-en plusieurs pour que
+          les séries soient nettement différentes les unes des autres.
+        </p>
+        <div id="setup-tags-container" class="tag-picker">
+          <label class="tag-tile tag-tile--random">
+            <input id="setup-tags-aleatoire" type="checkbox" /> Thème aléatoire (tout le catalogue)
+          </label>
+          <!-- Cases générées dynamiquement depuis GET /api/tags (voir app.js:chargerTagsDisponibles) -->
+        </div>
+
+        <label for="setup-nombre-series">Nombre de séries</label>
+        <input id="setup-nombre-series" type="number" min="1" value="3" />
+
+        <label for="setup-nombre-rounds">Nombre de rounds par série</label>
+        <input id="setup-nombre-rounds" type="number" min="1" value="10" />
+
+        <label for="setup-duree-fenetre">Durée de la fenêtre de réponse (secondes)</label>
+        <input id="setup-duree-fenetre" type="number" min="1" value="15" />
+
+        <label><input id="setup-audio-continu" type="checkbox" checked /> Musique continue entre les rounds</label>
+
+        <label for="setup-delai-enchainement">Délai avant le round suivant (secondes)</label>
+        <input id="setup-delai-enchainement" type="number" min="1" value="10" />
+
+        <button id="btn-configurer-partie">Valider la configuration</button>
+        <p id="configurer-error" class="error"></p>
+        <p id="configurer-note" class="reveal"></p>
+      </div>
+
       <div class="actions">
-        <button id="btn-start-round">Démarrer le round</button>
+        <button id="btn-start-round" disabled>Démarrer la partie</button>
       </div>
       <p id="lobby-error" class="error"></p>
+    </section>
+
+    <!-- Écran : annonce de série, affiché avant le premier round de CHAQUE série (retour
+         utilisateur) — y compris la toute première, depuis le lobby. -->
+    <section id="screen-serie-intro" class="screen hidden">
+      <h2>Prochaine série</h2>
+      <div class="serie-intro-card">
+        <div id="serie-intro-lettre" class="serie-intro-lettre"></div>
+        <div id="serie-intro-theme" class="serie-intro-theme"></div>
+      </div>
+      <p id="serie-intro-note" class="reveal"></p>
+      <div class="actions">
+        <button id="btn-start-serie">Démarrer la série</button>
+      </div>
+      <p id="serie-intro-error" class="error"></p>
     </section>
 
     <!-- Écran 4 : round en cours -->
@@ -113,7 +175,7 @@
 
     <!-- Écran 6 : question bonus — phase mise (à l'aveugle) -->
     <section id="screen-bonus-stake" class="screen hidden">
-      <h2>Question bonus — mise à l'aveugle</h2>
+      <h2 id="bonus-stake-title">Question bonus — mise à l'aveugle</h2>
       <p>Les joueurs choisissent un palier sur leur téléphone avant de découvrir la question.</p>
       <div class="timer-bar"><div id="bonus-stake-timer-fill" class="timer-fill"></div></div>
       <ul id="bonus-paliers" class="score-list"></ul>
@@ -121,7 +183,7 @@
 
     <!-- Écran 7 : question bonus — phase question -->
     <section id="screen-bonus-question" class="screen hidden">
-      <h2>Question bonus — à deviner !</h2>
+      <h2 id="bonus-question-title">Question bonus — à deviner !</h2>
       <div class="cover-frame cover-frame--mystere"><span class="cover-placeholder">❓</span></div>
       <p>Morceau ralenti, un seul essai, pas de dégressivité.</p>
       <div class="timer-bar"><div id="bonus-question-timer-fill" class="timer-fill"></div></div>
@@ -129,7 +191,7 @@
 
     <!-- Écran 8 : question bonus — résultat -->
     <section id="screen-bonus-result" class="screen hidden">
-      <h2>Résultat de la question bonus</h2>
+      <h2 id="bonus-result-title">Résultat de la question bonus</h2>
       <div class="cover-frame">
         <img id="bonus-reveal-cover" class="hidden" alt="Pochette de l'album" />
         <span id="bonus-reveal-cover-placeholder" class="cover-placeholder">🎵</span>
@@ -153,6 +215,8 @@
     <section id="screen-ended" class="screen hidden">
       <h2>Partie terminée</h2>
       <ol id="final-scores" class="score-list score-list--final"></ol>
+      <h3>Qui menait quand</h3>
+      <div id="score-chart" class="score-chart"></div>
       <div class="actions">
         <button id="btn-rejouer">Rejouer avec le même groupe</button>
       </div>

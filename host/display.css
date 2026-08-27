@@ -1,0 +1,224 @@
+/* Écran public — surcouche de style.css : format "vidéoprojecteur/TV", vu par tous les joueurs.
+   Aucune information sensible ne doit apparaître ici (voir display.js et la note du panneau de
+   contrôle) — ces règles ne font que grossir/épurer l'affichage, jamais montrer plus de données. */
+
+main {
+  max-width: 1400px;
+  padding: 3rem 2rem;
+}
+
+.screen {
+  align-items: center;
+  text-align: center;
+  gap: 1.75rem;
+  padding: clamp(2rem, 5vw, 4rem);
+}
+
+.screen h2 {
+  font-size: clamp(1.8rem, 2vw + 1.4rem, 2.8rem);
+}
+
+.logo {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(2.8rem, 6vw, 5.5rem);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  text-shadow: 5px 5px 0 var(--coral);
+}
+
+.waiting-text {
+  color: var(--ink-dim);
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+}
+
+/* ----- Annonce de série (retour utilisateur) : encore plus grand que côté panneau de contrôle,
+   lisible depuis le fond de la salle. ----- */
+
+.serie-intro-lettre--display {
+  font-size: clamp(5rem, 14vw, 9rem);
+  text-shadow: 7px 7px 0 var(--coral);
+}
+.serie-intro-theme--display {
+  font-size: clamp(1.4rem, 2vw, 2rem);
+}
+
+.paused-banner {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1.5deg);
+  z-index: 20;
+  background: var(--mustard);
+  color: #241d05;
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 1.4rem;
+  padding: 0.6rem 1.6rem;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 6px 6px 0 var(--coral);
+}
+
+/* ----- Pochette / mystère, plus grande que sur le panneau de contrôle ----- */
+
+.cover-frame--big {
+  width: min(420px, 60vw);
+}
+
+/* ----- Minuteur, plus visible depuis le fond de la pièce ----- */
+
+.timer-bar--big {
+  height: 24px;
+  width: min(600px, 90vw);
+  border-width: 3px;
+}
+.timer-bar--big .timer-fill {
+  background-image: repeating-linear-gradient(90deg, var(--cobalt) 0 16px, var(--bg) 16px 20px);
+}
+.timer-bar--big .timer-fill.timer-fill--warn {
+  background-image: repeating-linear-gradient(90deg, var(--mustard) 0 16px, var(--bg) 16px 20px);
+}
+.timer-bar--big .timer-fill.timer-fill--danger {
+  background-image: repeating-linear-gradient(90deg, var(--coral) 0 16px, var(--bg) 16px 20px);
+}
+
+.timer-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.timer-seconds {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 2rem;
+  min-width: 3ch;
+  text-align: right;
+  color: var(--cobalt);
+  font-variant-numeric: tabular-nums;
+}
+.timer-seconds--warn { color: var(--mustard); }
+.timer-seconds--danger { color: var(--coral); }
+
+/* ----- QR code de connexion (lobby) : quiet-zone blanche généreuse + cadre "encre" pour rester
+   scannable à distance depuis un téléphone, même sur fond sombre (voir display.js:appliquerEtat). */
+
+.qr-container {
+  width: min(300px, 45vw);
+  aspect-ratio: 1;
+  padding: 1rem;
+  background: #ffffff;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: 6px 6px 0 var(--cobalt);
+}
+.qr-container svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ----- Liste de joueurs (lobby) : sans statistiques, juste présence ----- */
+
+.player-list--display li {
+  font-size: 1.1rem;
+  padding: 0.85rem 1.2rem;
+}
+
+/* ----- Chips de joueurs pendant un round (pas de score affiché) ----- */
+
+.player-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+.player-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface-alt);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem 0.4rem 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+.player-chip.disconnected {
+  opacity: 0.45;
+}
+
+/* ----- Options QCM (retour utilisateur) : mêmes choix que sur le téléphone des joueurs, en
+   grand pour être lisibles depuis le fond de la salle — jamais la bonne réponse seule en avant. */
+
+.qcm-options-display {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.qcm-options-display li {
+  background: var(--surface-alt);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 5px 5px 0 var(--cobalt);
+  padding: 1rem 1.4rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+/* ----- Résultats de reveal : correct/incorrect uniquement, jamais de points ----- */
+
+.result-badges {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  max-width: 900px;
+}
+.result-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--surface-alt);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 0.5rem 1rem 0.5rem 0.5rem;
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.result-badge--correct { border-color: var(--good); box-shadow: 3px 3px 0 var(--good); }
+.result-badge--incorrect { border-color: var(--coral); opacity: 0.75; }
+.result-icon { font-family: var(--font-display); font-weight: 400; }
+.result-badge--correct .result-icon { color: var(--good); }
+.result-badge--incorrect .result-icon { color: var(--coral); }
+
+/* ----- Scores (tableau général / fin de partie uniquement — reveal volontaire) ----- */
+
+.score-list--display li {
+  font-size: 1.2rem;
+  padding: 0.85rem 1.2rem;
+}
+.score-list--display .avatar {
+  width: 2.6rem;
+  height: 2.6rem;
+  font-size: 1rem;
+}
