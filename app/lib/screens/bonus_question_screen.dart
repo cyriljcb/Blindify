@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/bonus_question_started.dart';
 import '../models/round_cible.dart';
+import '../models/round_mode.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/cover_art.dart';
@@ -58,7 +60,10 @@ class _BonusQuestionScreenState extends State<BonusQuestionScreen> {
   // qui détruit cet écran (et son ticker) avant que la validation locale ait pu partir.
   void _autoSubmitSiSaisie() {
     final game = context.read<GameConnection>();
-    if (game.bonusAnswered) return;
+    // Mode tiré aléatoirement depuis le retour utilisateur du 2026-08-27 (QCM/Première lettre en
+    // plus de la réponse tapée, comme un round classique) — ne concerne que TapeReponse, voir
+    // RoundScreen._autoSubmitSiSaisie pour le même raisonnement.
+    if (game.bonusAnswered || game.bonusQuestion?.mode != RoundMode.tapeReponse) return;
     final reponse = _reponseController.text.trim();
     if (reponse.isNotEmpty) game.submitBonusAnswer(reponse);
   }
@@ -121,30 +126,167 @@ class _BonusQuestionScreenState extends State<BonusQuestionScreen> {
           if (game.paused) const _Banner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.bonusAnswered && !game.paused)
             const _Banner(text: 'Réponse envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
-          const Spacer(),
-          TextField(
-            controller: _reponseController,
-            enabled: !disabled,
-            decoration: InputDecoration(
-              labelText: switch (cible) {
-                RoundCible.film => 'Film Disney',
-                RoundCible.auteur => 'Artiste du morceau',
-                RoundCible.titre => 'Titre du morceau',
-              },
-            ),
-            onSubmitted: disabled ? null : (value) => context.read<GameConnection>().submitBonusAnswer(value.trim()),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed:
-                  disabled ? null : () => context.read<GameConnection>().submitBonusAnswer(_reponseController.text.trim()),
-              child: const Text('Valider'),
-            ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: switch (game.bonusQuestion!.mode) {
+              RoundMode.qcm => _QcmAnswers(question: game.bonusQuestion!, disabled: disabled),
+              RoundMode.premiereLettre => _LetterAnswer(disabled: disabled),
+              RoundMode.tapeReponse => _TextAnswer(controller: _reponseController, disabled: disabled, cible: cible),
+            },
           ),
         ],
       ),
+    );
+  }
+}
+
+class _QcmAnswers extends StatelessWidget {
+  const _QcmAnswers({required this.question, required this.disabled});
+
+  final BonusQuestionStarted question;
+  final bool disabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = question.qcmOptions ?? [];
+
+    return ListView.separated(
+      itemCount: options.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final option = options[index];
+        // Un seul champ affiché par option, comme RoundScreen._QcmAnswers.
+        final label = switch (question.cible) {
+          RoundCible.titre => option.title,
+          RoundCible.auteur => option.artist.split(',').first.trim(),
+          RoundCible.film => option.film,
+        };
+        return _AnswerTile(
+          label: label,
+          onPressed: disabled ? null : () => context.read<GameConnection>().submitBonusAnswer(option.trackId),
+        );
+      },
+    );
+  }
+}
+
+class _AnswerTile extends StatelessWidget {
+  const _AnswerTile({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BlindifyColors.surfaceAlt,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onPressed,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: BlindifyColors.ink, width: 2),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LetterAnswer extends StatelessWidget {
+  const _LetterAnswer({required this.disabled});
+
+  final bool disabled;
+
+  static const _letters = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  ];
+
+  static const _crossAxisCount = 5;
+  static const _spacing = 10.0;
+
+  @override
+  Widget build(BuildContext context) {
+    // Même calcul que RoundScreen._LetterAnswer (retour utilisateur : occuper tout l'espace
+    // vertical disponible plutôt qu'un ratio fixe qui laisse un reste).
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final rows = (_letters.length / _crossAxisCount).ceil();
+        final tileWidth = (constraints.maxWidth - _spacing * (_crossAxisCount - 1)) / _crossAxisCount;
+        final tileHeight = (constraints.maxHeight - _spacing * (rows - 1)) / rows;
+
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: _crossAxisCount,
+            mainAxisSpacing: _spacing,
+            crossAxisSpacing: _spacing,
+            childAspectRatio: tileWidth / tileHeight,
+          ),
+          itemCount: _letters.length,
+          itemBuilder: (context, index) {
+            final letter = _letters[index];
+            return Material(
+              color: BlindifyColors.surfaceAlt,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: disabled ? null : () => context.read<GameConnection>().submitBonusAnswer(letter),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: BlindifyColors.ink, width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(letter, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _TextAnswer extends StatelessWidget {
+  const _TextAnswer({required this.controller, required this.disabled, required this.cible});
+
+  final TextEditingController controller;
+  final bool disabled;
+  final RoundCible cible;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (cible) {
+      RoundCible.film => 'Film Disney',
+      RoundCible.auteur => 'Artiste du morceau',
+      RoundCible.titre => 'Titre du morceau',
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: controller,
+          enabled: !disabled,
+          decoration: InputDecoration(labelText: label),
+          onSubmitted: disabled ? null : (value) => context.read<GameConnection>().submitBonusAnswer(value.trim()),
+        ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: disabled ? null : () => context.read<GameConnection>().submitBonusAnswer(controller.text.trim()),
+          child: const Text('Valider'),
+        ),
+      ],
     );
   }
 }
