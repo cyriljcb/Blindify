@@ -102,6 +102,19 @@ Retour utilisateur (2026-08-25) : taper l'IP du Pi depuis un iPhone est pénible
 - Config système sur le Pi, **aucun changement côté backend/Docker** : avahi tourne sur l'hôte, pas dans le conteneur, et n'a besoin de rien savoir du port publié.
 - Limite : dépend du support mDNS du réseau Wi-Fi — impeccable sur une box/routeur familial classique, plus capricieux si le réseau isole les clients entre eux (peu probable en usage domestique).
 
+### Mettre à jour l'app Android sans câble
+
+Retour utilisateur (2026-08-27) : mettre à jour l'app sur les téléphones des joueurs obligeait à rebrancher chacun sur le poste qui fait tourner le serveur pendant les sessions. Puisque `host/` est déjà servi en statique à la racine (voir "Dockerisation" ci-dessus, actif aussi quand le serveur tourne en dev sur ce poste), il suffit d'y déposer l'APK :
+
+```
+cd app && flutter build apk --release
+cp build/app/outputs/flutter-apk/app-release.apk ../host/blindify.apk
+```
+
+Chaque téléphone Android visite `http://<ip-du-poste>:5000/blindify.apk` (ou `http://blindify.local:5000/blindify.apk` une fois le mDNS en place) depuis son navigateur et installe (autoriser "sources inconnues" une fois par téléphone). `host/blindify.apk` n'est jamais commité (voir `.gitignore` — trop volumineux et vite obsolète), à régénérer à chaque mise à jour. `Program.cs` mappe explicitement `.apk` → `application/vnd.android.package-archive` pour ce dossier, sans quoi le middleware de fichiers statiques renvoie 404 (extension absente du `FileExtensionContentTypeProvider` par défaut). Signé avec la clé debug du poste (`build.gradle`, stable d'un build à l'autre sur cette machine) : les mises à jour s'installent par-dessus sans désinstallation préalable.
+
+Pas de solution équivalente pour iPhone sans compte Apple Developer/Xcode — voir point 9 du retour playtest 2026-08-24 (mémoire) pour la piste web (`flutter build web`, PWA via Safari).
+
 ## 3. Pipeline de préparation des données
 
 1. **Récupération playlist** : appel API Spotify pour obtenir les morceaux d'une playlist (titre, artiste, album, ID Spotify).
