@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/game_connection.dart';
 import '../theme.dart';
@@ -26,6 +28,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
   void dispose() {
     _urlController.dispose();
     super.dispose();
+  }
+
+  // L'APK est servi par le backend depuis host/ (voir docs/architecture.md "Mettre à jour l'app
+  // Android sans câble") — réutilise l'adresse déjà saisie/mémorisée plutôt que de la retaper.
+  Future<void> _ouvrirMiseAJour() async {
+    final base = _urlController.text.trim().replaceAll(RegExp(r'/+$'), '');
+    if (base.isEmpty) return;
+    await launchUrl(Uri.parse('$base/blindify.apk'), mode: LaunchMode.externalApplication);
   }
 
   @override
@@ -94,6 +104,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 icon: const Icon(Icons.qr_code_scanner_rounded),
                 label: const Text('Scanner le QR'),
               ),
+              if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: _ouvrirMiseAJour,
+                  icon: const Icon(Icons.system_update_alt_rounded, size: 18),
+                  label: const Text("Mettre à jour l'app"),
+                ),
+              ],
             ],
           ),
         ),
