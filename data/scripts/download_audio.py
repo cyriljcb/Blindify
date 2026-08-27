@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -94,17 +95,45 @@ def rechercher_sur_youtube(ffmpeg_location: str | None, requete: str) -> list[di
         return [e for e in entries if e]
 
 
+_MOTS_VIDES_TITRE = {
+    "the", "a", "an", "de", "des", "du", "la", "le", "les", "et", "feat", "ft", "with", "avec", "un", "une",
+}
+
+
+def _mots_significatifs(titre: str) -> set[str]:
+    mots = re.findall(r"[a-zàâäéèêëïîôöùûüç0-9]+", titre.lower())
+    return {m for m in mots if len(m) >= 3 and m not in _MOTS_VIDES_TITRE}
+
+
+def _titre_correspond(titre_candidat: str, titre_officiel: str) -> bool:
+    """Au moins un mot significatif commun entre le titre de la vidéo et le titre officiel —
+    filet de sécurité contre un mauvais morceau du même artiste (retour utilisateur 2026-08-27 :
+    redownload_tracks.py a un jour remplacé "Les fées rêvent du printemps" par "La Belle et la
+    Bête" du même artiste, même proximité de durée, aucun mot en commun). Permissif par nature
+    (un seul mot suffit) car les titres YouTube ajoutent souvent des mentions ("Official Video",
+    featuring...) qui réduisent le recouvrement réel."""
+    mots_officiels = _mots_significatifs(titre_officiel)
+    if not mots_officiels:
+        return True  # rien à comparer (titre officiel trop court) — ne bloque pas la sélection
+    return bool(mots_officiels & _mots_significatifs(titre_candidat))
+
+
 def meilleur_candidat(candidats: list[dict], duree_ms_attendue: int, titre_officiel: str) -> tuple[dict, float]:
     """Choisit, parmi les résultats de recherche, celui dont la durée colle le mieux à
     la durée Spotify. Retourne le candidat et son écart en secondes.
 
     Écarte d'abord les candidats dont le titre sent la version live/acoustique/remix/cover
     (voir live_keywords.py) — sinon une version live coupée à la bonne durée passait le
-    filtre de tolérance sans jamais être repérée. Si tous les candidats sont suspects, on
-    retombe sur la liste complète : le filtre de tolérance de durée reste le dernier
+    filtre de tolérance sans jamais être repérée. Écarte ensuite ceux dont le titre n'a aucun
+    mot en commun avec le titre officiel (_titre_correspond) — sans ça, un autre morceau du
+    même artiste à durée proche pouvait être choisi à tort. Si plus aucun candidat ne passe un
+    filtre, on retombe sur l'étage précédent : la tolérance de durée reste le dernier
     garde-fou plutôt que de ne rien télécharger du tout."""
     non_suspects = [c for c in candidats if not mots_suspects(c.get("title") or "", titre_officiel)]
     pool = non_suspects or candidats
+
+    pool_titre_ok = [c for c in pool if _titre_correspond(c.get("title") or "", titre_officiel)]
+    pool = pool_titre_ok or pool
 
     meilleur = min(pool, key=lambda c: abs((c.get("duration") or 0) * 1000 - duree_ms_attendue))
     ecart_s = abs((meilleur.get("duration") or 0) * 1000 - duree_ms_attendue) / 1000
