@@ -5,8 +5,8 @@ namespace Blindify.Tests.Rounds;
 public class TitreVariantesTests
 {
     [Theory]
-    [InlineData("Let It Go")] // 3 mots
-    [InlineData("Under the Sea Now")] // 4 mots
+    [InlineData("Let It Go")] // 9 caractères
+    [InlineData("Under the Sea Now")] // 17 caractères
     public void Acceptables_TitreCourt_SeulementLeTitreComplet(string titre)
     {
         Assert.Equal([titre], TitreVariantes.Acceptables(titre));
@@ -15,8 +15,9 @@ public class TitreVariantesTests
     [Fact]
     public void Acceptables_TitreLong_ContientLaVarianteTronqueeEtLeTitreComplet()
     {
-        // Retour utilisateur (playtest 2026-08-24) : "Another One Bites The Dust" (5 mots) doit
-        // rester devinable même sans taper le titre en entier.
+        // Retour utilisateur (playtest 2026-08-24, raisonnement en caractères depuis le
+        // 2026-08-27) : "Another One Bites The Dust" (26 caractères) doit rester devinable même
+        // sans taper le titre en entier.
         const string titre = "Another One Bites The Dust";
 
         var acceptables = TitreVariantes.Acceptables(titre).ToList();
@@ -26,10 +27,10 @@ public class TitreVariantesTests
     }
 
     [Theory]
-    [InlineData("Let It Go", true)] // 3 mots
-    [InlineData("Another One Bites The Dust", true)] // 5 mots, tronqué mais toujours éligible
-    [InlineData("Un Titre Avec Beaucoup Trop De Mots Dedans", false)] // 8 mots, au-delà du seuil d'exclusion
-    public void EstEligibleCommeCible_SelonLeNombreDeMots(string titre, bool attendu)
+    [InlineData("Let It Go", true)] // 9 caractères
+    [InlineData("Another One Bites The Dust", true)] // 26 caractères, tronqué mais toujours éligible
+    [InlineData("Un Titre Avec Beaucoup Trop De Mots Dedans", false)] // 42 caractères, au-delà du seuil d'exclusion
+    public void EstEligibleCommeCible_SelonLeNombreDeCaracteres(string titre, bool attendu)
     {
         Assert.Equal(attendu, TitreVariantes.EstEligibleCommeCible(titre));
     }

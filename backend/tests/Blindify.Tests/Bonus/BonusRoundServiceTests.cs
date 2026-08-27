@@ -194,8 +194,8 @@ public class BonusRoundServiceTests
     [Fact]
     public void CreerBonusRound_TitreTropLong_CibleTombeToujoursSurAuteur()
     {
-        // Voir TitreVariantes.EstEligibleCommeCible : au-delà de 7 mots, la cible Titre est exclue
-        // du tirage — déterministe, contrairement au test 50/50 ci-dessus.
+        // Voir TitreVariantes.EstEligibleCommeCible : au-delà de 35 caractères, la cible Titre est
+        // exclue du tirage — déterministe, contrairement au test 50/50 ci-dessus.
         var track = new Track
         {
             Id = "a",

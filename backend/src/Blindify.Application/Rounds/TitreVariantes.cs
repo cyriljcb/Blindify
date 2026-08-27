@@ -8,17 +8,18 @@ namespace Blindify.Application.Rounds;
 /// ET, en repli, le titre sans son contenu parenthétique.</summary>
 public static partial class TitreVariantes
 {
-    // Retour utilisateur (playtest 2026-08-24) : les titres longs ("Another One Bites The Dust")
-    // sont pénibles à taper en entier. En dessous de SeuilMotsTronque, comportement inchangé
-    // (titre complet uniquement). Entre les deux seuils, les NombreMotsTronques premiers mots sont
-    // acceptés en plus du titre complet. Au-delà de SeuilMotsExclusion, le morceau ne doit plus
-    // être tiré en cible Titre du tout (voir RoundService/BonusRoundService) — même tronqué, ça
-    // reste trop dur à deviner à l'oreille.
-    private const int SeuilMotsTronque = 4;
-    private const int SeuilMotsExclusion = 7;
-    private const int NombreMotsTronques = 3;
+    // Retour utilisateur (playtest 2026-08-24, affiné le 2026-08-27 pour raisonner en caractères
+    // plutôt qu'en mots — un titre à mots longs comme "Bohemian Rhapsody" est aussi pénible à
+    // taper qu'un titre à mots courts avec plus de mots) : les titres longs sont pénibles à taper
+    // en entier. En dessous de SeuilCaracteresTronque, comportement inchangé (titre complet
+    // uniquement). Au-delà, une variante tronquée (mots entiers, jusqu'à ~SeuilCaracteresTronque
+    // caractères) est acceptée en plus du titre complet. Au-delà de SeuilCaracteresExclusion, le
+    // morceau ne doit plus être tiré en cible Titre du tout (voir RoundService/BonusRoundService)
+    // — même tronqué, ça reste trop dur à deviner à l'oreille.
+    private const int SeuilCaracteresTronque = 20;
+    private const int SeuilCaracteresExclusion = 35;
 
-    public static bool EstEligibleCommeCible(string titre) => CompterMots(titre) <= SeuilMotsExclusion;
+    public static bool EstEligibleCommeCible(string titre) => titre.Length <= SeuilCaracteresExclusion;
 
     public static IEnumerable<string> Acceptables(string titre)
     {
@@ -32,14 +33,33 @@ public static partial class TitreVariantes
             yield return sansParentheses;
 
         var referenceTroncature = sansParentheses.Length > 0 ? sansParentheses : titre;
-        if (CompterMots(referenceTroncature) > SeuilMotsTronque)
+        if (referenceTroncature.Length > SeuilCaracteresTronque)
         {
-            var tronque = string.Join(' ', referenceTroncature.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(NombreMotsTronques));
+            var tronque = TronquerAuxMotsEntiers(referenceTroncature, SeuilCaracteresTronque);
             if (tronque.Length > 0) yield return tronque;
         }
     }
 
-    private static int CompterMots(string texte) => texte.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+    /// <summary>Prend des mots entiers depuis le début de <paramref name="texte"/> tant que leur
+    /// longueur cumulée (espaces compris) ne dépasse pas <paramref name="budgetCaracteres"/> — au
+    /// moins un mot est toujours pris, même s'il dépasse seul le budget, pour ne jamais renvoyer
+    /// une chaîne vide.</summary>
+    private static string TronquerAuxMotsEntiers(string texte, int budgetCaracteres)
+    {
+        var motsTronques = new List<string>();
+        var longueur = 0;
+
+        foreach (var mot in texte.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var prochaineLongueur = longueur + (motsTronques.Count > 0 ? 1 : 0) + mot.Length;
+            if (motsTronques.Count > 0 && prochaineLongueur > budgetCaracteres) break;
+
+            motsTronques.Add(mot);
+            longueur = prochaineLongueur;
+        }
+
+        return string.Join(' ', motsTronques);
+    }
 
     [GeneratedRegex(@"[\(\[][^\)\]]*[\)\]]")]
     private static partial Regex RegexParentheses();
