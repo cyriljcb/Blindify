@@ -101,9 +101,15 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
             ["t3"] = "Idina Menzel",
             ["t4"] = "Nathan Lane"
         };
-        var bonneReponse = questionPlayer.Cible == RoundCible.Auteur
-            ? artistesConnus[questionHost.TrackId]
-            : titresConnus[questionHost.TrackId];
+        // Mode tiré aléatoirement (Qcm/TapeReponse/PremiereLettre) depuis le retour utilisateur du
+        // 2026-08-27 — voir BonusRoundService.CreerBonusRound. En Qcm la bonne réponse est le
+        // TrackId (comme en round classique), pas le texte ; en TapeReponse/PremiereLettre le texte
+        // complet reste accepté (une première lettre correcte suffit à valider PremiereLettre).
+        var bonneReponse = questionPlayer.Mode == RoundMode.Qcm
+            ? questionHost.TrackId
+            : questionPlayer.Cible == RoundCible.Auteur
+                ? artistesConnus[questionHost.TrackId]
+                : titresConnus[questionHost.TrackId];
 
         var reponseAlice = await _alice.InvokeAsync<BonusAnswerResultDto>("SubmitBonusAnswer", new SubmitBonusAnswerRequestDto(bonneReponse));
         Assert.True(reponseAlice.EstCorrecte);

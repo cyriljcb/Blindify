@@ -6,7 +6,9 @@ namespace Blindify.Application.Bonus;
 /// <summary>Cycle de vie de la question bonus (mise à l'aveugle puis question) — voir architecture.md section 7.</summary>
 public interface IBonusRoundService
 {
-    BonusRound CreerBonusRound(Track track);
+    /// <summary>catalogueComplet/tags/config : nécessaires pour générer les options QCM quand le
+    /// tirage aléatoire du Mode tombe sur Qcm (voir RoundService.PoolPourQcm).</summary>
+    BonusRound CreerBonusRound(Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config);
 
     void DemarrerPhaseMise(BonusRound bonusRound, DateTimeOffset maintenant);
 

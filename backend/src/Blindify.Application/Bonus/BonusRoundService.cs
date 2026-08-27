@@ -1,4 +1,5 @@
 using Blindify.Application.Answers;
+using Blindify.Application.Qcm;
 using Blindify.Application.Rounds;
 using Blindify.Application.Scoring;
 using Blindify.Domain.Configuration;
@@ -7,19 +8,36 @@ using Blindify.Domain.Enums;
 
 namespace Blindify.Application.Bonus;
 
-public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher answerMatcher) : IBonusRoundService
+public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher answerMatcher, IQcmGenerator qcmGenerator) : IBonusRoundService
 {
     // Cible forcée à Film pour les morceaux "disney" (même raison que RoundService.DemarrerRound) :
     // ni le titre réel de la chanson ni l'artiste crédité ne sont devinables pour ce type de contenu.
     // Sinon, même tirage 50/50 Titre/Auteur que RoundService.DemarrerRound (retour utilisateur :
     // la question bonus tombait toujours sur le titre, jamais l'artiste).
-    public BonusRound CreerBonusRound(Track track) => new()
+    //
+    // Mode tiré au hasard parmi les 3 (retour utilisateur 2026-08-27 : la question bonus se
+    // limitait à la réponse tapée, jamais QCM/Première lettre comme les rounds classiques) — même
+    // tirage uniforme, indépendant de Cible. Qcm : options générées ici via le même pool que
+    // RoundService.DemarrerRound (RoundService.PoolPourQcm), les feintes (GameHub) sont appliquées
+    // plus tard côté BonusTimerCoordinator au moment de la diffusion, pas ici.
+    public BonusRound CreerBonusRound(Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config)
     {
-        TrackId = track.Id,
-        Cible = track.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)
+        var cible = track.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)
             ? RoundCible.Film
-            : Random.Shared.Next(2) == 0 && TitreVariantes.EstEligibleCommeCible(track.Title) ? RoundCible.Titre : RoundCible.Auteur
-    };
+            : Random.Shared.Next(2) == 0 && TitreVariantes.EstEligibleCommeCible(track.Title) ? RoundCible.Titre : RoundCible.Auteur;
+        var mode = (RoundMode)Random.Shared.Next(3);
+
+        var bonusRound = new BonusRound { TrackId = track.Id, Cible = cible, Mode = mode };
+
+        if (mode == RoundMode.Qcm)
+        {
+            var pool = RoundService.PoolPourQcm(cible, catalogueComplet, tags);
+            var options = qcmGenerator.GenererOptions(track, pool, config, Random.Shared);
+            bonusRound.QcmOptionTrackIds = options.OptionsTrackIds.ToList();
+        }
+
+        return bonusRound;
+    }
 
     public void DemarrerPhaseMise(BonusRound bonusRound, DateTimeOffset maintenant) => bonusRound.DebutPhaseMise = maintenant;
 
@@ -62,7 +80,12 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
             RoundCible.Auteur => AuteurVariantes.Acceptables(track.Artist),
             _ => TitreVariantes.Acceptables(track.Title)
         };
-        var estCorrecte = reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(reponse, texte, session.Config.SeuilToleranceLevenshteinRatio));
+        var estCorrecte = bonusRound.Mode switch
+        {
+            RoundMode.Qcm => reponse == track.Id,
+            RoundMode.PremiereLettre => reponsesAcceptables.Any(texte => EstPremiereLettreCorrecte(reponse, texte)),
+            _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(reponse, texte, session.Config.SeuilToleranceLevenshteinRatio)),
+        };
         var valeurMise = bonusScoring.ValeurPalier(config, mise.PalierIndex);
         var points = bonusScoring.PointsResultat(valeurMise, estCorrecte);
 
@@ -106,5 +129,15 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
     {
         var player = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
         if (player is not null) player.Score += points;
+    }
+
+    // Même logique que RoundService.EstPremiereLettreCorrecte, dupliquée plutôt que partagée par
+    // instance (les deux services sont injectés/testés séparément) — voir architecture.md section 11.
+    private bool EstPremiereLettreCorrecte(string reponse, string texteAttendu)
+    {
+        var normaliseeReponse = answerMatcher.Normaliser(reponse);
+        var normaliseAttendu = answerMatcher.Normaliser(texteAttendu);
+        return normaliseeReponse.Length > 0 && normaliseAttendu.Length > 0
+               && normaliseeReponse[0] == normaliseAttendu[0];
     }
 }

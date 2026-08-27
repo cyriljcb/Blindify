@@ -10,13 +10,14 @@ public record SelectStakeRequestDto(int PalierIndex);
 
 /// <summary>Envoyé au host uniquement — inclut l'audio (ralenti) du morceau révélé.
 /// RefrainStartMs : comme pour un round classique, appliqué au reveal (BonusResult), pas pendant
-/// la phase question qui reste jouée depuis le début (c'est la devinette elle-même).</summary>
-public record BonusQuestionStartedForHostDto(string TrackId, string FilePath, int? RefrainStartMs, int DureePhaseQuestionMs, bool RalentissementActive, double FacteurRalentissement);
+/// la phase question qui reste jouée depuis le début (c'est la devinette elle-même). Mode/QcmOptions :
+/// mêmes rôles que RoundStartedForHostDto — Mode tiré au hasard comme un round classique.</summary>
+public record BonusQuestionStartedForHostDto(string TrackId, string FilePath, int? RefrainStartMs, int DureePhaseQuestionMs, bool RalentissementActive, double FacteurRalentissement, RoundMode Mode, List<QcmOptionDto>? QcmOptions);
 
 /// <summary>Envoyé aux joueurs — pas d'audio. Cible (Titre/Film) indique ce qui est demandé, comme
 /// pour RoundStartedForPlayersDto — toujours Titre sauf morceau "disney" (Film). SerieIndex :
-/// voir RoundStartedForPlayersDto.</summary>
-public record BonusQuestionStartedForPlayersDto(int DureePhaseQuestionMs, RoundCible Cible, int SerieIndex);
+/// voir RoundStartedForPlayersDto. Mode/QcmOptions : voir RoundStartedForPlayersDto.</summary>
+public record BonusQuestionStartedForPlayersDto(int DureePhaseQuestionMs, RoundCible Cible, int SerieIndex, RoundMode Mode, List<QcmOptionDto>? QcmOptions);
 
 public record SubmitBonusAnswerRequestDto(string Reponse);
 

@@ -13,6 +13,13 @@ public class BonusRound
     /// artiste crédité (voir BonusRoundService.CreerBonusRound).</summary>
     public RoundCible Cible { get; set; } = RoundCible.Titre;
 
+    /// <summary>Tirée au hasard comme pour un round classique (retour utilisateur 2026-08-27 : la
+    /// question bonus se limitait à la réponse tapée) — voir BonusRoundService.CreerBonusRound.</summary>
+    public RoundMode Mode { get; set; } = RoundMode.TapeReponse;
+
+    /// <summary>Les 4 IDs de morceaux proposés (Mode Qcm uniquement), générés à la création du bonus round — voir Round.QcmOptionTrackIds.</summary>
+    public List<string>? QcmOptionTrackIds { get; set; }
+
     public DateTimeOffset? DebutPhaseMise { get; set; }
     public DateTimeOffset? DebutPhaseQuestion { get; set; }
 

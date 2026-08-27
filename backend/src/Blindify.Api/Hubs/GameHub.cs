@@ -192,7 +192,7 @@ public class GameHub(
         if (morceaux.Count == 0)
             throw new HubException("Pas assez de morceaux disponibles pour la question bonus.");
 
-        var bonusRound = bonusRoundService.CreerBonusRound(morceaux[0]);
+        var bonusRound = bonusRoundService.CreerBonusRound(morceaux[0], tracksRepository.GetAll(), serie.Tags, session.Config);
         serie.BonusRound = bonusRound;
         bonusRoundService.DemarrerPhaseMise(bonusRound, DateTimeOffset.UtcNow);
         statsRepository.IncrementPlayCount(morceaux[0].Id);
@@ -481,7 +481,9 @@ public class GameHub(
     /// <summary>Feinte QCM purement visuelle (retour utilisateur) — voir GameConfig.ProbabiliteQcmFeinteChamp.
     /// Remplace le champ affiché d'un distracteur tiré au sort par le champ opposé du morceau
     /// correct, sans toucher à son TrackId : le sélectionner reste une mauvaise réponse normale.</summary>
-    private static void AppliquerFeinteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
+    // Interne plutôt que privé : réutilisé par BonusTimerCoordinator pour appliquer les mêmes
+    // feintes QCM à la question bonus (retour utilisateur : QCM aussi disponible en bonus).
+    internal static void AppliquerFeinteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
     {
         // Pas de dualité "champ opposé" pertinente pour Film (pas de second champ à échanger).
         if (cible == RoundCible.Film) return;
@@ -504,7 +506,7 @@ public class GameHub(
     /// Track.TrapTextArtist, un leurre écrit à la main. Ne s'applique qu'en cible Auteur, et
     /// seulement si le morceau correct a un TrapTextArtist renseigné. Le TrackId du distracteur
     /// ne change pas : le sélectionner reste une mauvaise réponse normale.</summary>
-    private static void AppliquerFeinteTexteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
+    internal static void AppliquerFeinteTexteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
     {
         if (cible != RoundCible.Auteur || string.IsNullOrEmpty(correct.TrapTextArtist)) return;
         if (Random.Shared.NextDouble() >= config.ProbabiliteQcmFeinteTexteArtiste) return;

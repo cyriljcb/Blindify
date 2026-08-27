@@ -99,15 +99,30 @@ public class BonusTimerCoordinator(
         var track = tracksRepository.GetById(bonusRound.TrackId);
         if (track is null) return;
 
+        // Même construction que GameHub.StartRound pour les rounds classiques — Mode Qcm tiré au
+        // hasard côté BonusRoundService.CreerBonusRound, feintes appliquées ici au moment de la
+        // diffusion (retour utilisateur 2026-08-27 : QCM/Première lettre aussi en question bonus).
+        var qcmOptions = bonusRound.QcmOptionTrackIds?
+            .Select(id => tracksRepository.GetById(id))
+            .Where(t => t is not null)
+            .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist, FilmNameResolver.Resoudre(t)))
+            .ToList();
+
+        if (qcmOptions is not null)
+        {
+            GameHub.AppliquerFeinteEventuelle(qcmOptions, track, bonusRound.Cible, session.Config);
+            GameHub.AppliquerFeinteTexteEventuelle(qcmOptions, track, bonusRound.Cible, session.Config);
+        }
+
         if (session.HostConnectionId is not null)
         {
             await hubContext.Clients.Client(session.HostConnectionId).SendAsync("BonusQuestionStarted",
-                new BonusQuestionStartedForHostDto(track.Id, track.FilePath, track.RefrainStartMs, config.DureePhaseQuestionMs, session.Config.RalentissementBonusActive, session.Config.FacteurRalentissementBonus));
+                new BonusQuestionStartedForHostDto(track.Id, track.FilePath, track.RefrainStartMs, config.DureePhaseQuestionMs, session.Config.RalentissementBonusActive, session.Config.FacteurRalentissementBonus, bonusRound.Mode, qcmOptions));
         }
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
         await hubContext.Clients.Clients(joueursConnectes).SendAsync("BonusQuestionStarted",
-            new BonusQuestionStartedForPlayersDto(config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index));
+            new BonusQuestionStartedForPlayersDto(config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index, bonusRound.Mode, qcmOptions));
     }
 
     private async Task DiffuserResultatAsync(GameSession session, BonusRound bonusRound)

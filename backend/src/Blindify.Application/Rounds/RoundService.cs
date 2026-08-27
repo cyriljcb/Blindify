@@ -81,7 +81,10 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     /// jamais de repli catalogue complet ici, mieux vaut moins d'options que des incohérentes.
     /// Sinon : respecte le thème (tags), avec repli sur le catalogue complet seulement si le pool
     /// filtré est trop restreint pour fournir les 3 distracteurs + la bonne réponse.</summary>
-    private static IReadOnlyList<Track> PoolPourQcm(RoundCible cible, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags)
+    /// <summary>Interne plutôt que privé : réutilisé par BonusRoundService.CreerBonusRound pour le
+    /// même calcul de pool de distracteurs QCM (retour utilisateur : QCM aussi disponible en
+    /// question bonus, pas seulement en round classique).</summary>
+    internal static IReadOnlyList<Track> PoolPourQcm(RoundCible cible, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags)
     {
         if (cible == RoundCible.Film)
             return catalogueComplet.Where(t => t.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)).ToList();
