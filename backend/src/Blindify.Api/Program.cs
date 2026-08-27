@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Blindify.Api.Hubs;
 using Blindify.Application.DependencyInjection;
 using Blindify.Infrastructure.DependencyInjection;
+using Blindify.Infrastructure.Tracks;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,7 +39,35 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/files"
 });
 
-app.MapGet("/", () => "Hello World!");
+// Sert host/ (index.html, display.html, app.js...) à la racine — retour utilisateur du 2026-08-24 :
+// évite d'avoir à recopier/servir ce dossier séparément sur le PC du host, un simple navigateur
+// pointé sur l'IP du Pi suffit. Reste de simples fichiers statiques, aucune étape de build : ça ne
+// "dockerise" pas le frontend au sens de CLAUDE.md, ça les sert au même titre que /files ci-dessus.
+// Optionnel (clé absente ou dossier introuvable = ignoré silencieusement) pour ne rien casser côté
+// tests d'intégration (WebApplicationFactory, aucune config Host:StaticPath fournie) ni pour qui
+// lance juste l'API sans avoir le dossier host/ sous la main.
+var hostStaticPath = app.Configuration["Host:StaticPath"];
+if (!string.IsNullOrWhiteSpace(hostStaticPath))
+{
+    var resolvedHostStaticPath = Path.GetFullPath(hostStaticPath, app.Environment.ContentRootPath);
+    if (Directory.Exists(resolvedHostStaticPath))
+    {
+        var hostFileProvider = new PhysicalFileProvider(resolvedHostStaticPath);
+        app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = hostFileProvider, RequestPath = "" });
+        app.UseStaticFiles(new StaticFileOptions { FileProvider = hostFileProvider, RequestPath = "" });
+    }
+}
+
+// Alimente le sélecteur de thèmes du panneau de contrôle (cases à cocher, voir host/app.js) —
+// tags manuels/semi-automatiques de tracks.json (architecture.md section 4), pas les genres
+// Spotify (trop nombreux/bruités pour un choix de thème joueur).
+app.MapGet("/api/tags", (ITracksRepository tracksRepository) =>
+    tracksRepository.GetAll()
+        .SelectMany(t => t.Tags)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
+        .ToList());
+
 app.MapHub<GameHub>("/hubs/game");
 
 app.Run();

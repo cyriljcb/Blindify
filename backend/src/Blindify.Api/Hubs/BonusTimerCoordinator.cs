@@ -106,7 +106,8 @@ public class BonusTimerCoordinator(
         }
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
-        await hubContext.Clients.Clients(joueursConnectes).SendAsync("BonusQuestionStarted", new BonusQuestionStartedForPlayersDto(config.DureePhaseQuestionMs));
+        await hubContext.Clients.Clients(joueursConnectes).SendAsync("BonusQuestionStarted",
+            new BonusQuestionStartedForPlayersDto(config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index));
     }
 
     private async Task DiffuserResultatAsync(GameSession session, BonusRound bonusRound)
@@ -116,9 +117,10 @@ public class BonusTimerCoordinator(
         var resultats = bonusRound.Reponses
             .Select(r => new BonusResultEntryDto(r.PlayerId, Math.Abs(r.Points), r.Reponse, r.EstCorrecte, r.Points))
             .ToList();
+        var film = track is not null ? FilmNameResolver.Resoudre(track) : "?";
 
         await hubContext.Clients.Group(session.Id)
-            .SendAsync("BonusResult", new BonusResultDto(bonusRound.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, resultats));
+            .SendAsync("BonusResult", new BonusResultDto(bonusRound.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, bonusRound.Cible, film, resultats));
 
         await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
     }

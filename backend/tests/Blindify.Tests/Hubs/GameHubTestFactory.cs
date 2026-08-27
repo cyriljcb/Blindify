@@ -38,7 +38,11 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
             {
                 ["Data:TracksPath"] = TracksPath,
                 ["Data:StatsPath"] = StatsPath,
-                ["Data:RootPath"] = RootPath
+                ["Data:RootPath"] = RootPath,
+                // Vide explicitement : sinon hérite de la vraie valeur de appsettings.Development.json
+                // (environnement de test "Development" par défaut), qui pointe vers le vrai dossier
+                // host/ du repo — les tests qui en ont besoin le réactivent eux-mêmes (voir StaticFilesTests).
+                ["Host:StaticPath"] = ""
             });
         });
     }

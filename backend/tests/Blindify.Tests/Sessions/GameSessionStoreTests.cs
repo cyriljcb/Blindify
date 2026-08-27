@@ -8,7 +8,7 @@ public class GameSessionStoreTests
 {
     private readonly GameSessionStore _store = new();
 
-    private static GameSession NouvelleSession(string id) => new() { Id = id, Config = new GameConfig() };
+    private static GameSession NouvelleSession(string id) => new() { Id = id, Config = new GameConfig(), HostSecret = "test-secret" };
 
     [Fact]
     public void Add_PuisGet_RetrouveLaSession()

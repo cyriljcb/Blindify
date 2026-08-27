@@ -1,6 +1,10 @@
+using Blindify.Domain.Enums;
+
 namespace Blindify.Api.Contracts;
 
-public record BonusStakeOptionsDto(int[] Paliers, int DureePhaseMiseMs);
+/// <summary>SerieIndex (0-based) : voir RoundStartedForPlayersDto — même besoin de libellage par
+/// lettre côté joueur sur l'écran de mise à l'aveugle.</summary>
+public record BonusStakeOptionsDto(int[] Paliers, int DureePhaseMiseMs, int SerieIndex);
 
 public record SelectStakeRequestDto(int PalierIndex);
 
@@ -9,8 +13,10 @@ public record SelectStakeRequestDto(int PalierIndex);
 /// la phase question qui reste jouée depuis le début (c'est la devinette elle-même).</summary>
 public record BonusQuestionStartedForHostDto(string TrackId, string FilePath, int? RefrainStartMs, int DureePhaseQuestionMs, bool RalentissementActive, double FacteurRalentissement);
 
-/// <summary>Envoyé aux joueurs — pas d'audio, juste le signal de démarrage de la phase question.</summary>
-public record BonusQuestionStartedForPlayersDto(int DureePhaseQuestionMs);
+/// <summary>Envoyé aux joueurs — pas d'audio. Cible (Titre/Film) indique ce qui est demandé, comme
+/// pour RoundStartedForPlayersDto — toujours Titre sauf morceau "disney" (Film). SerieIndex :
+/// voir RoundStartedForPlayersDto.</summary>
+public record BonusQuestionStartedForPlayersDto(int DureePhaseQuestionMs, RoundCible Cible, int SerieIndex);
 
 public record SubmitBonusAnswerRequestDto(string Reponse);
 
@@ -18,4 +24,6 @@ public record BonusAnswerResultDto(bool EstCorrecte, int Points, int NouveauScor
 
 public record BonusResultEntryDto(string PlayerId, int Mise, string? Reponse, bool EstCorrecte, int Points);
 
-public record BonusResultDto(string TrackId, string Title, string Artist, string? CoverPath, List<BonusResultEntryDto> Resultats);
+/// <summary>Cible/Film : mêmes rôles que RoundEndedDto — permet au reveal d'afficher le film plutôt
+/// que le titre réel quand Cible == Film.</summary>
+public record BonusResultDto(string TrackId, string Title, string Artist, string? CoverPath, RoundCible Cible, string Film, List<BonusResultEntryDto> Resultats);

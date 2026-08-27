@@ -6,5 +6,11 @@ namespace Blindify.Domain.Enums;
 public enum RoundCible
 {
     Titre,
-    Auteur
+    Auteur,
+
+    /// <summary>Forcée pour les morceaux taggés "disney" (voir RoundService.DemarrerRound) : le
+    /// titre réel de la chanson ou l'artiste crédité (souvent la voix/l'acteur) sont imprévisibles
+    /// à deviner — le film dont est tiré le morceau (Track.Album nettoyé, voir FilmNameResolver)
+    /// est la question naturelle pour ce type de contenu.</summary>
+    Film
 }

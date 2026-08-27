@@ -34,6 +34,9 @@ data/scripts/output/
 data/scripts/__pycache__/
 data/scripts/.venv/
 
+# === Logs locaux (runs de dev, ex. backend_stdout.log/backend_stderr.log à la racine) ===
+*.log
+
 # === Éditeurs / OS ===
 .vscode/
 .idea/

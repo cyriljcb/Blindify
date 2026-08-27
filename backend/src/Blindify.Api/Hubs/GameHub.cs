@@ -5,6 +5,7 @@ using Blindify.Application.Sessions;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
 using Blindify.Domain.Enums;
+using Blindify.Infrastructure.Stats;
 using Blindify.Infrastructure.Tracks;
 using Microsoft.AspNetCore.SignalR;
 
@@ -21,6 +22,7 @@ public class GameHub(
     IRoundService roundService,
     IBonusRoundService bonusRoundService,
     ITracksRepository tracksRepository,
+    IStatsRepository statsRepository,
     RoundTimerCoordinator timerCoordinator,
     BonusTimerCoordinator bonusTimerCoordinator) : Hub
 {
@@ -28,8 +30,48 @@ public class GameHub(
 
     public async Task<CreateGameResultDto> CreateGame(CreateGameRequestDto request)
     {
+        var teams = request.ModeEquipe
+            ? (request.NomsEquipes ?? []).Select(nom => new Team { Id = Guid.NewGuid().ToString("N")[..8], Nom = nom }).ToList()
+            : [];
+
+        string code;
+        do { code = codeGenerator.GenererCode(); } while (sessionStore.Exists(code));
+
+        // Distinct du code de partie (public, connu de tous les joueurs) — voir GameSession.HostSecret.
+        var hostSecret = Guid.NewGuid().ToString("N");
+
+        var session = new GameSession
+        {
+            Id = code,
+            Etat = GameState.Lobby,
+            ModeEquipe = request.ModeEquipe,
+            Config = new GameConfig(),
+            SeriesList = [], // configuré séparément par ConfigurerPartie — voir CreateGameRequestDto
+            Teams = teams,
+            HostConnectionId = Context.ConnectionId,
+            HostSecret = hostSecret
+        };
+
+        sessionStore.Add(session);
+        sessionStore.AssocierConnexion(Context.ConnectionId, code);
+        await Groups.AddToGroupAsync(Context.ConnectionId, code);
+
+        return new CreateGameResultDto(code, teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList(), hostSecret);
+    }
+
+    // Retour utilisateur (playtest 2026-08-24) : auparavant, toute la configuration du blindtest
+    // (séries/tags/rounds) devait être soumise AVANT que le lobby n'existe — une erreur de config
+    // forçait à recréer toute la partie, donc les joueurs à quitter et rouvrir l'app Flutter faute
+    // d'un moyen de rejoindre une nouvelle partie sans redémarrage complet. Séparé de CreateGame :
+    // rappelable autant de fois que nécessaire tant que la partie n'a pas démarré, remplace
+    // entièrement la configuration précédente (recalcule la sélection de morceaux depuis zéro).
+    public Task ConfigurerPartie(ConfigurerPartieRequestDto request)
+    {
+        var session = ResoudreSessionHost();
+        if (session.Etat != GameState.Lobby)
+            throw new HubException("La partie a déjà démarré — configuration verrouillée.");
+
         var catalogue = tracksRepository.GetAll();
-        var config = request.Config ?? new GameConfig();
         var dejaUtilises = new HashSet<string>();
         var seriesList = new List<Series>();
 
@@ -38,43 +80,31 @@ public class GameHub(
             if (setup.RoundModes.Count != setup.Config.NombreRoundsClassiques)
                 throw new HubException("RoundModes doit contenir exactement NombreRoundsClassiques entrées.");
 
-            var morceaux = roundService.SelectionnerMorceaux(catalogue, request.Tags, setup.Config.NombreRoundsClassiques, dejaUtilises);
+            var morceaux = roundService.SelectionnerMorceaux(catalogue, setup.Tags, setup.Config.NombreRoundsClassiques, dejaUtilises, statsRepository.GetPlayCount);
             if (morceaux.Count < setup.Config.NombreRoundsClassiques)
-                throw new HubException("Pas assez de morceaux disponibles dans le catalogue pour cette série.");
+            {
+                var themeLabel = setup.Tags.Count > 0 ? string.Join("/", setup.Tags) : "aléatoire";
+                throw new HubException(
+                    $"Thème « {themeLabel} » : seulement {morceaux.Count} morceau(x) disponible(s) pour {setup.Config.NombreRoundsClassiques} rounds demandés (déjà utilisés par une autre série exclus). Réduis le nombre de rounds ou choisis un thème plus large.");
+            }
 
             var rounds = morceaux.Select((track, i) => new Round { TrackId = track.Id, Mode = setup.RoundModes[i] }).ToList();
-            seriesList.Add(new Series { Index = seriesList.Count, Config = setup.Config, Rounds = rounds });
+            seriesList.Add(new Series { Index = seriesList.Count, Config = setup.Config, Tags = setup.Tags, Rounds = rounds });
         }
 
-        var teams = request.ModeEquipe
-            ? (request.NomsEquipes ?? []).Select(nom => new Team { Id = Guid.NewGuid().ToString("N")[..8], Nom = nom }).ToList()
-            : [];
+        session.SeriesList = seriesList;
+        session.Config = request.Config ?? session.Config;
+        session.SerieCouranteIndex = 0;
+        session.RoundCourantIndex = -1;
 
-        string code;
-        do { code = codeGenerator.GenererCode(); } while (sessionStore.Exists(code));
-
-        var session = new GameSession
-        {
-            Id = code,
-            Etat = GameState.Lobby,
-            ModeEquipe = request.ModeEquipe,
-            Config = config,
-            Tags = request.Tags,
-            SeriesList = seriesList,
-            Teams = teams,
-            HostConnectionId = Context.ConnectionId
-        };
-
-        sessionStore.Add(session);
-        sessionStore.AssocierConnexion(Context.ConnectionId, code);
-        await Groups.AddToGroupAsync(Context.ConnectionId, code);
-
-        return new CreateGameResultDto(code, teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList());
+        return Task.CompletedTask;
     }
 
-    public async Task<HostStateSnapshotDto> RejoinAsHost(string code)
+    public async Task<HostStateSnapshotDto> RejoinAsHost(string code, string hostSecret)
     {
         var session = sessionStore.Get(code) ?? throw new HubException("Partie introuvable.");
+        if (session.HostSecret != hostSecret)
+            throw new HubException("Secret host invalide.");
 
         session.HostConnectionId = Context.ConnectionId;
         sessionStore.AssocierConnexion(Context.ConnectionId, code);
@@ -101,6 +131,8 @@ public class GameHub(
     public async Task StartRound()
     {
         var session = ResoudreSessionHost();
+        if (session.SeriesList.Count == 0)
+            throw new HubException("Aucune série configurée — configure le blindtest (ConfigurerPartie) avant de le démarrer.");
 
         if (session.RoundCourantIndex == -1) session.RoundCourantIndex = 0;
 
@@ -111,13 +143,14 @@ public class GameHub(
         var round = serie.Rounds[session.RoundCourantIndex];
         var track = tracksRepository.GetById(round.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
 
-        roundService.DemarrerRound(round, track, tracksRepository.GetAll(), session.Config, DateTimeOffset.UtcNow);
+        roundService.DemarrerRound(round, track, tracksRepository.GetAll(), serie.Tags, session.Config, DateTimeOffset.UtcNow);
         session.Etat = GameState.EnCours;
+        statsRepository.IncrementPlayCount(track.Id);
 
         var qcmOptions = round.QcmOptionTrackIds?
             .Select(id => tracksRepository.GetById(id))
             .Where(t => t is not null)
-            .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist))
+            .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist, FilmNameResolver.Resoudre(t)))
             .ToList();
 
         if (qcmOptions is not null)
@@ -129,12 +162,12 @@ public class GameHub(
         if (session.HostConnectionId is not null)
         {
             await Clients.Client(session.HostConnectionId)
-                .SendAsync("RoundStarted", new RoundStartedForHostDto(round.Mode, round.Cible, track.Id, track.FilePath, track.RefrainStartMs, serie.Config.DureeFenetreReponseMs));
+                .SendAsync("RoundStarted", new RoundStartedForHostDto(round.Mode, round.Cible, track.Id, track.FilePath, track.RefrainStartMs, serie.Config.DureeFenetreReponseMs, qcmOptions));
         }
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
         await Clients.Clients(joueursConnectes)
-            .SendAsync("RoundStarted", new RoundStartedForPlayersDto(round.Mode, round.Cible, serie.Config.DureeFenetreReponseMs, qcmOptions));
+            .SendAsync("RoundStarted", new RoundStartedForPlayersDto(round.Mode, round.Cible, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions));
 
         timerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
     }
@@ -142,6 +175,9 @@ public class GameHub(
     public async Task StartBonusRound()
     {
         var session = ResoudreSessionHost();
+        if (session.SeriesList.Count == 0)
+            throw new HubException("Aucune série configurée — configure le blindtest (ConfigurerPartie) avant de le démarrer.");
+
         var serie = session.SerieCourante();
 
         if (serie.BonusRound is not null)
@@ -152,17 +188,35 @@ public class GameHub(
             .Concat(session.SeriesList.Where(s => s.BonusRound is not null).Select(s => s.BonusRound!.TrackId))
             .ToHashSet();
 
-        var morceaux = roundService.SelectionnerMorceaux(tracksRepository.GetAll(), session.Tags, 1, dejaUtilises);
+        var morceaux = roundService.SelectionnerMorceaux(tracksRepository.GetAll(), serie.Tags, 1, dejaUtilises, statsRepository.GetPlayCount);
         if (morceaux.Count == 0)
             throw new HubException("Pas assez de morceaux disponibles pour la question bonus.");
 
         var bonusRound = bonusRoundService.CreerBonusRound(morceaux[0]);
         serie.BonusRound = bonusRound;
         bonusRoundService.DemarrerPhaseMise(bonusRound, DateTimeOffset.UtcNow);
+        statsRepository.IncrementPlayCount(morceaux[0].Id);
 
-        await Clients.Group(session.Id).SendAsync("BonusStakeOptions", new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.Config.DureePhaseMiseMs));
+        await Clients.Group(session.Id).SendAsync("BonusStakeOptions", new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.Config.DureePhaseMiseMs, serie.Index));
 
         bonusTimerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
+    }
+
+    // Retour utilisateur (playtest 2026-08-24) : le host avait déjà un écran "Série B — Rock" avant
+    // le premier round de chaque série, mais uniquement côté host/écran public (jamais diffusé aux
+    // joueurs). Le host appelle cette méthode au même moment où il affichait déjà cet écran
+    // localement (avant le premier round de la série, avant même StartRound) — le contenu (Tags)
+    // vient maintenant du serveur plutôt que d'être recopié côté client, mais le déclenchement reste
+    // un appel explicite du host pour préserver la pause volontaire avant le début du round (voir
+    // host/app.js:afficherIntroSerie et son délai avant StartRound/StartBonusRound).
+    public async Task AnnoncerSerieCourante()
+    {
+        var session = ResoudreSessionHost();
+        if (session.SeriesList.Count == 0)
+            throw new HubException("Aucune série configurée — configure le blindtest (ConfigurerPartie) avant de le démarrer.");
+
+        var serie = session.SerieCourante();
+        await Clients.Group(session.Id).SendAsync("SerieAnnoncee", new SerieAnnonceeDto(serie.Index, serie.Tags));
     }
 
     public Task NextRound()
@@ -268,12 +322,12 @@ public class GameHub(
         foreach (var serie in session.SeriesList)
         {
             var modes = serie.Rounds.Select(r => r.Mode).ToList();
-            var morceaux = roundService.SelectionnerMorceaux(catalogue, session.Tags, modes.Count, dejaUtilises);
+            var morceaux = roundService.SelectionnerMorceaux(catalogue, serie.Tags, modes.Count, dejaUtilises, statsRepository.GetPlayCount);
             if (morceaux.Count < modes.Count)
                 throw new HubException("Pas assez de morceaux disponibles dans le catalogue pour relancer cette série.");
 
             var rounds = morceaux.Select((track, i) => new Round { TrackId = track.Id, Mode = modes[i] }).ToList();
-            nouvellesSeries.Add(new Series { Index = nouvellesSeries.Count, Config = serie.Config, Rounds = rounds });
+            nouvellesSeries.Add(new Series { Index = nouvellesSeries.Count, Config = serie.Config, Tags = serie.Tags, Rounds = rounds });
         }
 
         session.SeriesList = nouvellesSeries;
@@ -365,7 +419,7 @@ public class GameHub(
 
         var bonusRound = session.SerieCourante().BonusRound ?? throw new HubException("Aucune question bonus en cours.");
 
-        return bonusRoundService.EnregistrerMise(bonusRound, joueur.PlayerId, request.PalierIndex);
+        return bonusRoundService.EnregistrerMise(session, bonusRound, joueur.PlayerId, request.PalierIndex);
     }
 
     public async Task<BonusAnswerResultDto> SubmitBonusAnswer(SubmitBonusAnswerRequestDto request)
@@ -429,6 +483,8 @@ public class GameHub(
     /// correct, sans toucher à son TrackId : le sélectionner reste une mauvaise réponse normale.</summary>
     private static void AppliquerFeinteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
     {
+        // Pas de dualité "champ opposé" pertinente pour Film (pas de second champ à échanger).
+        if (cible == RoundCible.Film) return;
         if (Random.Shared.NextDouble() >= config.ProbabiliteQcmFeinteChamp) return;
 
         var distracteurs = options.Where(o => o.TrackId != correct.Id).ToList();

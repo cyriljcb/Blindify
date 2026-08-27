@@ -52,17 +52,19 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
     {
         BonusStakeOptionsDto? stakeOptions = null;
         var questionStartedHostTcs = new TaskCompletionSource<BonusQuestionStartedForHostDto>();
+        var questionStartedPlayerTcs = new TaskCompletionSource<BonusQuestionStartedForPlayersDto>();
         var bonusResultTcs = new TaskCompletionSource<BonusResultDto>();
 
         _alice.On<BonusStakeOptionsDto>("BonusStakeOptions", payload => stakeOptions = payload);
         _hostConnection.On<BonusQuestionStartedForHostDto>("BonusQuestionStarted", payload => questionStartedHostTcs.TrySetResult(payload));
+        // Cible tirée aléatoirement (Titre/Auteur) depuis le retour utilisateur du 2026-08-24 — on
+        // écoute aussi la version joueur pour savoir quoi répondre, plutôt que de supposer Titre.
+        _alice.On<BonusQuestionStartedForPlayersDto>("BonusQuestionStarted", payload => questionStartedPlayerTcs.TrySetResult(payload));
         _alice.On<BonusResultDto>("BonusResult", payload => bonusResultTcs.TrySetResult(payload));
 
-        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
-            Tags: [],
-            ModeEquipe: false,
-            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfigSansRoundClassique(), [])],
-            Config: null));
+        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(ModeEquipe: false));
+        await _hostConnection.InvokeAsync(
+            "ConfigurerPartie", new ConfigurerPartieRequestDto([new SeriesSetupDto(NouveauSeriesConfigSansRoundClassique(), [], [])], null));
 
         await _alice.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-alice");
         await _bob.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Bob", "player-bob");
@@ -79,9 +81,12 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
 
         var questionHost = await AvecTimeout(questionStartedHostTcs.Task, TimeSpan.FromSeconds(5));
         Assert.NotNull(questionHost.FilePath);
+        var questionPlayer = await AvecTimeout(questionStartedPlayerTcs.Task, TimeSpan.FromSeconds(5));
 
-        // Le morceau bonus est tiré au hasard dans le catalogue de test (t1..t4) — on retrouve son titre
-        // exact par TrackId plutôt que de le supposer, pour ne pas rendre le test dépendant du tirage.
+        // Le morceau bonus est tiré au hasard dans le catalogue de test (t1..t4), et sa cible
+        // (Titre/Auteur) l'est aussi (voir BonusRoundService.CreerBonusRound) — on retrouve la bonne
+        // réponse par TrackId + Cible plutôt que de les supposer, pour ne pas rendre le test
+        // dépendant du tirage.
         var titresConnus = new Dictionary<string, string>
         {
             ["t1"] = "Under the Sea",
@@ -89,7 +94,16 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
             ["t3"] = "Let It Go",
             ["t4"] = "Hakuna Matata"
         };
-        var bonneReponse = titresConnus[questionHost.TrackId];
+        var artistesConnus = new Dictionary<string, string>
+        {
+            ["t1"] = "Samuel E. Wright",
+            ["t2"] = "Elton John",
+            ["t3"] = "Idina Menzel",
+            ["t4"] = "Nathan Lane"
+        };
+        var bonneReponse = questionPlayer.Cible == RoundCible.Auteur
+            ? artistesConnus[questionHost.TrackId]
+            : titresConnus[questionHost.TrackId];
 
         var reponseAlice = await _alice.InvokeAsync<BonusAnswerResultDto>("SubmitBonusAnswer", new SubmitBonusAnswerRequestDto(bonneReponse));
         Assert.True(reponseAlice.EstCorrecte);

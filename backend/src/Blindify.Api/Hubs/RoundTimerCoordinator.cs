@@ -91,8 +91,10 @@ public class RoundTimerCoordinator(
             })
             .ToList();
 
+        var film = track is not null ? FilmNameResolver.Resoudre(track) : "?";
+
         await hubContext.Clients.Group(session.Id)
-            .SendAsync("RoundEnded", new RoundEndedDto(round.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, resultats));
+            .SendAsync("RoundEnded", new RoundEndedDto(round.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, round.Cible, film, resultats));
 
         await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
     }

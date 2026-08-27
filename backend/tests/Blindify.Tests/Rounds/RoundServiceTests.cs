@@ -26,7 +26,8 @@ public class RoundServiceTests
     {
         Id = "ABCDE",
         Config = new GameConfig(),
-        Players = joueurs.ToList()
+        Players = joueurs.ToList(),
+        HostSecret = "test-secret"
     };
 
     private static SeriesConfig NouveauConfig() => new()
@@ -64,14 +65,79 @@ public class RoundServiceTests
     }
 
     [Fact]
-    public void SelectionnerMorceaux_PoolTagInsuffisant_CompleteAvecLePoolGlobal()
+    public void SelectionnerMorceaux_PoolTagInsuffisant_NeComplevePasAvecDesMorceauxHorsTheme()
     {
+        // Retour utilisateur : "je veux vraiment n'avoir QUE ce thème" — une série "années 2020"
+        // recevait des morceaux sans aucun rapport faute de pool suffisant. Le repli sur le
+        // catalogue complet a été retiré : mieux vaut retourner moins que demandé (l'appelant,
+        // GameHub.CreateGame, refuse alors la partie avec un message clair) que de jouer hors-thème.
         var pool = new List<Track> { NouveauTrack("niche", tags: ["niche"]), NouveauTrack("a"), NouveauTrack("b"), NouveauTrack("c") };
         var dejaUtilises = new HashSet<string>();
 
         var resultat = _service.SelectionnerMorceaux(pool, tags: ["niche"], nombre: 3, dejaUtilises);
 
+        Assert.Single(resultat);
+        Assert.Equal("niche", resultat[0].Id);
+    }
+
+    [Fact]
+    public void SelectionnerMorceaux_ThemeAutreQueDisney_ExclutLesMorceauxDisneyMemeSiTagCorrespond()
+    {
+        // Retour utilisateur : une série "années 2010" recevait des chansons Disney, parce que
+        // ~45 % du catalogue "disney" est aussi tagué par décennie (remakes/films récents) — le
+        // tag correspondait bien, mais Disney a un univers musical trop particulier pour se
+        // mélanger à un thème générique.
+        var disneyMaisAnnees2010 = NouveauTrack("disney-2010", tags: ["disney", "annees-2010"]);
+        var pool = new List<Track>
+        {
+            disneyMaisAnnees2010,
+            NouveauTrack("a", tags: ["annees-2010"]),
+            NouveauTrack("b", tags: ["annees-2010"]),
+            NouveauTrack("c", tags: ["annees-2010"]),
+        };
+        var dejaUtilises = new HashSet<string>();
+
+        var resultat = _service.SelectionnerMorceaux(pool, tags: ["annees-2010"], nombre: 4, dejaUtilises);
+
+        Assert.DoesNotContain(resultat, t => t.Id == "disney-2010");
         Assert.Equal(3, resultat.Count);
+    }
+
+    [Fact]
+    public void SelectionnerMorceaux_AvecPlayCount_FavoriseLesMoinsJouesSansExclureLesAutres()
+    {
+        // Retour utilisateur (2026-08-25) : playCount (data/stats.json) existait déjà comme
+        // compteur mais n'influençait jamais le tirage — mêmes morceaux qui revenaient d'une
+        // partie à l'autre sur un même thème. Pondération douce : jamais d'exclusion stricte.
+        var jamaisJoue = NouveauTrack("jamais");
+        var souventJoue = NouveauTrack("souvent");
+        var pool = new List<Track> { jamaisJoue, souventJoue };
+        var playCounts = new Dictionary<string, int> { ["jamais"] = 0, ["souvent"] = 20 };
+
+        const int nombreTirages = 500;
+        var tiragesJamaisJoue = 0;
+        for (var i = 0; i < nombreTirages; i++)
+        {
+            var dejaUtilises = new HashSet<string>();
+            var resultat = _service.SelectionnerMorceaux(pool, tags: [], nombre: 1, dejaUtilises, id => playCounts[id]);
+            if (resultat[0].Id == "jamais") tiragesJamaisJoue++;
+        }
+
+        Assert.True(tiragesJamaisJoue > nombreTirages * 0.9, $"attendu > 90% de tirages sur le morceau jamais joué, obtenu {tiragesJamaisJoue}/{nombreTirages}");
+        Assert.True(tiragesJamaisJoue < nombreTirages, "le morceau souvent joué ne doit jamais être totalement exclu");
+    }
+
+    [Fact]
+    public void SelectionnerMorceaux_ThemeDisney_IncludeLesMorceauxDisney()
+    {
+        var disneyMaisAnnees2010 = NouveauTrack("disney-2010", tags: ["disney", "annees-2010"]);
+        var pool = new List<Track> { disneyMaisAnnees2010, NouveauTrack("a", tags: ["annees-2010"]) };
+        var dejaUtilises = new HashSet<string>();
+
+        var resultat = _service.SelectionnerMorceaux(pool, tags: ["disney"], nombre: 1, dejaUtilises);
+
+        Assert.Single(resultat);
+        Assert.Equal("disney-2010", resultat[0].Id);
     }
 
     [Fact]
@@ -82,7 +148,7 @@ public class RoundServiceTests
         var config = new GameConfig { ProbabiliteQcmPiege = 0 };
         var round = new Round { TrackId = correct.Id, Mode = RoundMode.Qcm };
 
-        _service.DemarrerRound(round, correct, catalogue, config, DateTimeOffset.UtcNow);
+        _service.DemarrerRound(round, correct, catalogue, tags: [], config, DateTimeOffset.UtcNow);
 
         Assert.NotNull(round.QcmOptionTrackIds);
         Assert.Equal(4, round.QcmOptionTrackIds!.Count);
@@ -96,7 +162,7 @@ public class RoundServiceTests
         var correct = NouveauTrack("a");
         var round = new Round { TrackId = correct.Id, Mode = RoundMode.TapeReponse };
 
-        _service.DemarrerRound(round, correct, [correct], new GameConfig(), DateTimeOffset.UtcNow);
+        _service.DemarrerRound(round, correct, [correct], tags: [], new GameConfig(), DateTimeOffset.UtcNow);
 
         Assert.Null(round.QcmOptionTrackIds);
     }
@@ -193,7 +259,7 @@ public class RoundServiceTests
         for (var i = 0; i < 50; i++)
         {
             var round = new Round { TrackId = correct.Id, Mode = RoundMode.TapeReponse };
-            _service.DemarrerRound(round, correct, [correct], new GameConfig(), DateTimeOffset.UtcNow);
+            _service.DemarrerRound(round, correct, [correct], tags: [], new GameConfig(), DateTimeOffset.UtcNow);
             cibles.Add(round.Cible);
         }
 
@@ -202,16 +268,96 @@ public class RoundServiceTests
     }
 
     [Fact]
-    public void DemarrerRound_MorceauDisney_CibleToujoursTitre()
+    public void DemarrerRound_MorceauDisney_CibleToujoursFilm()
     {
         var correct = NouveauTrack("a", tags: ["disney"]);
 
         for (var i = 0; i < 20; i++)
         {
             var round = new Round { TrackId = correct.Id, Mode = RoundMode.TapeReponse };
-            _service.DemarrerRound(round, correct, [correct], new GameConfig(), DateTimeOffset.UtcNow);
-            Assert.Equal(RoundCible.Titre, round.Cible);
+            _service.DemarrerRound(round, correct, [correct], tags: [], new GameConfig(), DateTimeOffset.UtcNow);
+            Assert.Equal(RoundCible.Film, round.Cible);
         }
+    }
+
+    [Fact]
+    public void DemarrerRound_CibleFilm_OptionsQcmUniquementDesMorceauxDisney()
+    {
+        // Retour utilisateur : une question Film (Disney) proposait "Cœur de pirate" comme option,
+        // sans aucun rapport avec un film Disney -- les distracteurs QCM venaient du catalogue
+        // complet plutôt que d'être restreints aux autres morceaux "disney" (seuls à avoir un nom
+        // de film cohérent à proposer). Le thème sélectionné pour la partie (tags: []) ici n'a pas
+        // d'importance : la cible Film court-circuite toujours vers le pool "disney" uniquement.
+        var correct = NouveauTrack("a", tags: ["disney"]);
+        var catalogue = new List<Track>
+        {
+            correct,
+            NouveauTrack("disney-b", tags: ["disney"]),
+            NouveauTrack("disney-c", tags: ["disney"]),
+            NouveauTrack("disney-d", tags: ["disney"]),
+            NouveauTrack("hors-theme-1"),
+            NouveauTrack("hors-theme-2"),
+        };
+        var config = new GameConfig { ProbabiliteQcmPiege = 0 };
+        var round = new Round { TrackId = correct.Id, Mode = RoundMode.Qcm };
+
+        _service.DemarrerRound(round, correct, catalogue, tags: [], config, DateTimeOffset.UtcNow);
+
+        Assert.Equal(RoundCible.Film, round.Cible);
+        Assert.DoesNotContain("hors-theme-1", round.QcmOptionTrackIds!);
+        Assert.DoesNotContain("hors-theme-2", round.QcmOptionTrackIds!);
+        var options = round.QcmOptionTrackIds!.Select(id => catalogue.First(t => t.Id == id));
+        Assert.All(options, t => Assert.Contains("disney", t.Tags, StringComparer.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleFilm_CompareAuNomDuFilmNettoyeDeLAlbum()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track
+        {
+            Id = "a",
+            Title = "Un rêve est un souhait",
+            Artist = "Ilene Woods",
+            Album = "Cendrillon (Original Motion Picture Soundtrack)",
+            FilePath = "audio/a.mp3",
+            Tags = ["disney"]
+        };
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Film, DebutRound = DateTimeOffset.UtcNow };
+
+        var mauvaiseReponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Un rêve est un souhait", round.DebutRound!.Value);
+        Assert.False(mauvaiseReponse!.EstCorrecte);
+
+        round.Reponses.Clear();
+        var bonneReponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Cendrillon", round.DebutRound!.Value);
+        Assert.True(bonneReponse!.EstCorrecte);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleTitre_ReponseSansLeContenuEntreParentheses_EstAcceptee()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "Sweat (A La La La La Long)", Artist = "Inner Circle", FilePath = "audio/a.mp3" };
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Sweat", round.DebutRound!.Value);
+
+        Assert.True(reponse!.EstCorrecte);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleTitre_ReponseCompleteAvecParentheses_ResteAcceptee()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "Sweat (A La La La La Long)", Artist = "Inner Circle", FilePath = "audio/a.mp3" };
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Sweat (A La La La La Long)", round.DebutRound!.Value);
+
+        Assert.True(reponse!.EstCorrecte);
     }
 
     [Fact]

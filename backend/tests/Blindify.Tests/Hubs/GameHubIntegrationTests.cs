@@ -44,6 +44,17 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         DureePhaseQuestionMs = 5000
     };
 
+    // CreateGame ne configure plus rien (retour utilisateur du 2026-08-24 : permettre de recréer une
+    // configuration ratée sans recréer le lobby) — regroupe CreateGame + ConfigurerPartie pour garder
+    // les tests concis, comme l'ancien CreateGame combiné.
+    private static async Task<CreateGameResultDto> CreerEtConfigurerPartie(
+        HubConnection host, bool modeEquipe, List<SeriesSetupDto> seriesSetups, GameConfig? config, List<string>? nomsEquipes = null)
+    {
+        var creation = await host.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(modeEquipe, nomsEquipes));
+        await host.InvokeAsync("ConfigurerPartie", new ConfigurerPartieRequestDto(seriesSetups, config));
+        return creation;
+    }
+
     [Fact]
     public async Task PartieComplete_CreateJoinStartAnswer_ProduitLesEvenementsAttendus()
     {
@@ -57,11 +68,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _playerConnection.On<RoundEndedDto>("RoundEnded", payload => roundEndedTcs.TrySetResult(payload));
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
 
-        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
-            Tags: [],
-            ModeEquipe: false,
-            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
-            Config: null));
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
 
         Assert.Equal(5, creation.Code.Length);
 
@@ -105,11 +113,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         var roundEndedTcs = new TaskCompletionSource<RoundEndedDto>();
         _hostConnection.On<RoundEndedDto>("RoundEnded", payload => roundEndedTcs.TrySetResult(payload));
 
-        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
-            Tags: [],
-            ModeEquipe: false,
-            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
-            Config: null));
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
 
         await _hostConnection.InvokeAsync("StartRound");
         await AvecTimeout(roundEndedTcs.Task, TimeSpan.FromSeconds(5));
@@ -122,6 +127,77 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     }
 
     [Fact]
+    public async Task AnnoncerSerieCourante_DiffuseIndexEtTagsDeLaSerieEnCoursATousLesClients()
+    {
+        var annonceHostTcs = new TaskCompletionSource<SerieAnnonceeDto>();
+        var annoncePlayerTcs = new TaskCompletionSource<SerieAnnonceeDto>();
+        _hostConnection.On<SerieAnnonceeDto>("SerieAnnoncee", payload => annonceHostTcs.TrySetResult(payload));
+        _playerConnection.On<SerieAnnonceeDto>("SerieAnnoncee", payload => annoncePlayerTcs.TrySetResult(payload));
+
+        // Catalogue de test réduit à des morceaux "disney" sans tags (voir GameHubTestFactory) —
+        // thème vide ("aléatoire") pour ne pas dépendre d'un tag qui n'existe pas dans ce catalogue.
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+
+        await _hostConnection.InvokeAsync("AnnoncerSerieCourante");
+
+        var annonceHost = await AvecTimeout(annonceHostTcs.Task, TimeSpan.FromSeconds(5));
+        var annoncePlayer = await AvecTimeout(annoncePlayerTcs.Task, TimeSpan.FromSeconds(5));
+
+        Assert.Equal(0, annonceHost.SerieIndex);
+        Assert.Empty(annonceHost.Tags);
+        Assert.Equal(0, annoncePlayer.SerieIndex);
+        Assert.Empty(annoncePlayer.Tags);
+    }
+
+    [Fact]
+    public async Task ConfigurerPartie_ApresLeDemarrage_EstRefusee()
+    {
+        await CreerEtConfigurerPartie(_hostConnection, false,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+        await _hostConnection.InvokeAsync("StartRound");
+
+        var exception = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync(
+            "ConfigurerPartie", new ConfigurerPartieRequestDto([new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null)));
+        Assert.Contains("déjà démarré", exception.Message);
+    }
+
+    [Fact]
+    public async Task StartRound_SansConfigurationPrealable_EstRefuse()
+    {
+        await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(ModeEquipe: false));
+
+        var exception = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync("StartRound"));
+        Assert.Contains("Aucune série configurée", exception.Message);
+    }
+
+    [Fact]
+    public async Task ConfigurerPartie_RappeleeAvantLeDemarrage_RemplaceEntierementLaConfigurationPrecedente()
+    {
+        await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(ModeEquipe: false));
+
+        // Premier essai raté (trop de rounds demandés pour le thème "disney" du catalogue de test,
+        // voir GameHubTestFactory : seulement 4 morceaux) — ne doit pas laisser de configuration
+        // partielle derrière lui.
+        var premierEssai = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync(
+            "ConfigurerPartie", new ConfigurerPartieRequestDto([new SeriesSetupDto(NouveauSeriesConfig(10), Enumerable.Repeat(RoundMode.Qcm, 10).ToList(), [])], null)));
+        Assert.Contains("seulement", premierEssai.Message);
+
+        var exceptionAvantReconfig = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync("StartRound"));
+        Assert.Contains("Aucune série configurée", exceptionAvantReconfig.Message);
+
+        // Reconfiguration réussie, sans recréer le lobby.
+        await _hostConnection.InvokeAsync(
+            "ConfigurerPartie", new ConfigurerPartieRequestDto([new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null));
+
+        RoundStartedForHostDto? roundStartedHost = null;
+        _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedHost is not null);
+    }
+
+    [Fact]
     public async Task RejouerPartie_ApresFinDePartie_ResetLesScoresEtPermetDeRedemarrer()
     {
         var roundEndedTcs = new TaskCompletionSource<RoundEndedDto>();
@@ -131,11 +207,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _hostConnection.On<RoundEndedDto>("RoundEnded", payload => roundEndedTcs.TrySetResult(payload));
         _hostConnection.On("GameRestarted", () => gameRestartedTcs.TrySetResult());
 
-        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
-            Tags: [],
-            ModeEquipe: false,
-            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
-            Config: null));
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
 
         await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
 
@@ -158,7 +231,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         var rejoin = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
         Assert.Equal(0, rejoin.Score);
 
-        // La partie doit pouvoir redémarrer sans repasser par CreateGame.
+        // La partie doit pouvoir redémarrer sans repasser par CreateGame/ConfigurerPartie — RejouerPartie
+        // conserve la configuration déjà soumise (mêmes séries/tags, nouvelle sélection de morceaux).
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedApresReplay = payload);
         await _hostConnection.InvokeAsync("StartRound");
         await AttendreAsync(() => roundStartedApresReplay is not null);
@@ -170,12 +244,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     [Fact]
     public async Task ModeEquipe_CreationEtJoinTeam_AgregeLeScoreParEquipe()
     {
-        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
-            Tags: [],
-            ModeEquipe: true,
-            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
-            Config: null,
-            NomsEquipes: ["Rouge", "Bleu"]));
+        var creation = await CreerEtConfigurerPartie(_hostConnection, true,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null, nomsEquipes: ["Rouge", "Bleu"]);
 
         Assert.Equal(2, creation.Teams.Count);
         Assert.Contains(creation.Teams, t => t.Nom == "Rouge");
@@ -240,11 +310,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
 
         var config = new GameConfig { ProbabiliteQcmPiege = 0, ProbabiliteQcmFeinteChamp = 1.0 };
-        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
-            Tags: [],
-            ModeEquipe: false,
-            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
-            Config: config));
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], config);
 
         await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
         await _hostConnection.InvokeAsync("StartRound");
@@ -282,11 +349,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             roundStartedPlayer = null;
             roundStartedHost = null;
 
-            var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
-                Tags: [],
-                ModeEquipe: false,
-                SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
-                Config: config));
+            var creation = await CreerEtConfigurerPartie(_hostConnection, false,
+                [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], config);
 
             await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", $"player-texte-{tentative}");
             await _hostConnection.InvokeAsync("StartRound");
@@ -302,11 +366,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     [Fact]
     public async Task JoinGame_RenvoieLeRosterCompletYComprisSoiMeme()
     {
-        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(
-            Tags: [],
-            ModeEquipe: false,
-            SeriesSetups: [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm])],
-            Config: null));
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
 
         // Retour utilisateur : un joueur seul se voyait comme "0 joueur connecté" (PlayerJoined
         // n'est diffusé qu'aux AUTRES joueurs déjà présents) — le roster renvoyé par JoinGame
@@ -331,6 +392,100 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         Assert.False(join.Success);
         Assert.NotNull(join.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task PauseResume_PendantUnRound_RejetteLesReponsesPendantLaPauseEtLesReaccepteApresReprise()
+    {
+        var gamePausedTcs = new TaskCompletionSource();
+        var gameResumedTcs = new TaskCompletionSource();
+        RoundStartedForPlayersDto? roundStartedPlayer = null;
+        RoundStartedForHostDto? roundStartedHost = null;
+
+        _hostConnection.On("GamePaused", () => gamePausedTcs.TrySetResult());
+        _hostConnection.On("GameResumed", () => gameResumedTcs.TrySetResult());
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
+        _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
+
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+
+        await _hostConnection.InvokeAsync("PauseGame");
+        await AttendreAsync(() => gamePausedTcs.Task.IsCompleted);
+
+        // Filet de sécurité serveur (architecture.md section 9) : toute soumission reçue pendant
+        // EnPause=true est rejetée, pas juste désactivée côté UI — et ne consomme pas l'unique
+        // essai du joueur (RoundService.SoumettreReponse retourne avant d'enregistrer la réponse).
+        var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
+        var reponsePendantPause = await _playerConnection.InvokeAsync<RoundAnswerResultDto>(
+            "SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
+        Assert.False(reponsePendantPause.EstCorrecte);
+        Assert.Equal(0, reponsePendantPause.Points);
+
+        await Task.Delay(150); // laisse s'écouler du temps de pause à neutraliser dans DureeEnPauseMs
+        await _hostConnection.InvokeAsync("ResumeGame");
+        await AttendreAsync(() => gameResumedTcs.Task.IsCompleted);
+
+        // Après reprise, l'essai du joueur est toujours disponible et accepté normalement.
+        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>(
+            "SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
+        Assert.True(resultat.EstCorrecte);
+        Assert.True(resultat.Points > 0);
+    }
+
+    [Fact]
+    public async Task RejoinAsHost_ExigeLeHostSecret_RefuseUnIntrusEtResynchroniseLeVraiHost()
+    {
+        RoundStartedForHostDto? roundStartedHost = null;
+        _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
+
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
+            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedHost is not null);
+
+        // Un client qui ne connaît que le code de partie (comme n'importe quel joueur) ne doit
+        // pas pouvoir usurper le rôle host sans le HostSecret renvoyé à la création.
+        await using var intrus = _factory.CreateHubConnection();
+        await intrus.StartAsync();
+        var exception = await Assert.ThrowsAsync<HubException>(
+            () => intrus.InvokeAsync<HostStateSnapshotDto>("RejoinAsHost", creation.Code, "mauvais-secret"));
+        Assert.Contains("Secret host invalide", exception.Message);
+
+        // Le vrai host (nouvelle connexion, ex. après un refresh) reprend la main avec le bon secret,
+        // et l'état renvoyé permet de reprendre l'audio sans redémarrer le morceau.
+        await using var nouvelleConnexionHost = _factory.CreateHubConnection();
+        await nouvelleConnexionHost.StartAsync();
+        var snapshot = await nouvelleConnexionHost.InvokeAsync<HostStateSnapshotDto>(
+            "RejoinAsHost", creation.Code, creation.HostSecret);
+
+        Assert.False(snapshot.EnPause);
+        Assert.Equal(roundStartedHost!.TrackId, snapshot.TrackId);
+        Assert.Equal(roundStartedHost.FilePath, snapshot.FilePath);
+        Assert.NotNull(snapshot.PositionAudioMs);
+        Assert.True(snapshot.PositionAudioMs >= 0);
+
+        // La nouvelle connexion est désormais reconnue comme host par le serveur.
+        await nouvelleConnexionHost.InvokeAsync("PauseGame");
+    }
+
+    [Fact]
+    public async Task RejoinAsHost_LobbySansConfigurationEncoreSoumise_NeCrashePas()
+    {
+        // Retour utilisateur (playtest 2026-08-24) : ce sous-état (lobby existant, aucune série
+        // encore configurée) n'était pas atteignable avant que CreateGame ne configure plus rien —
+        // GameSessionNavigation.RoundCourant() doit rester défensif sur une SeriesList vide.
+        var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(ModeEquipe: false));
+
+        var snapshot = await _hostConnection.InvokeAsync<HostStateSnapshotDto>("RejoinAsHost", creation.Code, creation.HostSecret);
+
+        Assert.False(snapshot.EnPause);
+        Assert.Null(snapshot.TrackId);
     }
 
     private static async Task AttendreAsync(Func<bool> condition, int timeoutMs = 5000)
