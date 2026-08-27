@@ -1,0 +1,41 @@
+# Déploiement du backend Blindify sur le Raspberry Pi — voir docs/architecture.md section 2.
+# Seul le backend tourne en conteneur ; l'app Flutter n'est jamais dockerisée. Le dossier host/ (page
+# web du panneau de contrôle) n'est pas non plus construit/transformé par Docker — il est seulement
+# monté en volume (comme tracks.json/audio/covers) pour être servi tel quel en fichiers statiques
+# (retour utilisateur du 2026-08-24 : évite de devoir gérer ce dossier séparément sur le PC du host).
+#
+# Avant le tout premier `docker compose up` :
+#   - tracks.json doit déjà exister à la racine des données (source de vérité, versionnée avec Git).
+#   - stats.json doit exister, même vide (`echo '{}' > stats.json`) : un mount de fichier Docker
+#     sur un chemin qui n'existe pas encore côté hôte crée un dossier vide à la place, ce qui fait
+#     planter le backend au premier écriture de playCount.
+#   - Les dossiers audio/ et covers/ doivent exister (mêmes vides), peuplés ensuite par
+#     data/scripts/download_audio.py (voir data/scripts/sync_daily.py pour l'automatisation).
+#
+# BLINDIFY_DATA_ROOT pointe vers ce dossier de données sur le Pi (défaut : /mnt/hdd2to/blindify).
+# Remplace la valeur par défaut ci-dessous ou exporte la variable d'environnement avant de lancer
+# `docker compose up -d` si ton point de montage HDD diffère.
+
+services:
+  backend:
+    build: ./backend
+    container_name: blindify-backend
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    volumes:
+      - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/tracks.json:/data/tracks.json:ro
+      - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/stats.json:/data/stats.json
+      - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/audio:/data/audio:ro
+      - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/covers:/data/covers:ro
+      # Relatif à ce fichier (racine du repo) : host/ est versionné avec Git, pas un point de montage
+      # séparé comme le HDD de données ci-dessus.
+      - ./host:/host:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Data__TracksPath=/data/tracks.json
+      - Data__StatsPath=/data/stats.json
+      - Data__AudioPath=/data/audio
+      - Data__CoversPath=/data/covers
+      - Data__RootPath=/data
+      - Host__StaticPath=/host
