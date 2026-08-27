@@ -37,6 +37,10 @@ data/scripts/.venv/
 # === Logs locaux (runs de dev, ex. backend_stdout.log/backend_stderr.log à la racine) ===
 *.log
 
+# === APK buildé localement, servi en statique par host/ pour installer sur les telephones sans
+# cable (voir docs/architecture.md) — jamais commite, trop volumineux et vite obsolete ===
+host/*.apk
+
 # === Éditeurs / OS ===
 .vscode/
 .idea/

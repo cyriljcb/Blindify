@@ -4,6 +4,7 @@ using Blindify.Api.Hubs;
 using Blindify.Application.DependencyInjection;
 using Blindify.Infrastructure.DependencyInjection;
 using Blindify.Infrastructure.Tracks;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,8 +54,19 @@ if (!string.IsNullOrWhiteSpace(hostStaticPath))
     if (Directory.Exists(resolvedHostStaticPath))
     {
         var hostFileProvider = new PhysicalFileProvider(resolvedHostStaticPath);
+        // .apk absent du FileExtensionContentTypeProvider par défaut : sans ce mapping, le
+        // middleware renvoie 404 plutôt que de servir un type inconnu (ServeUnknownFileTypes
+        // reste false, comportement voulu partout ailleurs) — utilisé pour distribuer l'app
+        // Flutter aux téléphones Android par le réseau local, sans câble (voir docs/architecture.md).
+        var hostContentTypeProvider = new FileExtensionContentTypeProvider();
+        hostContentTypeProvider.Mappings[".apk"] = "application/vnd.android.package-archive";
         app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = hostFileProvider, RequestPath = "" });
-        app.UseStaticFiles(new StaticFileOptions { FileProvider = hostFileProvider, RequestPath = "" });
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = hostFileProvider,
+            RequestPath = "",
+            ContentTypeProvider = hostContentTypeProvider
+        });
     }
 }
 
