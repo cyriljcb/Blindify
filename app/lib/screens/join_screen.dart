@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/game_card.dart';
+import 'qr_scan_screen.dart';
 
 class JoinScreen extends StatefulWidget {
   const JoinScreen({super.key});
@@ -20,8 +21,12 @@ class _JoinScreenState extends State<JoinScreen> {
   @override
   void initState() {
     super.initState();
-    _codeController = TextEditingController();
-    _nomController = TextEditingController(text: context.read<GameConnection>().nom ?? '');
+    final game = context.read<GameConnection>();
+    // Pré-rempli si on arrive ici après un scan de QR (voir QrScanScreen) — consommé une seule
+    // fois pour ne pas re-préremplir un futur passage sur cet écran.
+    _codeController = TextEditingController(text: game.pendingJoinCode ?? '');
+    game.pendingJoinCode = null;
+    _nomController = TextEditingController(text: game.nom ?? '');
   }
 
   @override
@@ -50,6 +55,14 @@ class _JoinScreenState extends State<JoinScreen> {
   Widget build(BuildContext context) {
     final game = context.watch<GameConnection>();
 
+    // Scan lancé depuis cet écran alors qu'on était déjà connecté (voir QrScanScreen) : l'écran
+    // était déjà monté, contrairement au cas "scan depuis ConnectScreen" couvert par initState —
+    // il faut donc aussi rattraper le code ici, à chaque reconstruction.
+    if (game.pendingJoinCode != null) {
+      _codeController.text = game.pendingJoinCode!;
+      game.pendingJoinCode = null;
+    }
+
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
@@ -58,7 +71,7 @@ class _JoinScreenState extends State<JoinScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.groups_rounded, size: 40, color: BlindifyColors.accent2),
+              const Icon(Icons.groups_rounded, size: 40, color: BlindifyColors.mustard),
               const SizedBox(height: 12),
               Text('Rejoindre une partie', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 20),
@@ -90,6 +103,28 @@ class _JoinScreenState extends State<JoinScreen> {
                 const SizedBox(height: 12),
                 Text(game.errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
+              const SizedBox(height: 16),
+              Row(children: [
+                const Expanded(child: Divider(color: BlindifyColors.borderSoft)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text('ou', style: Theme.of(context).textTheme.bodySmall),
+                ),
+                const Expanded(child: Divider(color: BlindifyColors.borderSoft)),
+              ]),
+              const SizedBox(height: 16),
+              // Cas le plus fréquent en pratique : déjà connecté au même Raspberry Pi qu'une
+              // précédente soirée (reconnexion auto, voir GameConnection.init), seul le code de
+              // partie change — ce scan-là ne rouvre pas de connexion (voir QrScanScreen).
+              OutlinedButton.icon(
+                onPressed: _joining
+                    ? null
+                    : () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const QrScanScreen()),
+                        ),
+                icon: const Icon(Icons.qr_code_scanner_rounded),
+                label: const Text('Scanner le QR'),
+              ),
             ],
           ),
         ),

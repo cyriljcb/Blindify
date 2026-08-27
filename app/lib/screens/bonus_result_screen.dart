@@ -29,8 +29,17 @@ class BonusResultScreen extends StatelessWidget {
           const SizedBox(height: 16),
           CoverArt(imageUrl: game.coverUrl(result.coverPath)),
           const SizedBox(height: 16),
-          Text(result.title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
-          Text(result.artist, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+          Text(result.reponseAttendue, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
+          if (result.cible == 'Film')
+            Text(
+              '${result.title} — ${result.artist}',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            )
+          else if (result.cible == 'Auteur')
+            Text(result.title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium)
+          else
+            Text(result.artist, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 24),
           if (monResultat != null) ...[
             Icon(

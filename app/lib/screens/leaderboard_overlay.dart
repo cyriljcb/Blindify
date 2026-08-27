@@ -25,8 +25,9 @@ class LeaderboardOverlay extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: BlindifyColors.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: BlindifyColors.border),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: BlindifyColors.ink, width: 3),
+                boxShadow: hardShadow(BlindifyColors.cobalt, offset: 7),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,

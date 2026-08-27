@@ -16,11 +16,9 @@ class GameCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: BlindifyColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: BlindifyColors.border),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 40, offset: const Offset(0, 20)),
-        ],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: BlindifyColors.ink, width: 3),
+        boxShadow: hardShadow(BlindifyColors.cobalt, offset: 7),
       ),
       child: child,
     );

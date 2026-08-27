@@ -11,9 +11,10 @@ import '../models/join_result.dart';
 import '../models/round_ended.dart';
 import '../models/round_started.dart';
 import '../models/score_update.dart';
+import '../models/serie_annoncee.dart';
 import '../models/team.dart';
 
-enum AppScreen { connect, join, lobby, round, roundEnded, bonusStake, bonusQuestion, bonusResult, ended }
+enum AppScreen { loading, connect, join, lobby, serieIntro, round, roundEnded, bonusStake, bonusQuestion, bonusResult, ended }
 
 class PlayerInfo {
   PlayerInfo({required this.playerId, required this.nom, this.estConnecte = true, this.teamId});
@@ -40,11 +41,16 @@ class GameConnection extends ChangeNotifier {
   String? nom;
   String? gameCode;
 
+  /// Code de partie extrait d'un QR scanné (voir QrScanScreen), en attente d'être consommé par
+  /// JoinScreen pour pré-remplir son champ — remis à null après lecture pour ne pas re-préremplir
+  /// un futur passage sur cet écran (ex. après une partie terminée, code manuel suivant).
+  String? pendingJoinCode;
+
   /// URL complète d'une pochette (servie sous /files, comme l'audio côté host — voir
   /// Program.cs). null si le morceau n'a pas de coverPath.
   String? coverUrl(String? coverPath) => coverPath == null ? null : '$serverUrl/files/$coverPath';
 
-  AppScreen screen = AppScreen.connect;
+  AppScreen screen = AppScreen.loading;
   bool connected = false;
   bool connecting = false;
   String? errorMessage;
@@ -53,6 +59,8 @@ class GameConnection extends ChangeNotifier {
   int score = 0;
   String? teamId;
   List<Team> teams = []; // équipes disponibles — vide si mode équipe inactif
+
+  SerieAnnoncee? serieIntro;
 
   RoundStarted? currentRound;
   bool roundAnswered = false;
@@ -73,6 +81,11 @@ class GameConnection extends ChangeNotifier {
 
   BonusResult? lastBonusResult;
 
+  /// Durée maximale de la tentative de reconnexion automatique au démarrage — au-delà, on
+  /// abandonne et on affiche l'écran de connexion manuelle plutôt que de laisser l'écran de
+  /// chargement tourner indéfiniment (serveur éteint, Pi pas encore démarré, mauvais réseau...).
+  static const _delaiReconnexionAuto = Duration(seconds: 4);
+
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
 
@@ -84,7 +97,17 @@ class GameConnection extends ChangeNotifier {
 
     serverUrl = _prefs!.getString(_prefsServerUrl);
     nom = _prefs!.getString(_prefsNom);
-    notifyListeners();
+
+    // Tentative silencieuse avec la dernière adresse connue pendant l'écran de chargement — si
+    // elle échoue ou traîne trop longtemps, on retombe sur l'écran de connexion manuelle avec
+    // l'adresse déjà pré-remplie (voir ConnectScreen), sans message d'erreur alarmant puisque
+    // rien n'a encore été tenté explicitement par le joueur.
+    if (serverUrl != null) {
+      await connect(serverUrl!, timeout: _delaiReconnexionAuto, silent: true);
+    } else {
+      screen = AppScreen.connect;
+      notifyListeners();
+    }
   }
 
   /// Identifiant stable persisté localement — jamais le connectionId SignalR, qui
@@ -101,19 +124,37 @@ class GameConnection extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> connect(String url) async {
+  /// À utiliser quand JoinScreen est déjà à l'écran (scan lancé depuis là, déjà connecté au même
+  /// serveur — voir QrScanScreen) : [connect] n'étant pas rappelé dans ce cas, il faut notifier
+  /// explicitement pour que l'écran déjà monté récupère le nouveau code.
+  void setPendingJoinCode(String code) {
+    pendingJoinCode = code;
+    notifyListeners();
+  }
+
+  /// [timeout] borne la tentative (utilisé pour la reconnexion auto au démarrage — voir [init])
+  /// ; sans borne pour une connexion manuelle depuis [ConnectScreen], où l'utilisateur voit le
+  /// spinner et peut patienter. [silent] masque le message d'erreur en cas d'échec, pour ne pas
+  /// afficher une alerte au joueur lors d'une tentative qu'il n'a pas déclenchée lui-même.
+  Future<bool> connect(String url, {Duration? timeout, bool silent = false}) async {
     connecting = true;
     errorMessage = null;
     notifyListeners();
 
     final cleanUrl = url.trim().replaceAll(RegExp(r'/+$'), '');
 
+    // Referme une éventuelle connexion précédente avant d'en ouvrir une nouvelle (ex. scan d'un QR
+    // depuis JoinScreen alors qu'on était déjà connecté) — sinon l'ancien HubConnection reste actif
+    // en arrière-plan, écoutant toujours ses handlers, sans jamais être arrêté.
+    await _hub?.stop();
+
     _hub = HubConnectionBuilder().withUrl('$cleanUrl/hubs/game').withAutomaticReconnect().build();
 
     _registerHandlers();
 
     try {
-      await _hub!.start();
+      final demarrage = _hub!.start()!;
+      await (timeout == null ? demarrage : demarrage.timeout(timeout));
       connected = true;
       connecting = false;
       serverUrl = cleanUrl;
@@ -124,7 +165,10 @@ class GameConnection extends ChangeNotifier {
     } catch (e) {
       connecting = false;
       connected = false;
-      errorMessage = "Connexion impossible : vérifiez l'adresse et que le serveur tourne.";
+      screen = AppScreen.connect;
+      if (!silent) {
+        errorMessage = "Connexion impossible : vérifiez l'adresse et que le serveur tourne.";
+      }
       notifyListeners();
       return false;
     }
@@ -188,6 +232,16 @@ class GameConnection extends ChangeNotifier {
       notifyListeners();
     });
 
+    // Retour utilisateur (playtest 2026-08-24) : écran déjà présent côté host/écran public avant
+    // chaque série, jamais diffusé aux joueurs. Reste affiché jusqu'au prochain écran pertinent
+    // (RoundStarted/BonusStakeOptions plus bas) plutôt qu'un minuteur local — voir SerieIntroScreen.
+    hub.on('SerieAnnoncee', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      serieIntro = SerieAnnoncee.fromJson(data);
+      screen = AppScreen.serieIntro;
+      notifyListeners();
+    });
+
     hub.on('RoundStarted', (args) {
       final data = args![0] as Map<String, dynamic>;
       currentRound = RoundStarted.fromJson(data);
@@ -240,6 +294,7 @@ class GameConnection extends ChangeNotifier {
     // scores remis à zéro côté serveur. Pas de bouton côté joueur : seul le host décide.
     hub.on('GameRestarted', (_) {
       score = 0;
+      serieIntro = null;
       currentRound = null;
       roundAnswered = false;
       lastRoundResult = null;

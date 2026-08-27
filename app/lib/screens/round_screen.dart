@@ -10,6 +10,8 @@ import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/cover_art.dart';
 import '../widgets/game_card.dart';
+import '../widgets/serie_badge.dart';
+import '../widgets/timer_bar.dart';
 
 class RoundScreen extends StatefulWidget {
   const RoundScreen({super.key});
@@ -22,6 +24,7 @@ class _RoundScreenState extends State<RoundScreen> {
   final _reponseController = TextEditingController();
   Timer? _ticker;
   int _remainingMs = 0;
+  bool _autoSubmitDeclenche = false;
 
   @override
   void initState() {
@@ -31,12 +34,33 @@ class _RoundScreenState extends State<RoundScreen> {
     if (!game.paused) _startTicker();
   }
 
+  // Marge avant zéro (voir _autoSubmitSiSaisie) à laquelle la validation auto est tentée, pas au
+  // tout dernier tick — sans cette marge, le décompte visuel continue jusqu'à 0 normalement.
+  static const _margeAutoSubmitMs = 1000;
+
   void _startTicker() {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) {
       setState(() => _remainingMs = (_remainingMs - 100).clamp(0, _remainingMs));
+      if (_remainingMs <= _margeAutoSubmitMs && !_autoSubmitDeclenche) {
+        _autoSubmitDeclenche = true;
+        _autoSubmitSiSaisie();
+      }
       if (_remainingMs <= 0) _ticker?.cancel();
     });
+  }
+
+  // Timer écoulé : valide automatiquement une saisie texte déjà tapée plutôt que de la perdre
+  // silencieusement — retour utilisateur, surtout utile en question bonus où il n'y a aucun enjeu
+  // à répondre tôt. Ne concerne que le mode "tape la réponse" : QCM/lettre n'ont pas de saisie
+  // libre à récupérer, un timer écoulé sans clic y reste une absence de réponse assumée. Déclenché
+  // avec une marge avant zéro (_margeAutoSubmitMs) — voir BonusQuestionScreen._autoSubmitSiSaisie
+  // pour le détail de la course contre le timeout serveur que ça évite.
+  void _autoSubmitSiSaisie() {
+    final game = context.read<GameConnection>();
+    if (game.roundAnswered || game.currentRound?.mode != RoundMode.tapeReponse) return;
+    final reponse = _reponseController.text.trim();
+    if (reponse.isNotEmpty) game.submitAnswer(reponse);
   }
 
   // Idempotent : ne (re)démarre/n'arrête le ticker que si l'état de pause a réellement
@@ -87,6 +111,8 @@ class _RoundScreenState extends State<RoundScreen> {
                     Text(round.mode.label, style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 2),
                     Text('Trouve ${round.cible.label} du morceau', style: Theme.of(context).textTheme.bodyMedium),
+                    const SizedBox(height: 6),
+                    SerieBadge(serieIndex: round.serieIndex),
                   ],
                 ),
               ),
@@ -95,9 +121,7 @@ class _RoundScreenState extends State<RoundScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _RoundTimerBar(progress: progress),
-          const SizedBox(height: 4),
-          Text('${(_remainingMs / 1000).ceil()}s restantes', style: Theme.of(context).textTheme.bodySmall),
+          TimerBar(progress: progress, secondesRestantes: (_remainingMs / 1000).ceil()),
           const SizedBox(height: 16),
           if (game.paused) const _Banner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.roundAnswered && !game.paused)
@@ -111,32 +135,6 @@ class _RoundScreenState extends State<RoundScreen> {
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _RoundTimerBar extends StatelessWidget {
-  const _RoundTimerBar({required this.progress});
-
-  final double progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final pct = progress.clamp(0, 1) * 100;
-    final color = pct <= 15 ? BlindifyColors.bad : (pct <= 40 ? BlindifyColors.warn : BlindifyColors.accent);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: TweenAnimationBuilder<Color?>(
-        tween: ColorTween(end: color),
-        duration: const Duration(milliseconds: 300),
-        builder: (context, animatedColor, _) => LinearProgressIndicator(
-          value: progress.clamp(0, 1),
-          minHeight: 10,
-          backgroundColor: BlindifyColors.surfaceAlt,
-          valueColor: AlwaysStoppedAnimation(animatedColor ?? BlindifyColors.accent),
-        ),
       ),
     );
   }
@@ -179,9 +177,13 @@ class _QcmAnswers extends StatelessWidget {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final option = options[index];
-        // Un seul champ affiché par option (titre OU premier auteur), pas les deux — un
+        // Un seul champ affiché par option (titre, premier auteur, ou film), pas plusieurs — un
         // morceau à plusieurs auteurs listés en entier rend le QCM illisible.
-        final label = round.cible == RoundCible.titre ? option.title : option.artist.split(',').first.trim();
+        final label = switch (round.cible) {
+          RoundCible.titre => option.title,
+          RoundCible.auteur => option.artist.split(',').first.trim(),
+          RoundCible.film => option.film,
+        };
         return _AnswerTile(
           label: label,
           onPressed: disabled ? null : () => context.read<GameConnection>().submitAnswer(option.trackId),
@@ -201,16 +203,16 @@ class _AnswerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: BlindifyColors.surfaceAlt,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         onTap: onPressed,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: BlindifyColors.border),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: BlindifyColors.ink, width: 2),
           ),
           child: Text(
             label,
@@ -233,32 +235,47 @@ class _LetterAnswer extends StatelessWidget {
     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
   ];
 
+  static const _crossAxisCount = 5;
+  static const _spacing = 10.0;
+
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 6,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-      ),
-      itemCount: _letters.length,
-      itemBuilder: (context, index) {
-        final letter = _letters[index];
-        return Material(
-          color: BlindifyColors.surfaceAlt,
-          borderRadius: BorderRadius.circular(10),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: disabled ? null : () => context.read<GameConnection>().submitAnswer(letter),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: BlindifyColors.border),
-              ),
-              alignment: Alignment.center,
-              child: Text(letter, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-            ),
+    // childAspectRatio calculé pour occuper tout l'espace vertical disponible (retour
+    // utilisateur : la grille à 6 colonnes laissait un grand vide sous les lettres, faute d'être
+    // étirée pour remplir l'Expanded qui la contient) plutôt qu'un ratio fixe qui laisse un reste.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final rows = (_letters.length / _crossAxisCount).ceil();
+        final tileWidth = (constraints.maxWidth - _spacing * (_crossAxisCount - 1)) / _crossAxisCount;
+        final tileHeight = (constraints.maxHeight - _spacing * (rows - 1)) / rows;
+
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: _crossAxisCount,
+            mainAxisSpacing: _spacing,
+            crossAxisSpacing: _spacing,
+            childAspectRatio: tileWidth / tileHeight,
           ),
+          itemCount: _letters.length,
+          itemBuilder: (context, index) {
+            final letter = _letters[index];
+            return Material(
+              color: BlindifyColors.surfaceAlt,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: disabled ? null : () => context.read<GameConnection>().submitAnswer(letter),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: BlindifyColors.ink, width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(letter, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -274,7 +291,11 @@ class _TextAnswer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = cible == RoundCible.titre ? 'Titre du morceau' : "Nom de l'artiste";
+    final label = switch (cible) {
+      RoundCible.titre => 'Titre du morceau',
+      RoundCible.auteur => "Nom de l'artiste",
+      RoundCible.film => 'Film Disney',
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

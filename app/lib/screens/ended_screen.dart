@@ -43,15 +43,16 @@ class EndedScreen extends StatelessWidget {
                   0 => const Color(0xFFD4AF37),
                   1 => const Color(0xFFB8B8C8),
                   2 => const Color(0xFFCD7F32),
-                  _ => BlindifyColors.border,
+                  _ => BlindifyColors.ink,
                 };
 
                 return Container(
                   padding: EdgeInsets.symmetric(horizontal: 14, vertical: estTop3 ? 14 : 10),
                   decoration: BoxDecoration(
                     color: estTop3 ? couleurMedaille.withValues(alpha: 0.12) : BlindifyColors.surfaceAlt,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: couleurMedaille),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: couleurMedaille, width: estTop3 ? 3 : 2),
+                    boxShadow: estTop3 ? hardShadow(couleurMedaille, offset: 4) : null,
                   ),
                   child: Row(
                     children: [

@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../services/game_connection.dart';
 import '../theme.dart';
+
+/// Palette identique à host/app.js et host/display.js:couleurAvatar — hash%360 laissait parfois
+/// deux joueurs avec des teintes de vert trop proches pour être distinguées (retour utilisateur).
+const _paletteAvatars = [
+  Color(0xFFE63946), Color(0xFF457B9D), Color(0xFFF4A300), Color(0xFF2A9D8F),
+  Color(0xFF9B5DE5), Color(0xFF06D6A0), Color(0xFFF15BB5), Color(0xFF4CC9F0),
+  Color(0xFFFF6B35), Color(0xFF8AC926), Color(0xFFFFCA3A), Color(0xFF6A4C93),
+];
 
 /// Avatar rond coloré par identifiant (même joueur = même couleur d'un écran à l'autre) —
 /// même logique que côté host (host/app.js:couleurAvatar) pour une identité visuelle cohérente.
@@ -16,7 +26,16 @@ class PlayerAvatar extends StatelessWidget {
 
   static const _medailles = ['🥇', '🥈', '🥉'];
 
-  Color _couleur() {
+  /// Couleur basée sur la position dans le roster (ordre d'arrivée) plutôt que sur un hash de
+  /// l'id, pour garantir des couleurs distinctes entre joueurs (et entre équipes) tant que leur
+  /// nombre ne dépasse pas la taille de la palette.
+  Color _couleur(GameConnection game) {
+    final indexJoueur = game.players.indexWhere((p) => p.playerId == id);
+    if (indexJoueur >= 0) return _paletteAvatars[indexJoueur % _paletteAvatars.length];
+
+    final indexEquipe = game.teams.indexWhere((t) => t.id == id);
+    if (indexEquipe >= 0) return _paletteAvatars[(game.players.length + indexEquipe) % _paletteAvatars.length];
+
     var hash = 0;
     for (final unit in id.codeUnits) {
       hash = (hash * 31 + unit) & 0x7fffffff;
@@ -34,10 +53,11 @@ class PlayerAvatar extends StatelessWidget {
       );
     }
 
+    final game = context.watch<GameConnection>();
     final initiale = nom.trim().isEmpty ? '?' : nom.trim().substring(0, 1).toUpperCase();
     return CircleAvatar(
       radius: size / 2,
-      backgroundColor: _couleur(),
+      backgroundColor: _couleur(game),
       child: Text(
         initiale,
         style: TextStyle(color: BlindifyColors.onAccent, fontWeight: FontWeight.w800, fontSize: size * 0.4),

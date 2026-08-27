@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'screens/bonus_question_screen.dart';
@@ -8,13 +10,23 @@ import 'screens/connect_screen.dart';
 import 'screens/ended_screen.dart';
 import 'screens/join_screen.dart';
 import 'screens/leaderboard_overlay.dart';
+import 'screens/loading_screen.dart';
 import 'screens/lobby_screen.dart';
 import 'screens/round_ended_screen.dart';
 import 'screens/round_screen.dart';
+import 'screens/serie_intro_screen.dart';
 import 'services/game_connection.dart';
 import 'theme.dart';
 
-void main() {
+void main() async {
+  // Buzzer tenu à deux mains en mode portrait — un paysage accidentel casserait la mise en page
+  // (grille de lettres, QCM) pensée pour ce format. Ignoré sur desktop/web (no-op silencieux si
+  // la plateforme ne supporte pas la contrainte, par ex. Flutter web sur certains navigateurs).
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(const BlindifyApp());
 }
 
@@ -27,6 +39,7 @@ class BlindifyApp extends StatelessWidget {
       create: (_) => GameConnection()..init(),
       child: MaterialApp(
         title: 'Blindify',
+        debugShowCheckedModeBanner: false,
         theme: buildBlindifyTheme(),
         home: const _RootScreen(),
       ),
@@ -42,9 +55,11 @@ class _RootScreen extends StatelessWidget {
     final game = context.watch<GameConnection>();
 
     final Widget body = switch (game.screen) {
+      AppScreen.loading => const LoadingScreen(),
       AppScreen.connect => const ConnectScreen(),
       AppScreen.join => const JoinScreen(),
       AppScreen.lobby => const LobbyScreen(),
+      AppScreen.serieIntro => const SerieIntroScreen(),
       AppScreen.round => const RoundScreen(),
       AppScreen.roundEnded => const RoundEndedScreen(),
       AppScreen.bonusStake => const BonusStakeScreen(),
@@ -60,7 +75,7 @@ class _RootScreen extends StatelessWidget {
           gradient: RadialGradient(
             center: Alignment(0, -0.9),
             radius: 1.4,
-            colors: [Color(0x297C8FFF), BlindifyColors.bg],
+            colors: [Color(0x293D5AFF), BlindifyColors.bg],
             stops: [0, 0.6],
           ),
         ),
@@ -71,13 +86,16 @@ class _RootScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
                 child: Row(
                   children: [
-                    ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [BlindifyColors.accent, BlindifyColors.accent2],
-                      ).createShader(bounds),
-                      child: const Text(
-                        'Blindify',
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.white),
+                    Text(
+                      'BLINDIFY',
+                      style: TextStyle(
+                        fontFamily: GoogleFonts.anton().fontFamily,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 24,
+                        letterSpacing: 0.5,
+                        color: BlindifyColors.ink,
+                        // Ombre dure décalée (pas de flou) — même motif que header h1 côté host.
+                        shadows: const [Shadow(color: BlindifyColors.coral, offset: Offset(3, 3), blurRadius: 0)],
                       ),
                     ),
                     const Spacer(),
@@ -118,23 +136,24 @@ class _ConnectionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = connected ? BlindifyColors.good : BlindifyColors.textDim;
+    final bg = connected ? BlindifyColors.good : BlindifyColors.surfaceAlt;
+    final fg = connected ? BlindifyColors.onLight : BlindifyColors.inkDim;
+    final border = connected ? BlindifyColors.ink : BlindifyColors.borderSoft;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: bg,
+        border: Border.all(color: border, width: 2),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 6),
-          Text(
-            connected ? 'connecté' : 'déconnecté',
-            style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
-          ),
-        ],
+      child: Text(
+        connected ? 'connecté' : 'déconnecté',
+        style: GoogleFonts.spaceMono(
+          color: fg,
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+          letterSpacing: 0.6,
+        ),
       ),
     );
   }

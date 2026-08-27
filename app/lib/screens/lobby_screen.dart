@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../services/game_connection.dart';
@@ -24,20 +25,22 @@ class LobbyScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
               color: BlindifyColors.surfaceAlt,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: BlindifyColors.border),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: BlindifyColors.ink, width: 3),
+              boxShadow: hardShadow(BlindifyColors.mustard),
             ),
             child: Column(
               children: [
                 Text('CODE', style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 2),
-                ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [BlindifyColors.accent, BlindifyColors.accent2],
-                  ).createShader(bounds),
-                  child: Text(
-                    game.gameCode ?? '',
-                    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, letterSpacing: 6, color: Colors.white),
+                Text(
+                  game.gameCode ?? '',
+                  style: TextStyle(
+                    fontFamily: GoogleFonts.anton().fontFamily,
+                    fontSize: 40,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 6,
+                    color: BlindifyColors.ink,
                   ),
                 ),
               ],
@@ -55,10 +58,10 @@ class LobbyScreen extends StatelessWidget {
                   ChoiceChip(
                     label: Text(equipe.nom),
                     selected: game.teamId == equipe.id,
-                    selectedColor: BlindifyColors.accent,
+                    selectedColor: BlindifyColors.cobalt,
                     labelStyle: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: game.teamId == equipe.id ? BlindifyColors.onAccent : BlindifyColors.text,
+                      color: game.teamId == equipe.id ? BlindifyColors.onAccent : BlindifyColors.ink,
                     ),
                     onSelected: (_) => context.read<GameConnection>().joinTeam(equipe.id),
                   ),
@@ -88,8 +91,8 @@ class LobbyScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: BlindifyColors.surfaceAlt,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: BlindifyColors.border),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: BlindifyColors.ink, width: 2),
                         ),
                         child: Opacity(
                           opacity: p.estConnecte ? 1 : 0.5,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/game_card.dart';
+import 'qr_scan_screen.dart';
 
 class ConnectScreen extends StatefulWidget {
   const ConnectScreen({super.key});
@@ -39,7 +40,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.podcasts_rounded, size: 40, color: BlindifyColors.accent),
+              const Icon(Icons.podcasts_rounded, size: 40, color: BlindifyColors.cobalt),
               const SizedBox(height: 12),
               Text('Connexion au serveur', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 4),
@@ -74,6 +75,25 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 const SizedBox(height: 12),
                 Text(game.errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
+              const SizedBox(height: 16),
+              Row(children: [
+                const Expanded(child: Divider(color: BlindifyColors.borderSoft)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text('ou', style: Theme.of(context).textTheme.bodySmall),
+                ),
+                const Expanded(child: Divider(color: BlindifyColors.borderSoft)),
+              ]),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: game.connecting
+                    ? null
+                    : () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const QrScanScreen()),
+                        ),
+                icon: const Icon(Icons.qr_code_scanner_rounded),
+                label: const Text('Scanner le QR'),
+              ),
             ],
           ),
         ),

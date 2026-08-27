@@ -37,6 +37,8 @@ dependencies:
   signalr_netcore: ^1.4.4
   provider: ^6.1.5+1
   shared_preferences: ^2.5.5
+  google_fonts: ^6.2.1
+  mobile_scanner: ^7.0.1
 
 dev_dependencies:
   flutter_test:
@@ -55,10 +57,10 @@ flutter_launcher_icons:
   ios: true
   web:
     generate: true
-    background_color: "#7C8FFF"
-    theme_color: "#7C8FFF"
+    background_color: "#121014"
+    theme_color: "#121014"
   image_path: "assets/icon/icon.png"
-  adaptive_icon_background: "#7C8FFF"
+  adaptive_icon_background: "#121014"
   adaptive_icon_foreground: "assets/icon/icon_foreground.png"
   min_sdk_android: 21
   remove_alpha_ios: true
