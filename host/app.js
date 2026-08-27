@@ -1480,21 +1480,26 @@ el("btn-rejouer").addEventListener("click", async () => {
   }
 });
 
-// ----- Démarrage : reconnexion automatique à la dernière adresse connue -----
-// Même logique que côté Flutter (GameConnection.init) : tentative silencieuse et bornée dans le
-// temps, retombe sur la saisie manuelle (adresse déjà pré-remplie) en cas d'échec ou de timeout —
-// évite de retaper l'adresse à chaque ouverture du panneau (retour utilisateur).
+// ----- Démarrage : connexion automatique à l'adresse depuis laquelle la page a été chargée -----
+// Retour utilisateur (2026-08-27) : cet écran est "useless" en usage normal — host/ est servi par
+// le backend lui-même (voir docs/architecture.md "Dockerisation"), donc l'adresse du serveur est
+// toujours celle de la barre d'adresse du navigateur, pas la peine de la faire retaper. Repli sur
+// la dernière adresse connue (localStorage) si l'origine n'est pas exploitable (page ouverte en
+// fichier local, ex. `file://`) — puis sur la saisie manuelle en cas d'échec/timeout, même logique
+// de tentative silencieuse et bornée que côté Flutter (GameConnection.init).
 const DELAI_RECONNEXION_AUTO_MS = 4000;
+const origineActuelle = window.location.origin.startsWith("http") ? window.location.origin : null;
 const derniereAdresseConnue = localStorage.getItem(SERVER_URL_STORAGE_KEY);
+const adresseAutoConnexion = origineActuelle || derniereAdresseConnue;
 
 showScreen("screen-connect");
 
-if (derniereAdresseConnue) {
-  el("server-url").value = derniereAdresseConnue;
+if (adresseAutoConnexion) {
+  el("server-url").value = adresseAutoConnexion;
   const btnConnect = el("btn-connect");
   btnConnect.disabled = true;
   btnConnect.textContent = "Connexion en cours...";
-  tenterConnexion(derniereAdresseConnue, { silencieux: true, timeoutMs: DELAI_RECONNEXION_AUTO_MS }).finally(() => {
+  tenterConnexion(adresseAutoConnexion, { silencieux: true, timeoutMs: DELAI_RECONNEXION_AUTO_MS }).finally(() => {
     btnConnect.disabled = false;
     btnConnect.textContent = "Se connecter";
   });
