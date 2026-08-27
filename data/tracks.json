@@ -498,7 +498,7 @@
     "artist": "Vianney",
     "album": "N'attendons pas",
     "spotifyId": "5wXkbtZO1HsOQ1P75zi35p",
-    "youtubeId": "apgcFZPQd0E",
+    "youtubeId": "2Wy4w8ErnGg",
     "durationMs": 197562,
     "genres": [
       "chanson",
@@ -514,7 +514,7 @@
     "year": 2020,
     "filePath": "audio/5wXkbtZO1HsOQ1P75zi35p.mp3",
     "coverPath": "covers/5wXkbtZO1HsOQ1P75zi35p.jpg",
-    "refrainStartMs": 80930,
+    "refrainStartMs": 77593,
     "addedAt": "2026-08-18T16:37:49.982557+00:00"
   },
   {
@@ -1388,7 +1388,7 @@
     "artist": "Avicii",
     "album": "True",
     "spotifyId": "0nrRP2bk19rLc0orkWPQk2",
-    "youtubeId": "Orp4k_YkE5w",
+    "youtubeId": "5y_KJAg8bHI",
     "durationMs": 247426,
     "genres": [
       "edm"
@@ -1403,7 +1403,7 @@
     "year": 2013,
     "filePath": "audio/0nrRP2bk19rLc0orkWPQk2.mp3",
     "coverPath": "covers/0nrRP2bk19rLc0orkWPQk2.jpg",
-    "refrainStartMs": 204229,
+    "refrainStartMs": 100074,
     "addedAt": "2026-08-18T16:51:39.643354+00:00"
   },
   {
@@ -4808,7 +4808,7 @@
     "artist": "Post Malone",
     "album": "Hollywood's Bleeding",
     "spotifyId": "21jGcNKet2qwijlDFuPiPb",
-    "youtubeId": "n85KukOXc0A",
+    "youtubeId": "9gkRJONZPSA",
     "durationMs": 215280,
     "genres": [],
     "tags": [
@@ -4818,7 +4818,7 @@
     "year": 2019,
     "filePath": "audio/21jGcNKet2qwijlDFuPiPb.mp3",
     "coverPath": "covers/21jGcNKet2qwijlDFuPiPb.jpg",
-    "refrainStartMs": 177639,
+    "refrainStartMs": 96516,
     "addedAt": "2026-08-18T17:44:41.924349+00:00"
   },
   {
@@ -6539,7 +6539,7 @@
     "artist": "Benson Boone",
     "album": "Fireworks & Rollerblades",
     "spotifyId": "3xkHsmpQCBMytMJNiDf3Ii",
-    "youtubeId": "fCWvZisydrE",
+    "youtubeId": "HU08BcK5SUY",
     "durationMs": 180304,
     "genres": [],
     "tags": [
@@ -6549,7 +6549,7 @@
     "year": 2024,
     "filePath": "audio/3xkHsmpQCBMytMJNiDf3Ii.mp3",
     "coverPath": "covers/3xkHsmpQCBMytMJNiDf3Ii.jpg",
-    "refrainStartMs": 112699,
+    "refrainStartMs": 140946,
     "addedAt": "2026-08-18T18:10:45.339558+00:00"
   },
   {
@@ -6700,7 +6700,7 @@
     "artist": "felix jaehn, Jasmine Thompson",
     "album": "I",
     "spotifyId": "3c8iiZGfEammKJuWTErE5x",
-    "youtubeId": "8aZdpj5zEZ0",
+    "youtubeId": "5j1RCys4R0g",
     "durationMs": 186146,
     "genres": [
       "tropical house"
@@ -6712,7 +6712,7 @@
     "year": 2018,
     "filePath": "audio/3c8iiZGfEammKJuWTErE5x.mp3",
     "coverPath": "covers/3c8iiZGfEammKJuWTErE5x.jpg",
-    "refrainStartMs": 67059,
+    "refrainStartMs": 66255,
     "addedAt": "2026-08-18T18:13:38.661118+00:00"
   },
   {
@@ -7323,7 +7323,7 @@
     "artist": "Meat Loaf",
     "album": "Welcome To The Neighbourhood",
     "spotifyId": "6fqLce5TNAmNgbFwXD2DdG",
-    "youtubeId": "99k0PvkASEM",
+    "youtubeId": "-qleBCzkxic",
     "durationMs": 329400,
     "genres": [],
     "tags": [
@@ -7333,7 +7333,7 @@
     "year": 1995,
     "filePath": "audio/6fqLce5TNAmNgbFwXD2DdG.mp3",
     "coverPath": "covers/6fqLce5TNAmNgbFwXD2DdG.jpg",
-    "refrainStartMs": 192181,
+    "refrainStartMs": 176377,
     "addedAt": "2026-08-18T18:24:43.735012+00:00"
   },
   {
@@ -10609,7 +10609,7 @@
     "artist": "Suzanne Vega",
     "album": "Solitude Standing",
     "spotifyId": "5yMXAaSvxo12QkYU75Ixv0",
-    "youtubeId": "fPoDV4p6ync",
+    "youtubeId": "-06n1iy4Ey4",
     "durationMs": 231933,
     "genres": [
       "singer-songwriter"
@@ -10621,7 +10621,7 @@
     "year": 1987,
     "filePath": "audio/5yMXAaSvxo12QkYU75Ixv0.mp3",
     "coverPath": "covers/5yMXAaSvxo12QkYU75Ixv0.jpg",
-    "refrainStartMs": 181655,
+    "refrainStartMs": 181224,
     "addedAt": "2026-08-18T19:18:23.326595+00:00"
   },
   {
@@ -11339,7 +11339,7 @@
     "artist": "Deee-Lite",
     "album": "World Clique",
     "spotifyId": "2He3NOyqtLNE3RQPpeDdSb",
-    "youtubeId": "g_hLZJwdA4M",
+    "youtubeId": "hIpT8H40Apo",
     "durationMs": 231786,
     "genres": [],
     "tags": [
@@ -11349,7 +11349,7 @@
     "year": 1990,
     "filePath": "audio/2He3NOyqtLNE3RQPpeDdSb.mp3",
     "coverPath": "covers/2He3NOyqtLNE3RQPpeDdSb.jpg",
-    "refrainStartMs": 204482,
+    "refrainStartMs": 160658,
     "addedAt": "2026-08-18T19:31:54.714261+00:00"
   },
   {
@@ -15124,7 +15124,7 @@
     "artist": "Creedence Clearwater Revival",
     "album": "Willy And The Poor Boys (Expanded Edition)",
     "spotifyId": "4BP3uh0hFLFRb5cjsgLqDh",
-    "youtubeId": "b0Upk41P7aw",
+    "youtubeId": "3RmQTYLD398",
     "durationMs": 140773,
     "genres": [
       "classic rock",
@@ -15139,7 +15139,7 @@
     "year": 1969,
     "filePath": "audio/4BP3uh0hFLFRb5cjsgLqDh.mp3",
     "coverPath": "covers/4BP3uh0hFLFRb5cjsgLqDh.jpg",
-    "refrainStartMs": null,
+    "refrainStartMs": 94814,
     "addedAt": "2026-08-19T06:18:54.860105+00:00"
   },
   {
@@ -19176,7 +19176,7 @@
     "artist": "Destiny's Child",
     "album": "Survivor",
     "spotifyId": "2Mpj1Ul5OFPyyP4wB62Rvi",
-    "youtubeId": "wYZR9971mD0",
+    "youtubeId": "Wmc8bQoL-J0",
     "durationMs": 254026,
     "genres": [],
     "tags": [
@@ -19188,7 +19188,7 @@
     "year": 2001,
     "filePath": "audio/2Mpj1Ul5OFPyyP4wB62Rvi.mp3",
     "coverPath": "covers/2Mpj1Ul5OFPyyP4wB62Rvi.jpg",
-    "refrainStartMs": null,
+    "refrainStartMs": 69995,
     "addedAt": "2026-08-19T07:15:34.570639+00:00"
   },
   {
@@ -19621,7 +19621,7 @@
     "artist": "Ofenbach",
     "album": "Be Mine",
     "spotifyId": "2KklXplRtxMsBYo474Es0w",
-    "youtubeId": "SdAw6e37s6s",
+    "youtubeId": "19AleiN2T1E",
     "durationMs": 161322,
     "genres": [],
     "tags": [
@@ -19631,7 +19631,7 @@
     "year": 2016,
     "filePath": "audio/2KklXplRtxMsBYo474Es0w.mp3",
     "coverPath": "covers/2KklXplRtxMsBYo474Es0w.jpg",
-    "refrainStartMs": 132179,
+    "refrainStartMs": 16531,
     "addedAt": "2026-08-19T07:22:45.653989+00:00"
   },
   {
@@ -20938,7 +20938,7 @@
     "artist": "Eurythmics, Annie Lennox, Dave Stewart",
     "album": "Touch (Reissue - Deluxe Edition)",
     "spotifyId": "78RIER8V6EhrqVPOBi2GYa",
-    "youtubeId": "ko8Ec7ojahU",
+    "youtubeId": "pohZ0dqaP64",
     "durationMs": 294586,
     "genres": [
       "new wave",
@@ -20953,7 +20953,7 @@
     "year": 1983,
     "filePath": "audio/78RIER8V6EhrqVPOBi2GYa.mp3",
     "coverPath": "covers/78RIER8V6EhrqVPOBi2GYa.jpg",
-    "refrainStartMs": 143952,
+    "refrainStartMs": 110098,
     "addedAt": "2026-08-19T07:42:03.628806+00:00"
   },
   {
@@ -21357,7 +21357,7 @@
     "artist": "BENNETT",
     "album": "Vois sur ton chemin (Techno Mix)",
     "spotifyId": "31nfdEooLEq7dn3UMcIeB5",
-    "youtubeId": "ZIIT9hO1EZE",
+    "youtubeId": "f4gODZFkTJg",
     "durationMs": 178156,
     "genres": [
       "hypertechno",
@@ -21371,7 +21371,7 @@
     "year": 2023,
     "filePath": "audio/31nfdEooLEq7dn3UMcIeB5.mp3",
     "coverPath": "covers/31nfdEooLEq7dn3UMcIeB5.jpg",
-    "refrainStartMs": 75008,
+    "refrainStartMs": 75350,
     "addedAt": "2026-08-19T07:48:05.404179+00:00"
   },
   {
@@ -21876,7 +21876,7 @@
     "artist": "David Guetta, Bebe Rexha",
     "album": "I'm Good (Blue)",
     "spotifyId": "4uUG5RXrOk84mYEfFvj3cK",
-    "youtubeId": "kXhBKjDKF84",
+    "youtubeId": "Y5dEp-nN6qQ",
     "durationMs": 175238,
     "genres": [
       "edm"
@@ -21889,7 +21889,7 @@
     "year": 2022,
     "filePath": "audio/4uUG5RXrOk84mYEfFvj3cK.mp3",
     "coverPath": "covers/4uUG5RXrOk84mYEfFvj3cK.jpg",
-    "refrainStartMs": 88149,
+    "refrainStartMs": 89262,
     "addedAt": "2026-08-19T07:55:01.938500+00:00"
   },
   {
@@ -23710,7 +23710,7 @@
     "artist": "Patrick Fiori, Jose Garcia, Thierry Ragueneau, Pierre Francois Pistorio, Michel Vigné, Chorus - Mulan",
     "album": "Mulan Original Soundtrack",
     "spotifyId": "16TPtk65LzaqSKtNoZvCNC",
-    "youtubeId": "YcZW5pEZCHc",
+    "youtubeId": "pNk0AzU9WVQ",
     "durationMs": 201760,
     "genres": [
       "chanson",
@@ -23727,7 +23727,7 @@
     "year": 2002,
     "filePath": "audio/16TPtk65LzaqSKtNoZvCNC.mp3",
     "coverPath": "covers/16TPtk65LzaqSKtNoZvCNC.jpg",
-    "refrainStartMs": 50875,
+    "refrainStartMs": 52539,
     "addedAt": "2026-08-21T17:50:37.162583+00:00"
   },
   {
@@ -24052,7 +24052,7 @@
     "id": "5eAZyD2t92RffeUcKmcQgo",
     "title": "Histoire éternelle",
     "artist": "Lucie Dolene",
-    "album": "Beauty And The Beast Original Soundtrack Special Edition",
+    "album": "La Belle et la Bête",
     "spotifyId": "5eAZyD2t92RffeUcKmcQgo",
     "youtubeId": "6HJNpHYAbyg",
     "durationMs": 166026,
@@ -24156,7 +24156,7 @@
     "id": "5ZYc1Zwqzvs53l8qrQQLHs",
     "title": "De Zéro En Héros",
     "artist": "Mimi Félixine, Assitan Dembele, Norma Ray, Jessica Parker, Debbie Davis, Chorus",
-    "album": "Hercules Original Soundtrack",
+    "album": "Hercule",
     "spotifyId": "5ZYc1Zwqzvs53l8qrQQLHs",
     "youtubeId": "fZp791ygO5g",
     "durationMs": 140160,
@@ -24175,7 +24175,7 @@
     "id": "66nwL8QBjIkO6deVpvSqvw",
     "title": "Jamais Je N'avouerai",
     "artist": "Mimi Félixine, Assitan Dembele, Norma Ray, Jessica Parker, Debbie Davis",
-    "album": "Hercules Original Soundtrack",
+    "album": "Hercule",
     "spotifyId": "66nwL8QBjIkO6deVpvSqvw",
     "youtubeId": "q5Mb-cTOfiE",
     "durationMs": 139813,
@@ -24251,7 +24251,7 @@
     "id": "0SaLO4BBaUdf4URMOrGeG6",
     "title": "Soyez Prêtes",
     "artist": "Jean Piat, Marie-Christine Darah, Michel Mella",
-    "album": "The Lion King: Special Edition Original Soundtrack (French Version)",
+    "album": "Le Roi Lion",
     "spotifyId": "0SaLO4BBaUdf4URMOrGeG6",
     "youtubeId": "OSYsHNeoyTU",
     "durationMs": 219946,
@@ -24270,7 +24270,7 @@
     "id": "1KxQ0sXDBggSOKn7xdJqec",
     "title": "Tout le monde veut devenir un cat",
     "artist": "José Germain",
-    "album": "The Aristocats Original Soundtrack",
+    "album": "Les Aristochats",
     "spotifyId": "1KxQ0sXDBggSOKn7xdJqec",
     "youtubeId": "ujbuwIA-A3k",
     "durationMs": 355560,
@@ -24425,7 +24425,7 @@
     "id": "4XLuhFecYKpcsy2vgD9PRO",
     "title": "Le Monde Qui Est Le Mien",
     "artist": "Emmanuel Dahl",
-    "album": "Hercules Original Soundtrack",
+    "album": "Hercule",
     "spotifyId": "4XLuhFecYKpcsy2vgD9PRO",
     "youtubeId": "NizG2AXpSMU",
     "durationMs": 194040,
@@ -24463,7 +24463,7 @@
     "id": "5XTZe496tBMKKX4uDrLmQQ",
     "title": "Être un homme comme vous",
     "artist": "Jean Stout, José Bartel, Pascal Bressi",
-    "album": "The Jungle Book Original Soundtrack (French Version)",
+    "album": "Le Livre de la Jungle",
     "spotifyId": "5XTZe496tBMKKX4uDrLmQQ",
     "youtubeId": "xRbnBHizY-o",
     "durationMs": 230560,
@@ -24675,7 +24675,7 @@
     "id": "3gcCYTyBHp5b0lc71rxU5t",
     "title": "C'est la Fête",
     "artist": "Daniel Beretta, Lucie Dolene",
-    "album": "Beauty And The Beast Original Soundtrack Special Edition",
+    "album": "La Belle et la Bête",
     "spotifyId": "3gcCYTyBHp5b0lc71rxU5t",
     "youtubeId": "DfrU8dqUJoQ",
     "durationMs": 224240,
@@ -24717,7 +24717,7 @@
     "id": "1noNg85wzbtrn0LGotBkVK",
     "title": "Des gammes et des arpèges",
     "artist": "Cast - Aristocats",
-    "album": "The Aristocats Original Soundtrack",
+    "album": "Les Aristochats",
     "spotifyId": "1noNg85wzbtrn0LGotBkVK",
     "youtubeId": "Vm0bR_alU8E",
     "durationMs": 103920,
@@ -24774,7 +24774,7 @@
     "id": "0n1yJ8cLt8k4Bq3tpGgQTW",
     "title": "Une étoile Est Née",
     "artist": "Mimi Félixine, Assitan Dembele, Jessica Parker, Debbie Davis, Chorus - Lady and the Tramp",
-    "album": "Hercules Original Soundtrack",
+    "album": "Hercule",
     "spotifyId": "0n1yJ8cLt8k4Bq3tpGgQTW",
     "youtubeId": "C0h9-zNWafk",
     "durationMs": 124120,
@@ -24977,7 +24977,7 @@
     "id": "3p0p3nyqF0dAXndMG7uIkQ",
     "title": "Belle",
     "artist": "Bénédicte Lecroard, Jean Claude Corbel, Francois Le Roux",
-    "album": "Beauty And The Beast Original Soundtrack Special Edition",
+    "album": "La Belle et la Bête",
     "spotifyId": "3p0p3nyqF0dAXndMG7uIkQ",
     "youtubeId": "2Mg1igK2oxk",
     "durationMs": 308640,
@@ -24998,7 +24998,7 @@
     "id": "5QYzMLIBMeRDAGjaVM0sDj",
     "title": "Sifflez en travaillant",
     "artist": "Rachel Pignot",
-    "album": "Snow White And The Seven Dwarfs Original Soundtrack",
+    "album": "Blanche-Neige et les Sept Nains",
     "spotifyId": "5QYzMLIBMeRDAGjaVM0sDj",
     "youtubeId": "SORK9CdnwA4",
     "durationMs": 207866,
@@ -25036,7 +25036,7 @@
     "id": "63R0fhNwlMGLUDVfyU8jp5",
     "title": "Je ne savais pas",
     "artist": "Bénédicte Lecroard, Daniel Beretta, Lucie Dolene",
-    "album": "Beauty And The Beast Original Soundtrack Special Edition",
+    "album": "La Belle et la Bête",
     "spotifyId": "63R0fhNwlMGLUDVfyU8jp5",
     "youtubeId": "V-PrZVOU2o4",
     "durationMs": 138160,
@@ -25093,7 +25093,7 @@
     "id": "1ykYBHXMqhb5wAgdFOk32w",
     "title": "Le rapport du matin",
     "artist": "Michel Prudhomme, Mathias Mella",
-    "album": "The Lion King: Special Edition Original Soundtrack (French Version)",
+    "album": "Le Roi Lion",
     "spotifyId": "1ykYBHXMqhb5wAgdFOk32w",
     "youtubeId": "_UgE89HyaVA",
     "durationMs": 96640,
@@ -25112,7 +25112,7 @@
     "id": "0PusOERKzfFfVj0Ir8hvKb",
     "title": "La Belle et la Bête",
     "artist": "Patrick Fiori, Julie Zenatti",
-    "album": "Beauty And The Beast Original Soundtrack Special Edition",
+    "album": "La Belle et la Bête",
     "spotifyId": "0PusOERKzfFfVj0Ir8hvKb",
     "youtubeId": "_nWdKPKNpeU",
     "durationMs": 244746,
@@ -25252,7 +25252,7 @@
     "id": "2yF9vgopkdojNvfi4pE1Zs",
     "title": "Gaston",
     "artist": "Jean Claude Corbel, Francois Le Roux",
-    "album": "Beauty And The Beast Original Soundtrack Special Edition",
+    "album": "La Belle et la Bête",
     "spotifyId": "2yF9vgopkdojNvfi4pE1Zs",
     "youtubeId": "XkrovLt15NA",
     "durationMs": 189653,
@@ -25292,7 +25292,7 @@
     "id": "47FeTn8wwWCmjXrNfAgo0e",
     "title": "Thomas O'Malley",
     "artist": "Claude Bertrand",
-    "album": "The Aristocats Original Soundtrack",
+    "album": "Les Aristochats",
     "spotifyId": "47FeTn8wwWCmjXrNfAgo0e",
     "youtubeId": "4_9waIT0FCU",
     "durationMs": 155426,
@@ -25393,7 +25393,7 @@
     "id": "6dG5f6x9GhaZ0AlgqhGWg2",
     "title": "Sentimentale",
     "artist": "Jenny MacKay",
-    "album": "Hercules Original Soundtrack",
+    "album": "Hercule",
     "spotifyId": "6dG5f6x9GhaZ0AlgqhGWg2",
     "youtubeId": "lqn7MsvWftk",
     "durationMs": 140906,
@@ -25412,7 +25412,7 @@
     "id": "4cKcSoxVAJsXDg37XQjAgh",
     "title": "Il Me Reste Un Espoir",
     "artist": "Patrick Timsit",
-    "album": "Hercules Original Soundtrack",
+    "album": "Hercule",
     "spotifyId": "4cKcSoxVAJsXDg37XQjAgh",
     "youtubeId": "mvC3qUrczOU",
     "durationMs": 181413,
@@ -25431,7 +25431,7 @@
     "id": "3U743DUUaFw6Q8LVgaNnse",
     "title": "Le Gospel Pur III",
     "artist": "Mimi Félixine, Assitan Dembele, Norma Ray, Jessica Parker, Debbie Davis",
-    "album": "Hercules Original Soundtrack",
+    "album": "Hercule",
     "spotifyId": "3U743DUUaFw6Q8LVgaNnse",
     "youtubeId": "KoVJ219Oozw",
     "durationMs": 65212,
@@ -25489,7 +25489,7 @@
     "id": "5xa71Pnwx34gncf9tFpT6C",
     "title": "Le Gospel Pur II",
     "artist": "Assitan Dembele, Jessica Parker, Mimi Félixine, Debbie Davis, Norma Ray",
-    "album": "Hercules Original Soundtrack",
+    "album": "Hercule",
     "spotifyId": "5xa71Pnwx34gncf9tFpT6C",
     "youtubeId": "mU4dMC_dHqw",
     "durationMs": 58066,
@@ -25584,7 +25584,7 @@
     "id": "3hJszmO9p07R1lxBJDi6tj",
     "title": "Tuons la Bête",
     "artist": "Jean Claude Corbel, Francois Le Roux",
-    "album": "Beauty And The Beast Original Soundtrack Special Edition",
+    "album": "La Belle et la Bête",
     "spotifyId": "3hJszmO9p07R1lxBJDi6tj",
     "youtubeId": "AKa-3sXy-9M",
     "durationMs": 209413,
@@ -25662,7 +25662,7 @@
     "id": "0yuK2N2auiXfkBHbTlImQc",
     "title": "Humain à nouveau",
     "artist": "Daniel Beretta, Brigitte Virtudes, Gérard Rinaldi, Christiane Legrand",
-    "album": "Beauty And The Beast Original Soundtrack Special Edition",
+    "album": "La Belle et la Bête",
     "spotifyId": "0yuK2N2auiXfkBHbTlImQc",
     "youtubeId": "bM1G8Q4VAv0",
     "durationMs": 294386,
@@ -25738,7 +25738,7 @@
     "id": "7DPx1C4loXgE6PZVVMOZRQ",
     "title": "Il y a longtemps..",
     "artist": "Jean Davy",
-    "album": "Hercules Original Soundtrack",
+    "album": "Hercule",
     "spotifyId": "7DPx1C4loXgE6PZVVMOZRQ",
     "youtubeId": "sqkdIAkHCIU",
     "durationMs": 30466,
@@ -25806,7 +25806,7 @@
     "artist": "Bénedicte Le Croart",
     "album": "Clochette Et La Pierre De Lune",
     "spotifyId": "1K9AcSEtfjuPxn0L7b7VWD",
-    "youtubeId": "YHc0IUSQrPw",
+    "youtubeId": "-a-Ygu_F1tE",
     "durationMs": 53240,
     "genres": [],
     "tags": [
