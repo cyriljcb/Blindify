@@ -59,7 +59,12 @@ BUCKETS: dict[str, list[str]] = {
     "metal": ["metal", "hardcore", "screamo", "grindcore"],
     "rock": ["rock", "punk", "grunge"],
     "pop": ["pop"],
-    "electro": ["electro", "house", "techno", "trance", "edm", "dubstep", "drum and bass", "dnb", "synth"],
+    # "house" volontairement absent : "french house" apparaît systématiquement dans les genres
+    # Spotify d'artistes de chanson mainstream sans rapport avec la house (Cabrel, Goldman, Céline
+    # Dion...) — même défaut de métadonnées Spotify que le bug "Renaud tagué electro" déjà connu
+    # (docs/architecture.md section 3 point 3). "electro"/"techno"/"trance"/"edm"/... restent des
+    # signaux fiables, vérifiés sur David Guetta/Avicii.
+    "electro": ["electro", "techno", "trance", "edm", "dubstep", "drum and bass", "dnb", "synth"],
     "rap": ["rap", "hip hop", "hip-hop", "trap"],
     "rnb-funk-jazz": ["r&b", "rnb", "funk", "jazz", "soul", "motown"],
     # Phrases explicites plutôt qu'un simple "french" — "french touch"/"french house"/"french
@@ -67,7 +72,7 @@ BUCKETS: dict[str, list[str]] = {
     # docs : piège déjà identifié pour "singer-songwriter"/"folk", même prudence ici).
     "variete-francaise": ["chanson", "variete", "variété", "french pop", "french hip hop", "francoton", "francophone"],
     "latino": ["latin", "reggaeton", "salsa", "bachata", "cumbia", "flamenco"],
-    "monde": ["world", "afrobeat", "african", "reggae", "arab", "bollywood"],
+    "monde": ["world", "afrobeat", "african", "reggae", "arab", "bollywood", "dancehall", "zouk", "kompa", "shatta"],
 }
 
 
