@@ -1,0 +1,15 @@
+# Synchronisation quotidienne du catalogue Blindify (voir sync_daily.py) — à installer sur le
+# Raspberry Pi avec `crontab -e` (copier la ligne ci-dessous, adapter les chemins).
+#
+# Tourne hors Docker, directement sur l'OS du Pi : le pipeline de préparation des données écrit
+# sur le HDD en dehors du conteneur (voir docs/architecture.md section 2, "Points d'attention").
+#
+# Prérequis sur le Pi (une seule fois) :
+#   cd /chemin/vers/blindify/data/scripts
+#   python3 -m venv .venv
+#   .venv/bin/pip install -r requirements.txt
+#   cp .env.example .env   # puis renseigner SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET
+#   # remplir playlists.json avec les playlists à suivre
+#
+# Tous les jours à 6h, avec ffmpeg déjà sur le PATH du Pi (sinon ajouter --ffmpeg-location) :
+0 6 * * * cd /chemin/vers/blindify/data/scripts && .venv/bin/python sync_daily.py >> /var/log/blindify-sync.log 2>&1

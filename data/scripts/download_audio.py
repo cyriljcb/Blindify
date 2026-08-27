@@ -8,11 +8,12 @@ puis fusionne les entrées complètes dans data/tracks.json (la source de vérit
 Usage :
     python download_audio.py <export.json> [--limit N] [--tolerance-seconds 8]
 
-Validation du matching (architecture.md section 3, point 4) : après récupération des
-métadonnées YouTube, la durée est comparée à durationMs (Spotify), tolérance
-±tolerance-seconds. Au-delà, le morceau est flaggé "à vérifier manuellement" et n'est
-NI téléchargé NI ajouté à tracks.json plutôt que d'intégrer une mauvaise version
-(live, reprise, lyric video d'un autre artiste).
+Validation du matching (architecture.md section 3, point 4) : parmi les candidats de
+recherche, ceux dont le titre sent la version live/acoustique/remix/cover sont écartés en
+priorité (live_keywords.py) ; le candidat retenu doit ensuite avoir une durée proche de
+durationMs (Spotify), tolérance ±tolerance-seconds. Au-delà, le morceau est flaggé "à
+vérifier manuellement" et n'est NI téléchargé NI ajouté à tracks.json plutôt que
+d'intégrer une mauvaise version (live, reprise, lyric video d'un autre artiste).
 
 Reprise après interruption : les morceaux déjà présents dans tracks.json (par id) ou
 dont le fichier audio existe déjà sont sautés — on peut relancer le script à tout
@@ -35,6 +36,8 @@ from pathlib import Path
 import requests
 import yt_dlp
 from pychorus import find_and_output_chorus
+
+from live_keywords import mots_suspects
 
 SCRIPTS_DIR = Path(__file__).parent
 DATA_DIR = SCRIPTS_DIR.parent
@@ -91,12 +94,19 @@ def rechercher_sur_youtube(ffmpeg_location: str | None, requete: str) -> list[di
         return [e for e in entries if e]
 
 
-def meilleur_candidat(candidats: list[dict], duree_ms_attendue: int) -> tuple[dict, float]:
+def meilleur_candidat(candidats: list[dict], duree_ms_attendue: int, titre_officiel: str) -> tuple[dict, float]:
     """Choisit, parmi les résultats de recherche, celui dont la durée colle le mieux à
-    la durée Spotify. Retourne le candidat et son écart en secondes."""
-    meilleur = min(
-        candidats, key=lambda c: abs((c.get("duration") or 0) * 1000 - duree_ms_attendue)
-    )
+    la durée Spotify. Retourne le candidat et son écart en secondes.
+
+    Écarte d'abord les candidats dont le titre sent la version live/acoustique/remix/cover
+    (voir live_keywords.py) — sinon une version live coupée à la bonne durée passait le
+    filtre de tolérance sans jamais être repérée. Si tous les candidats sont suspects, on
+    retombe sur la liste complète : le filtre de tolérance de durée reste le dernier
+    garde-fou plutôt que de ne rien télécharger du tout."""
+    non_suspects = [c for c in candidats if not mots_suspects(c.get("title") or "", titre_officiel)]
+    pool = non_suspects or candidats
+
+    meilleur = min(pool, key=lambda c: abs((c.get("duration") or 0) * 1000 - duree_ms_attendue))
     ecart_s = abs((meilleur.get("duration") or 0) * 1000 - duree_ms_attendue) / 1000
     return meilleur, ecart_s
 
@@ -233,7 +243,7 @@ def main() -> None:
                     echecs.append({"id": track_id, "titre": titre, "artiste": artiste, "raison": "aucun résultat"})
                     continue
 
-                resultat, ecart_s = meilleur_candidat(candidats, entry["durationMs"])
+                resultat, ecart_s = meilleur_candidat(candidats, entry["durationMs"], titre)
                 if ecart_s > args.tolerance_seconds:
                     a_verifier.append(
                         {
