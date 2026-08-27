@@ -408,6 +408,7 @@ function appliquerEtat(msg) {
       el("bonus-ralenti-note").textContent = msg.bonus?.ralenti
         ? "Morceau ralenti, un seul essai, pas de dégressivité."
         : "Un seul essai, pas de dégressivité.";
+      renderQcmOptionsDisplay(el("bonus-question-qcm-options"), msg.bonus);
       showScreen("screen-bonus-question");
       if (!msg.paused && timerEndAt !== null) startLocalTimer(el("bonus-question-timer-fill"), el("bonus-question-timer-seconds"));
       else stopLocalTimer(el("bonus-question-timer-fill"), el("bonus-question-timer-seconds"));

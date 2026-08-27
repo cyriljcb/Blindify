@@ -816,11 +816,21 @@ function registerHandlers() {
     const rate = payload.ralentissementActive ? payload.facteurRalentissement : 1;
     playAudio(payload.filePath, rate); // depuis le début — c'est la devinette elle-même, pas le reveal
     el("bonus-question-title").textContent = `Question bonus — à deviner !${libelleSerie(serieCouranteIndex)}`;
+    const cibleLabelBonus = payload.cible === "Titre" ? "le titre" : payload.cible === "Auteur" ? "l'artiste" : "le film";
+    el("bonus-question-mode-label").textContent = `${payload.mode} — trouver ${cibleLabelBonus}`;
     showScreen("screen-bonus-question");
     startTimer(payload.dureePhaseQuestionMs, el("bonus-question-timer-fill"));
 
     currentDisplayScreen = "bonus-question";
-    currentBonusInfo = { ralenti: payload.ralentissementActive, serieLabel: libelleSerie(serieCouranteIndex) };
+    // cible/qcmOptions : retour utilisateur — Mode tiré aléatoirement comme un round classique
+    // (QCM/Première lettre en plus de la réponse tapée), qcmOptions affiché sur l'écran public en
+    // mode QCM comme pour un round classique (voir display.js:renderQcmOptionsDisplay).
+    currentBonusInfo = {
+      ralenti: payload.ralentissementActive,
+      serieLabel: libelleSerie(serieCouranteIndex),
+      cible: payload.cible,
+      qcmOptions: payload.qcmOptions,
+    };
     syncDisplay();
   });
 
