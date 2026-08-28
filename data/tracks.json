@@ -9,7 +9,9 @@
     "durationMs": 242733,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "latino"
     ],
     "trapWith": [],
     "year": 1986,
@@ -31,7 +33,7 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
+      "electro",
       "variete-francaise"
     ],
     "trapWith": [
@@ -56,7 +58,8 @@
     ],
     "tags": [
       "annees-2020",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -80,8 +83,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [
       "2bwbKylFWjIeRNVuUWdYFN"
@@ -102,7 +105,9 @@
     "durationMs": 242373,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2008,
@@ -121,7 +126,9 @@
     "durationMs": 278719,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2011,
@@ -140,7 +147,9 @@
     "durationMs": 130100,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -184,8 +193,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "electro"
     ],
     "trapWith": [],
     "year": 2013,
@@ -209,8 +218,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [
       "2UC5XnHA1Wn9FjQmbjNca9"
@@ -231,7 +240,9 @@
     "durationMs": 171739,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2005,
@@ -253,7 +264,8 @@
     ],
     "tags": [
       "annees-1990",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1990,
@@ -276,7 +288,8 @@
     ],
     "tags": [
       "annees-1990",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1998,
@@ -298,6 +311,7 @@
     ],
     "tags": [
       "annees-2010",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -320,8 +334,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [
       "2GYHyAoLWpkxLVa4oYTVko"
@@ -335,7 +349,7 @@
   {
     "id": "0R368DfOIDpI697marWXDf",
     "title": "Bo le lavabo",
-    "artist": "Chansons Françaises",
+    "artist": "Vincent Lagaf'",
     "album": "Chansons françaises pour faire la fête",
     "spotifyId": "0R368DfOIDpI697marWXDf",
     "youtubeId": "nmuF7LK-fTU",
@@ -345,8 +359,7 @@
       "french jazz"
     ],
     "tags": [
-      "annees-2010",
-      "rnb-funk-jazz",
+      "annees-1990",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -370,7 +383,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop"
+      "electro",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2021,
@@ -392,8 +406,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2005,
@@ -418,9 +432,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "variete-francaise",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2004,
@@ -461,7 +474,9 @@
     "durationMs": 194087,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2019,
@@ -480,7 +495,9 @@
     "durationMs": 200040,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [
       "7fBv7CLKzipRk6EC6TWHOB"
@@ -506,8 +523,7 @@
       "variété française"
     ],
     "tags": [
-      "annees-2020",
-      "pop",
+      "annees-2010",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -527,7 +543,8 @@
     "durationMs": 306440,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1994,
@@ -550,6 +567,7 @@
     ],
     "tags": [
       "annees-1990",
+      "rap",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -573,7 +591,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [
       "0SiywuOBRcynK0uKGWdCnn"
@@ -597,7 +616,7 @@
       "variété française"
     ],
     "tags": [
-      "annees-2000",
+      "annees-1980",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -623,8 +642,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 2007,
@@ -646,7 +665,8 @@
     ],
     "tags": [
       "annees-2000",
-      "monde"
+      "monde",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2005,
@@ -672,9 +692,9 @@
     ],
     "tags": [
       "annees-2010",
+      "variete-francaise",
       "pop",
-      "rap",
-      "variete-francaise"
+      "rap"
     ],
     "trapWith": [],
     "year": 2018,
@@ -699,8 +719,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2018,
@@ -722,7 +742,9 @@
       "disco"
     ],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "3vkQ5DAB1qQMYO4Mr9zJN6"
@@ -769,7 +791,8 @@
       "zouk"
     ],
     "tags": [
-      "annees-2000",
+      "annees-1990",
+      "variete-francaise",
       "monde"
     ],
     "trapWith": [],
@@ -793,7 +816,7 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
+      "rap",
       "variete-francaise"
     ],
     "trapWith": [
@@ -822,7 +845,6 @@
     ],
     "tags": [
       "annees-1970",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -846,8 +868,7 @@
     ],
     "tags": [
       "annees-2010",
-      "rap",
-      "rnb-funk-jazz"
+      "rap"
     ],
     "trapWith": [
       "0CJ31BEjjl1tPIj0CKi9kH",
@@ -869,7 +890,9 @@
     "durationMs": 225146,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "4VrWlk8IQxevMvERoX08iC"
@@ -890,7 +913,9 @@
     "durationMs": 289133,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "pop"
     ],
     "trapWith": [
       "3oDFtOhcN08qeDPAK6MEQG",
@@ -917,7 +942,7 @@
     "tags": [
       "annees-2010",
       "latino",
-      "monde"
+      "pop"
     ],
     "trapWith": [],
     "year": 2019,
@@ -936,7 +961,8 @@
     "durationMs": 292613,
     "genres": [],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "pop"
     ],
     "trapWith": [
       "3WMbD1OyfKuwWDWMNbPQ4g"
@@ -961,8 +987,7 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "pop"
     ],
     "trapWith": [
       "39lSeqnyjZJejRuaREfyLL"
@@ -983,7 +1008,9 @@
     "durationMs": 213573,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1987,
@@ -1002,7 +1029,9 @@
     "durationMs": 167303,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "electro"
     ],
     "trapWith": [
       "4cluDES4hQEUhmXj6TXkSo"
@@ -1026,8 +1055,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -1049,7 +1078,8 @@
     ],
     "tags": [
       "annees-1980",
-      "variete-francaise"
+      "variete-francaise",
+      "electro"
     ],
     "trapWith": [],
     "year": 1989,
@@ -1119,7 +1149,9 @@
       "christmas"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1984,
@@ -1139,7 +1171,9 @@
     "durationMs": 210626,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rap"
     ],
     "trapWith": [],
     "year": 2012,
@@ -1167,9 +1201,7 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "rap",
-      "rnb-funk-jazz",
       "monde"
     ],
     "trapWith": [],
@@ -1189,7 +1221,9 @@
     "durationMs": 258296,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [
       "7J1uxwnxfQLu4APicE5Rnj"
@@ -1210,7 +1244,9 @@
     "durationMs": 233306,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -1235,7 +1271,6 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -1259,8 +1294,7 @@
       "variété française"
     ],
     "tags": [
-      "annees-2000",
-      "pop",
+      "annees-1980",
       "variete-francaise"
     ],
     "trapWith": [
@@ -1283,7 +1317,9 @@
     "durationMs": 242253,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rnb-funk-jazz",
+      "rap"
     ],
     "trapWith": [
       "0VjIjW4GlUZAMYd2vXMi3b"
@@ -1310,7 +1346,6 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -1330,7 +1365,9 @@
     "durationMs": 186813,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 2012,
@@ -1349,7 +1386,9 @@
     "durationMs": 204346,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2017,
@@ -1371,7 +1410,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [
       "0nrRP2bk19rLc0orkWPQk2"
@@ -1395,7 +1435,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [
       "0ct6r3EGTcMLPtrXHDvVjc"
@@ -1419,7 +1460,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -1438,7 +1480,9 @@
     "durationMs": 233478,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2012,
@@ -1460,7 +1504,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rap"
     ],
     "trapWith": [],
     "year": 2019,
@@ -1507,8 +1552,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1984,
@@ -1551,7 +1596,8 @@
     "durationMs": 219200,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -1570,7 +1616,9 @@
     "durationMs": 212626,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -1589,7 +1637,9 @@
     "durationMs": 271093,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1992,
@@ -1608,7 +1658,9 @@
     "durationMs": 257265,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2013,
@@ -1627,7 +1679,8 @@
     "durationMs": 173026,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1996,
@@ -1646,7 +1699,9 @@
     "durationMs": 213973,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "latino",
+      "pop"
     ],
     "trapWith": [],
     "year": 2002,
@@ -1673,9 +1728,7 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "rap",
-      "rnb-funk-jazz",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -1703,9 +1756,7 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "rap",
-      "rnb-funk-jazz",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -1728,7 +1779,7 @@
       "variété française"
     ],
     "tags": [
-      "annees-2000",
+      "annees-1980",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -1797,7 +1848,9 @@
     "durationMs": 204134,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rap"
     ],
     "trapWith": [],
     "year": 2012,
@@ -1816,7 +1869,9 @@
     "durationMs": 199693,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2000",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -1838,8 +1893,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-1990",
-      "variete-francaise"
+      "annees-1980",
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1990,
@@ -1858,7 +1914,8 @@
     "durationMs": 217746,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2016,
@@ -1899,7 +1956,8 @@
     "durationMs": 230400,
     "genres": [],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "pop"
     ],
     "trapWith": [],
     "year": 1976,
@@ -1940,7 +1998,8 @@
     "durationMs": 237792,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro"
     ],
     "trapWith": [],
     "year": 2015,
@@ -1959,7 +2018,9 @@
     "durationMs": 243600,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -1981,7 +2042,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2008,
@@ -2000,7 +2062,9 @@
     "durationMs": 284866,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "latino"
     ],
     "trapWith": [],
     "year": 2011,
@@ -2047,7 +2111,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [
       "1QV6tiMFM6fSOKOGLMHYYg",
@@ -2069,7 +2134,8 @@
     "durationMs": 193400,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -2090,7 +2156,9 @@
       "moombahton"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -2114,7 +2182,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2013,
@@ -2138,8 +2207,8 @@
     ],
     "tags": [
       "annees-2000",
-      "rap",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "rap"
     ],
     "trapWith": [],
     "year": 2004,
@@ -2162,8 +2231,7 @@
     ],
     "tags": [
       "annees-1990",
-      "rap",
-      "rnb-funk-jazz"
+      "rap"
     ],
     "trapWith": [],
     "year": 1995,
@@ -2183,7 +2251,9 @@
     "durationMs": 251440,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rap",
+      "electro"
     ],
     "trapWith": [
       "4kLLWz7srcuLKA7Et40PQR"
@@ -2207,7 +2277,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [
       "11mwFrKvLXCbcVGNxffGyP"
@@ -2228,7 +2299,9 @@
     "durationMs": 215160,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2008,
@@ -2273,6 +2346,7 @@
     ],
     "tags": [
       "annees-2010",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -2292,7 +2366,8 @@
     "durationMs": 258431,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap"
     ],
     "trapWith": [],
     "year": 2012,
@@ -2311,7 +2386,8 @@
     "durationMs": 171360,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro"
     ],
     "trapWith": [],
     "year": 2004,
@@ -2360,7 +2436,8 @@
     ],
     "tags": [
       "annees-2000",
-      "rap"
+      "rap",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2003,
@@ -2382,7 +2459,9 @@
       "italo dance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1997,
@@ -2401,7 +2480,8 @@
     "durationMs": 241970,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2020",
+      "electro"
     ],
     "trapWith": [],
     "year": 2017,
@@ -2454,6 +2534,7 @@
     ],
     "tags": [
       "annees-2010",
+      "rnb-funk-jazz",
       "electro"
     ],
     "trapWith": [],
@@ -2473,7 +2554,9 @@
     "durationMs": 222066,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2009,
@@ -2495,7 +2578,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -2516,8 +2600,9 @@
       "edm"
     ],
     "tags": [
-      "annees-2010",
-      "electro"
+      "annees-2000",
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 2010,
@@ -2541,8 +2626,7 @@
     ],
     "tags": [
       "annees-1990",
-      "rock",
-      "rnb-funk-jazz"
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -2587,7 +2671,9 @@
       "tropical house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2014,
@@ -2612,8 +2698,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -2661,7 +2747,8 @@
       "riot grrrl"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2009,
@@ -2684,7 +2771,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "monde",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2014,
@@ -2710,7 +2798,6 @@
     ],
     "tags": [
       "annees-1970",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -2730,7 +2817,9 @@
     "durationMs": 202333,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rap"
     ],
     "trapWith": [],
     "year": 2015,
@@ -2749,7 +2838,9 @@
     "durationMs": 200192,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2017,
@@ -2773,7 +2864,6 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "rap",
       "variete-francaise"
     ],
@@ -2822,8 +2912,8 @@
     ],
     "tags": [
       "avant-1970",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1964,
@@ -2847,8 +2937,7 @@
     ],
     "tags": [
       "annees-1990",
-      "rock",
-      "rnb-funk-jazz"
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -2900,9 +2989,7 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "rap",
-      "rnb-funk-jazz",
       "monde"
     ],
     "trapWith": [],
@@ -2971,7 +3058,6 @@
     ],
     "tags": [
       "avant-1970",
-      "rnb-funk-jazz",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -2996,7 +3082,6 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -3039,7 +3124,9 @@
     "durationMs": 177773,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2002,
@@ -3063,9 +3150,7 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "rap",
-      "rnb-funk-jazz"
+      "rap"
     ],
     "trapWith": [],
     "year": 2019,
@@ -3130,7 +3215,9 @@
     "durationMs": 157066,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2019,
@@ -3153,8 +3240,7 @@
     ],
     "tags": [
       "annees-2000",
-      "rock",
-      "pop"
+      "rock"
     ],
     "trapWith": [],
     "year": 2004,
@@ -3175,7 +3261,9 @@
       "crunk"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 2013,
@@ -3194,7 +3282,9 @@
     "durationMs": 178560,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -3217,7 +3307,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rock"
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 2012,
@@ -3240,7 +3331,7 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "rock"
     ],
     "trapWith": [],
     "year": 2003,
@@ -3264,7 +3355,7 @@
     "tags": [
       "annees-2020",
       "pop",
-      "variete-francaise"
+      "electro"
     ],
     "trapWith": [],
     "year": 2020,
@@ -3288,7 +3379,6 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -3330,7 +3420,9 @@
     "durationMs": 221149,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "variete-francaise",
+      "electro"
     ],
     "trapWith": [],
     "year": 2022,
@@ -3352,6 +3444,7 @@
     ],
     "tags": [
       "annees-2000",
+      "rnb-funk-jazz",
       "rap"
     ],
     "trapWith": [],
@@ -3377,9 +3470,7 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "rap",
-      "rnb-funk-jazz"
+      "rap"
     ],
     "trapWith": [],
     "year": 2022,
@@ -3404,9 +3495,7 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "rap",
-      "rnb-funk-jazz",
       "variete-francaise"
     ],
     "trapWith": [
@@ -3453,7 +3542,9 @@
     "durationMs": 209438,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2021,
@@ -3480,8 +3571,7 @@
     ],
     "tags": [
       "annees-1990",
-      "rap",
-      "rnb-funk-jazz"
+      "rap"
     ],
     "trapWith": [],
     "year": 1999,
@@ -3502,8 +3592,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-2000",
-      "variete-francaise"
+      "annees-1980",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2009,
@@ -3522,7 +3613,9 @@
     "durationMs": 217853,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "variete-francaise",
+      "electro"
     ],
     "trapWith": [],
     "year": 2009,
@@ -3546,8 +3639,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [
       "2QSAj76Ba6aMFX9RlXdUdO",
@@ -3575,8 +3668,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [
       "2i353bK8WrQbJ3wfR6IYWm"
@@ -3597,7 +3690,8 @@
     "durationMs": 233866,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2006,
@@ -3616,7 +3710,9 @@
     "durationMs": 205773,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rap",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2007,
@@ -3635,7 +3731,9 @@
     "durationMs": 213680,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2000",
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -3654,7 +3752,9 @@
     "durationMs": 211070,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2000",
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2011,
@@ -3678,7 +3778,6 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -3698,7 +3797,9 @@
     "durationMs": 220066,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2007,
@@ -3720,7 +3821,7 @@
     ],
     "tags": [
       "annees-1980",
-      "metal"
+      "rock"
     ],
     "trapWith": [
       "37ZJ0p5Jm13JPevGcx4SkF"
@@ -3746,8 +3847,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "monde"
     ],
     "trapWith": [],
     "year": 2006,
@@ -3766,7 +3867,8 @@
     "durationMs": 254640,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop"
     ],
     "trapWith": [
       "2IvetNzSZMH5gwjInoyr18"
@@ -3787,7 +3889,8 @@
     "durationMs": 182933,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2013,
@@ -3806,7 +3909,8 @@
     "durationMs": 225360,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [
       "47BBI51FKFwOMlIiX6m8ya"
@@ -3831,7 +3935,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2008,
@@ -3850,7 +3955,8 @@
     "durationMs": 213266,
     "genres": [],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "pop"
     ],
     "trapWith": [],
     "year": 1975,
@@ -3873,7 +3979,7 @@
     "tags": [
       "annees-2010",
       "pop",
-      "latino"
+      "monde"
     ],
     "trapWith": [],
     "year": 2010,
@@ -3894,7 +4000,9 @@
       "disco"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1982,
@@ -3913,7 +4021,9 @@
     "durationMs": 221466,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "rap"
     ],
     "trapWith": [
       "4kLLWz7srcuLKA7Et40PQR",
@@ -3940,7 +4050,6 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -3963,6 +4072,7 @@
     ],
     "tags": [
       "annees-2010",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -3982,7 +4092,9 @@
     "durationMs": 192586,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2008,
@@ -4005,7 +4117,8 @@
     ],
     "tags": [
       "annees-1970",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [
       "63T7DJ1AFDD6Bn8VzG6JE8"
@@ -4028,7 +4141,9 @@
       "eurodance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1995,
@@ -4053,9 +4168,8 @@
     ],
     "tags": [
       "annees-2000",
-      "metal",
       "rock",
-      "rap"
+      "metal"
     ],
     "trapWith": [],
     "year": 2007,
@@ -4103,7 +4217,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2011,
@@ -4122,7 +4237,9 @@
     "durationMs": 187146,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2017,
@@ -4141,7 +4258,9 @@
     "durationMs": 213066,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2005,
@@ -4160,7 +4279,9 @@
     "durationMs": 267080,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "electro"
     ],
     "trapWith": [],
     "year": 2008,
@@ -4183,7 +4304,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1997,
@@ -4205,7 +4327,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rap"
+      "rnb-funk-jazz",
+      "monde"
     ],
     "trapWith": [],
     "year": 2016,
@@ -4224,7 +4347,8 @@
     "durationMs": 216120,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [
       "6O20JhBJPePEkBdrB5sqRx"
@@ -4245,7 +4369,9 @@
     "durationMs": 199080,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2014,
@@ -4268,7 +4394,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [
       "4aVuWgvD0X63hcOCnZtNFA",
@@ -4290,7 +4417,9 @@
     "durationMs": 211920,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2012,
@@ -4359,8 +4488,9 @@
       "rap"
     ],
     "tags": [
-      "annees-2000",
-      "rap"
+      "annees-2010",
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2001,
@@ -4406,7 +4536,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2014,
@@ -4428,7 +4559,7 @@
     ],
     "tags": [
       "annees-1980",
-      "metal"
+      "rock"
     ],
     "trapWith": [
       "3MrRksHupTVEQ7YbA0FsZK",
@@ -4450,7 +4581,9 @@
     "durationMs": 199986,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [
       "4LRPiXqCikLlN15c3yImP7"
@@ -4518,7 +4651,9 @@
     "durationMs": 244960,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2016,
@@ -4537,7 +4672,9 @@
     "durationMs": 247160,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2017,
@@ -4585,8 +4722,7 @@
     ],
     "tags": [
       "annees-1990",
-      "rock",
-      "rnb-funk-jazz"
+      "rock"
     ],
     "trapWith": [],
     "year": 1991,
@@ -4610,7 +4746,7 @@
     "tags": [
       "annees-1980",
       "pop",
-      "electro"
+      "rock"
     ],
     "trapWith": [],
     "year": 1985,
@@ -4629,7 +4765,8 @@
     "durationMs": 238120,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [
       "2v7ywbUzCgcVohHaKUcacV"
@@ -4650,7 +4787,9 @@
     "durationMs": 173991,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2019,
@@ -4669,7 +4808,9 @@
     "durationMs": 205946,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2016,
@@ -4688,7 +4829,8 @@
     "durationMs": 266773,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2000,
@@ -4707,7 +4849,8 @@
     "durationMs": 203346,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2008,
@@ -4749,7 +4892,9 @@
     "durationMs": 157560,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2019,
@@ -4791,7 +4936,9 @@
     "durationMs": 253920,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [
       "4KFM3A5QF2IMcc6nHsu3Wp"
@@ -4812,7 +4959,9 @@
     "durationMs": 215280,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rap"
     ],
     "trapWith": [],
     "year": 2019,
@@ -4831,7 +4980,9 @@
     "durationMs": 237146,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2004,
@@ -4850,7 +5001,8 @@
     "durationMs": 199440,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2017,
@@ -4892,7 +5044,9 @@
     "durationMs": 202533,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2012,
@@ -4934,7 +5088,9 @@
     "durationMs": 178426,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [
       "2EGaDf0cPX789H3LNeB03D"
@@ -4958,7 +5114,7 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "pop"
     ],
     "trapWith": [],
     "year": 1983,
@@ -5006,8 +5162,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2013,
@@ -5032,7 +5188,6 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
       "rock"
     ],
     "trapWith": [
@@ -5054,7 +5209,8 @@
     "durationMs": 242721,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -5098,7 +5254,9 @@
     "durationMs": 292875,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1987,
@@ -5123,7 +5281,8 @@
     ],
     "tags": [
       "annees-1970",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1978,
@@ -5142,7 +5301,9 @@
     "durationMs": 242293,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "rap"
     ],
     "trapWith": [],
     "year": 2006,
@@ -5161,7 +5322,8 @@
     "durationMs": 200600,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop"
     ],
     "trapWith": [],
     "year": 2023,
@@ -5180,7 +5342,9 @@
     "durationMs": 258893,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "7j74lucZ59vqN67Ipe2ZcY"
@@ -5201,7 +5365,9 @@
     "durationMs": 238805,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2020,
@@ -5220,7 +5386,9 @@
     "durationMs": 219146,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2016,
@@ -5263,7 +5431,9 @@
     "durationMs": 244506,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2002,
@@ -5286,7 +5456,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2018,
@@ -5305,7 +5476,8 @@
     "durationMs": 231826,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -5375,7 +5547,9 @@
     "durationMs": 272533,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rap",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2003,
@@ -5394,7 +5568,9 @@
     "durationMs": 200373,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1999,
@@ -5413,7 +5589,9 @@
     "durationMs": 141805,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "rap"
     ],
     "trapWith": [],
     "year": 2021,
@@ -5432,7 +5610,8 @@
     "durationMs": 203417,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2018,
@@ -5454,7 +5633,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2010,
@@ -5476,7 +5656,8 @@
     ],
     "tags": [
       "annees-2000",
-      "rap"
+      "rap",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2008,
@@ -5498,7 +5679,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2016,
@@ -5517,7 +5699,9 @@
     "durationMs": 163253,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2017,
@@ -5540,9 +5724,8 @@
     ],
     "tags": [
       "annees-2020",
-      "rap",
       "latino",
-      "monde"
+      "electro"
     ],
     "trapWith": [],
     "year": 2021,
@@ -5561,7 +5744,9 @@
     "durationMs": 200573,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2014,
@@ -5580,7 +5765,8 @@
     "durationMs": 221366,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [
       "2EoIt9vdgFRNW03u5IvFsQ"
@@ -5601,7 +5787,9 @@
     "durationMs": 178146,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2021,
@@ -5620,7 +5808,9 @@
     "durationMs": 168601,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2021,
@@ -5642,7 +5832,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2018,
@@ -5661,7 +5852,9 @@
     "durationMs": 137875,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2021,
@@ -5682,7 +5875,9 @@
       "emo"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2018,
@@ -5701,7 +5896,9 @@
     "durationMs": 169944,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2021,
@@ -5723,7 +5920,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2018,
@@ -5742,7 +5940,9 @@
     "durationMs": 279635,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2011,
@@ -5768,9 +5968,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "rap",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2018,
@@ -5789,7 +5988,8 @@
     "durationMs": 239000,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2018,
@@ -5808,7 +6008,9 @@
     "durationMs": 313684,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 2013,
@@ -5830,7 +6032,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2021,
@@ -5853,7 +6056,6 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "rap"
     ],
     "trapWith": [],
@@ -5875,7 +6077,9 @@
       "coupé décalé"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -5901,8 +6105,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2013,
@@ -5921,7 +6125,9 @@
     "durationMs": 229500,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -5943,7 +6149,8 @@
     ],
     "tags": [
       "annees-2000",
-      "variete-francaise"
+      "variete-francaise",
+      "rap"
     ],
     "trapWith": [],
     "year": 2007,
@@ -5962,7 +6169,9 @@
     "durationMs": 232946,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -5983,7 +6192,9 @@
       "tekno"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2015,
@@ -6008,8 +6219,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2021,
@@ -6028,7 +6239,9 @@
     "durationMs": 223213,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2015,
@@ -6047,7 +6260,9 @@
     "durationMs": 182306,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2009,
@@ -6066,7 +6281,9 @@
     "durationMs": 187436,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2020,
@@ -6085,7 +6302,9 @@
     "durationMs": 201660,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2020,
@@ -6109,7 +6328,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rap"
+      "pop",
+      "latino"
     ],
     "trapWith": [],
     "year": 2018,
@@ -6131,7 +6351,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2011,
@@ -6150,7 +6371,9 @@
     "durationMs": 189109,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2010,
@@ -6172,7 +6395,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 2010,
@@ -6194,7 +6418,8 @@
     ],
     "tags": [
       "annees-2020",
-      "rap"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2024,
@@ -6216,7 +6441,9 @@
       "gqom"
     ],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "monde",
+      "electro"
     ],
     "trapWith": [],
     "year": 2020,
@@ -6241,7 +6468,6 @@
     ],
     "tags": [
       "annees-1970",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -6263,8 +6489,9 @@
       "french rap"
     ],
     "tags": [
-      "annees-2020",
-      "rap"
+      "annees-2010",
+      "rap",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2021,
@@ -6289,8 +6516,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "monde"
+      "monde",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2022,
@@ -6314,9 +6541,7 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "rap",
-      "rnb-funk-jazz"
+      "rap"
     ],
     "trapWith": [],
     "year": 2022,
@@ -6335,7 +6560,8 @@
     "durationMs": 230192,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2010,
@@ -6354,7 +6580,9 @@
     "durationMs": 162398,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2020,
@@ -6373,7 +6601,9 @@
     "durationMs": 213826,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2012,
@@ -6396,8 +6626,7 @@
     ],
     "tags": [
       "annees-2010",
-      "rap",
-      "rnb-funk-jazz"
+      "rap"
     ],
     "trapWith": [],
     "year": 2012,
@@ -6416,7 +6645,9 @@
     "durationMs": 204640,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2009,
@@ -6440,6 +6671,7 @@
     ],
     "tags": [
       "annees-2000",
+      "rnb-funk-jazz",
       "rap"
     ],
     "trapWith": [],
@@ -6459,7 +6691,9 @@
     "durationMs": 248133,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2012,
@@ -6500,7 +6734,8 @@
     "durationMs": 213306,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [
       "1di1BEgJYzPvXUuinsYJGP"
@@ -6523,8 +6758,9 @@
       "soft pop"
     ],
     "tags": [
-      "annees-2010",
-      "pop"
+      "annees-2000",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2010,
@@ -6543,7 +6779,9 @@
     "durationMs": 180304,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2024,
@@ -6562,7 +6800,9 @@
     "durationMs": 192280,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2012,
@@ -6583,7 +6823,9 @@
       "indie"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2007,
@@ -6625,7 +6867,8 @@
     "durationMs": 236053,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2013,
@@ -6644,7 +6887,9 @@
     "durationMs": 267866,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2014,
@@ -6663,7 +6908,9 @@
     "durationMs": 262533,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2005,
@@ -6685,7 +6932,9 @@
       "french house"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 2006,
@@ -6706,7 +6955,9 @@
       "tropical house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2018,
@@ -6730,7 +6981,6 @@
     ],
     "tags": [
       "annees-1990",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -6753,7 +7003,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2014,
@@ -6772,7 +7023,9 @@
     "durationMs": 361026,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "rnb-funk-jazz",
+      "electro"
     ],
     "trapWith": [],
     "year": 2020,
@@ -6791,7 +7044,9 @@
     "durationMs": 294986,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "latino"
     ],
     "trapWith": [],
     "year": 1999,
@@ -6810,7 +7065,9 @@
     "durationMs": 188359,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1995,
@@ -6829,7 +7086,8 @@
     "durationMs": 236066,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1980,
@@ -6850,8 +7108,9 @@
       "yacht rock"
     ],
     "tags": [
-      "annees-1990",
-      "rock"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1997,
@@ -6873,7 +7132,8 @@
       "hip house"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 1993,
@@ -6894,7 +7154,8 @@
       "eurodance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 1992,
@@ -6915,7 +7176,9 @@
       "eurodance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 1994,
@@ -6980,7 +7243,8 @@
     "durationMs": 207360,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1996,
@@ -7002,6 +7266,7 @@
     ],
     "tags": [
       "annees-1990",
+      "rock",
       "pop"
     ],
     "trapWith": [],
@@ -7021,7 +7286,8 @@
     "durationMs": 218360,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1999,
@@ -7042,7 +7308,8 @@
       "trip hop"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 1996,
@@ -7088,7 +7355,8 @@
       "hard house"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [
       "3AIEEEIDJFnqv8rozNVCRZ"
@@ -7109,7 +7377,8 @@
     "durationMs": 594666,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 2001,
@@ -7131,7 +7400,7 @@
       "electronica"
     ],
     "tags": [
-      "annees-2010",
+      "annees-1990",
       "electro"
     ],
     "trapWith": [],
@@ -7151,7 +7420,9 @@
     "durationMs": 194000,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1994,
@@ -7170,7 +7441,9 @@
     "durationMs": 304293,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rnb-funk-jazz",
+      "rock"
     ],
     "trapWith": [],
     "year": 1987,
@@ -7193,7 +7466,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1982,
@@ -7212,7 +7486,8 @@
     "durationMs": 286840,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock"
     ],
     "trapWith": [],
     "year": 1983,
@@ -7236,7 +7511,6 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -7260,8 +7534,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-2010",
-      "variete-francaise"
+      "annees-1980",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -7305,7 +7580,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "4YwbSZaYeYja8Umyt222Qf",
@@ -7327,7 +7603,8 @@
     "durationMs": 329400,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1995,
@@ -7352,7 +7629,6 @@
     ],
     "tags": [
       "annees-1990",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -7376,7 +7652,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1992,
@@ -7422,7 +7699,7 @@
     ],
     "tags": [
       "annees-1990",
-      "metal"
+      "rock"
     ],
     "trapWith": [],
     "year": 1993,
@@ -7441,7 +7718,8 @@
     "durationMs": 252760,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1997,
@@ -7463,7 +7741,7 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "rock"
     ],
     "trapWith": [],
     "year": 1997,
@@ -7482,7 +7760,9 @@
     "durationMs": 288986,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "latino"
     ],
     "trapWith": [],
     "year": 1993,
@@ -7501,7 +7781,9 @@
     "durationMs": 230000,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1995,
@@ -7523,7 +7805,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1988,
@@ -7542,7 +7825,8 @@
     "durationMs": 237466,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock"
     ],
     "trapWith": [],
     "year": 1987,
@@ -7564,7 +7848,9 @@
       "trip hop"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2000,
@@ -7583,7 +7869,8 @@
     "durationMs": 218134,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1998,
@@ -7602,7 +7889,8 @@
     "durationMs": 287600,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1990,
@@ -7628,7 +7916,6 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -7648,7 +7935,9 @@
     "durationMs": 241666,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-2000",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1999,
@@ -7671,8 +7960,8 @@
     ],
     "tags": [
       "annees-1980",
-      "electro",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [
       "0ire4j2mcGovF5JA1D2cTp"
@@ -7724,7 +8013,6 @@
     ],
     "tags": [
       "annees-1970",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -7744,7 +8032,8 @@
     "durationMs": 260440,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1992,
@@ -7766,8 +8055,7 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "electro"
+      "pop"
     ],
     "trapWith": [],
     "year": 1992,
@@ -7786,7 +8074,8 @@
     "durationMs": 208400,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1995,
@@ -7805,7 +8094,9 @@
     "durationMs": 295533,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1992,
@@ -7826,7 +8117,7 @@
       "acid jazz"
     ],
     "tags": [
-      "annees-1980",
+      "annees-1990",
       "rnb-funk-jazz"
     ],
     "trapWith": [],
@@ -7846,7 +8137,8 @@
     "durationMs": 258026,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1998,
@@ -7892,8 +8184,7 @@
     ],
     "tags": [
       "annees-1990",
-      "rock",
-      "pop"
+      "rock"
     ],
     "trapWith": [],
     "year": 1994,
@@ -7918,7 +8209,6 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -7961,7 +8251,9 @@
     "durationMs": 208840,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "latino",
+      "monde"
     ],
     "trapWith": [],
     "year": 1989,
@@ -7983,7 +8275,7 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "rock"
     ],
     "trapWith": [],
     "year": 1998,
@@ -8002,7 +8294,8 @@
     "durationMs": 236150,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1998,
@@ -8021,7 +8314,9 @@
     "durationMs": 244666,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1997,
@@ -8088,8 +8383,8 @@
       "synthpop"
     ],
     "tags": [
-      "annees-1990",
-      "pop",
+      "annees-1980",
+      "rock",
       "electro"
     ],
     "trapWith": [],
@@ -8109,7 +8404,9 @@
     "durationMs": 215533,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz",
+      "electro"
     ],
     "trapWith": [],
     "year": 1993,
@@ -8128,7 +8425,9 @@
     "durationMs": 223826,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-2000",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1995,
@@ -8147,7 +8446,8 @@
     "durationMs": 145760,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1980",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 1991,
@@ -8166,7 +8466,8 @@
     "durationMs": 152373,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-1980",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2011,
@@ -8185,7 +8486,8 @@
     "durationMs": 222333,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 1991,
@@ -8209,7 +8511,6 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -8259,7 +8560,9 @@
       "trip hop"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1994,
@@ -8303,7 +8606,9 @@
     "durationMs": 257359,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rap",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1990,
@@ -8322,7 +8627,9 @@
     "durationMs": 229000,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1992,
@@ -8346,7 +8653,6 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -8370,8 +8676,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1994,
@@ -8394,7 +8700,7 @@
       "space music"
     ],
     "tags": [
-      "annees-2010",
+      "annees-1990",
       "electro"
     ],
     "trapWith": [],
@@ -8414,7 +8720,8 @@
     "durationMs": 324840,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1996,
@@ -8460,7 +8767,9 @@
       "new age"
     ],
     "tags": [
-      "annees-2000"
+      "annees-1990",
+      "electro",
+      "monde"
     ],
     "trapWith": [],
     "year": 2002,
@@ -8481,7 +8790,8 @@
       "new age"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 1992,
@@ -8506,8 +8816,7 @@
     ],
     "tags": [
       "annees-1990",
-      "metal",
-      "rock"
+      "metal"
     ],
     "trapWith": [],
     "year": 1997,
@@ -8533,7 +8842,7 @@
     "tags": [
       "annees-1990",
       "rock",
-      "variete-francaise"
+      "monde"
     ],
     "trapWith": [],
     "year": 1998,
@@ -8552,7 +8861,9 @@
     "durationMs": 191026,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1995,
@@ -8576,7 +8887,6 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -8596,7 +8906,9 @@
     "durationMs": 303000,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "latino",
+      "pop"
     ],
     "trapWith": [],
     "year": 1993,
@@ -8619,7 +8931,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -8638,7 +8951,8 @@
     "durationMs": 272293,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1993,
@@ -8657,7 +8971,8 @@
     "durationMs": 235173,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1993,
@@ -8701,7 +9016,8 @@
       "christmas"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1992,
@@ -8727,8 +9043,7 @@
     ],
     "tags": [
       "annees-1990",
-      "rock",
-      "pop"
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -8747,7 +9062,9 @@
     "durationMs": 268910,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "monde",
+      "rap"
     ],
     "trapWith": [],
     "year": 1993,
@@ -8795,8 +9112,8 @@
     ],
     "tags": [
       "annees-1990",
-      "metal",
-      "rock"
+      "rock",
+      "metal"
     ],
     "trapWith": [],
     "year": 1999,
@@ -8815,7 +9132,8 @@
     "durationMs": 238933,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1996,
@@ -8857,7 +9175,8 @@
     "durationMs": 159313,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock"
     ],
     "trapWith": [],
     "year": 1984,
@@ -8881,7 +9200,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1990,
@@ -8905,8 +9225,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rock",
-      "monde"
+      "monde",
+      "pop"
     ],
     "trapWith": [],
     "year": 1995,
@@ -8930,7 +9250,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rock"
+      "rock",
+      "metal"
     ],
     "trapWith": [],
     "year": 1994,
@@ -8952,7 +9273,8 @@
       "italo disco"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1981,
@@ -8996,7 +9318,9 @@
       "country"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -9018,7 +9342,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1988,
@@ -9037,7 +9362,9 @@
     "durationMs": 260506,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rap",
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -9104,7 +9431,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -9123,7 +9451,9 @@
     "durationMs": 216400,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1970",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1981,
@@ -9146,8 +9476,8 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
-      "rock"
+      "rock",
+      "metal"
     ],
     "trapWith": [],
     "year": 1984,
@@ -9170,7 +9500,8 @@
     ],
     "tags": [
       "annees-1990",
-      "monde"
+      "monde",
+      "pop"
     ],
     "trapWith": [],
     "year": 1992,
@@ -9189,7 +9520,9 @@
     "durationMs": 208680,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1997,
@@ -9208,7 +9541,9 @@
     "durationMs": 308333,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1997,
@@ -9227,7 +9562,9 @@
     "durationMs": 300773,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1998,
@@ -9246,7 +9583,8 @@
     "durationMs": 272983,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1991,
@@ -9274,9 +9612,9 @@
     ],
     "tags": [
       "annees-1990",
-      "rock",
+      "monde",
       "pop",
-      "monde"
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1994,
@@ -9295,7 +9633,9 @@
     "durationMs": 244293,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-2000",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1999,
@@ -9314,7 +9654,9 @@
     "durationMs": 292080,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1988,
@@ -9360,7 +9702,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "rock",
+      "monde"
     ],
     "trapWith": [],
     "year": 1997,
@@ -9383,7 +9726,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rnb-funk-jazz"
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 1992,
@@ -9405,7 +9749,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rock"
+      "rock",
+      "latino"
     ],
     "trapWith": [],
     "year": 1996,
@@ -9427,7 +9772,7 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "rock"
     ],
     "trapWith": [],
     "year": 1996,
@@ -9473,7 +9818,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 1990,
@@ -9518,7 +9864,9 @@
       "eurodance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1994,
@@ -9588,7 +9936,8 @@
     "durationMs": 189626,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1992,
@@ -9610,7 +9959,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1991,
@@ -9629,7 +9979,9 @@
     "durationMs": 320466,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1995,
@@ -9651,6 +10003,7 @@
     ],
     "tags": [
       "annees-1980",
+      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -9673,8 +10026,7 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "electro"
+      "pop"
     ],
     "trapWith": [],
     "year": 1996,
@@ -9693,7 +10045,9 @@
     "durationMs": 280320,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1985,
@@ -9714,7 +10068,9 @@
       "singer-songwriter"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "monde"
     ],
     "trapWith": [],
     "year": 1986,
@@ -9736,7 +10092,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [
       "2Hy89WQAxszEUQAvpja0nx"
@@ -9760,7 +10117,9 @@
       "trip hop"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 1999,
@@ -9784,8 +10143,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1997,
@@ -9808,7 +10167,7 @@
       "soul jazz"
     ],
     "tags": [
-      "annees-1970",
+      "annees-1980",
       "rnb-funk-jazz"
     ],
     "trapWith": [],
@@ -9833,7 +10192,6 @@
     ],
     "tags": [
       "annees-1990",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -9853,7 +10211,9 @@
     "durationMs": 230720,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -9872,7 +10232,8 @@
     "durationMs": 200293,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1998,
@@ -9893,7 +10254,9 @@
       "new jack swing"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1991,
@@ -9912,7 +10275,9 @@
     "durationMs": 170782,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1995,
@@ -9934,7 +10299,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 1996,
@@ -9958,7 +10324,6 @@
     ],
     "tags": [
       "annees-1980",
-      "rock",
       "monde"
     ],
     "trapWith": [],
@@ -9978,7 +10343,9 @@
     "durationMs": 280400,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1986,
@@ -9997,7 +10364,8 @@
     "durationMs": 247093,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -10018,7 +10386,7 @@
       "progressive rock"
     ],
     "tags": [
-      "annees-2010",
+      "annees-1990",
       "rock"
     ],
     "trapWith": [],
@@ -10044,10 +10412,7 @@
     ],
     "tags": [
       "annees-1990",
-      "metal",
-      "rock",
-      "rap",
-      "rnb-funk-jazz"
+      "rock"
     ],
     "trapWith": [],
     "year": 1992,
@@ -10066,7 +10431,9 @@
     "durationMs": 170466,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1992,
@@ -10085,7 +10452,9 @@
     "durationMs": 212600,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1981,
@@ -10104,7 +10473,8 @@
     "durationMs": 281853,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1992,
@@ -10126,7 +10496,8 @@
       "progressive rock"
     ],
     "tags": [
-      "annees-2000",
+      "annees-1980",
+      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -10190,7 +10561,9 @@
     "durationMs": 216440,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1998,
@@ -10209,7 +10582,8 @@
     "durationMs": 256946,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1991,
@@ -10228,7 +10602,9 @@
     "durationMs": 262173,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "monde"
     ],
     "trapWith": [],
     "year": 1982,
@@ -10247,7 +10623,8 @@
     "durationMs": 227590,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1986,
@@ -10272,7 +10649,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -10294,7 +10672,7 @@
     ],
     "tags": [
       "annees-1990",
-      "metal"
+      "rock"
     ],
     "trapWith": [],
     "year": 1990,
@@ -10316,7 +10694,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1996,
@@ -10338,7 +10717,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "6EMQo2suHaUYZVsbGVTxSZ"
@@ -10362,6 +10742,7 @@
     ],
     "tags": [
       "annees-1990",
+      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -10387,7 +10768,6 @@
     ],
     "tags": [
       "annees-1990",
-      "rock",
       "rap"
     ],
     "trapWith": [],
@@ -10407,7 +10787,8 @@
     "durationMs": 203373,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [
       "2vwlzO0Qp8kfEtzTsCXfyE"
@@ -10428,7 +10809,9 @@
     "durationMs": 215600,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1997,
@@ -10447,7 +10830,9 @@
     "durationMs": 228000,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1981,
@@ -10466,7 +10851,9 @@
     "durationMs": 343933,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1985,
@@ -10485,7 +10872,9 @@
     "durationMs": 287306,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1982,
@@ -10507,7 +10896,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rock"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1991,
@@ -10531,8 +10921,8 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
-      "rock"
+      "rock",
+      "metal"
     ],
     "trapWith": [],
     "year": 1984,
@@ -10556,7 +10946,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -10575,7 +10966,9 @@
     "durationMs": 251466,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1988,
@@ -10594,7 +10987,9 @@
     "durationMs": 252773,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1970",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1980,
@@ -10615,7 +11010,9 @@
       "singer-songwriter"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1987,
@@ -10661,7 +11058,9 @@
     "durationMs": 265133,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1996,
@@ -10680,7 +11079,9 @@
     "durationMs": 238733,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1985,
@@ -10704,7 +11105,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rnb-funk-jazz"
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 1994,
@@ -10723,7 +11125,8 @@
     "durationMs": 290333,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -10742,7 +11145,9 @@
     "durationMs": 235066,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1994,
@@ -10766,8 +11171,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "rock"
+      "variete-francaise",
+      "monde"
     ],
     "trapWith": [],
     "year": 1997,
@@ -10786,7 +11191,9 @@
     "durationMs": 258560,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "monde",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1995,
@@ -10805,7 +11212,8 @@
     "durationMs": 172133,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1997,
@@ -10826,7 +11234,8 @@
       "hi-nrg"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [
       "1BxfuPKGuaTgP7aM0Bbdwr"
@@ -10847,7 +11256,9 @@
     "durationMs": 224466,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1991,
@@ -10866,7 +11277,9 @@
     "durationMs": 235373,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1985,
@@ -10885,7 +11298,9 @@
     "durationMs": 181106,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -10904,7 +11319,9 @@
     "durationMs": 252613,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1991,
@@ -10923,7 +11340,9 @@
     "durationMs": 244706,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1983,
@@ -10942,7 +11361,9 @@
     "durationMs": 192866,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -10966,7 +11387,7 @@
     "tags": [
       "annees-1980",
       "pop",
-      "electro"
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1983,
@@ -10989,7 +11410,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [
       "1c9dnQbOzw01ID7X2IsYOE"
@@ -11010,7 +11432,9 @@
     "durationMs": 274746,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1991,
@@ -11029,7 +11453,9 @@
     "durationMs": 292400,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1988,
@@ -11071,7 +11497,8 @@
     "durationMs": 243800,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -11086,19 +11513,21 @@
     "artist": "Simple Minds",
     "album": "Once Upon A Time (Super Deluxe)",
     "spotifyId": "2x5IXUFOcvvBUtEpnCBNlp",
-    "youtubeId": "5GsbCeyDx8Q",
+    "youtubeId": "w8TGmNbyRE0",
     "durationMs": 289453,
     "genres": [
       "new wave"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
     "filePath": "audio/2x5IXUFOcvvBUtEpnCBNlp.mp3",
     "coverPath": "covers/2x5IXUFOcvvBUtEpnCBNlp.jpg",
-    "refrainStartMs": null,
+    "refrainStartMs": 136287,
     "addedAt": "2026-08-18T19:28:16.777254+00:00"
   },
   {
@@ -11111,7 +11540,9 @@
     "durationMs": 243893,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1990,
@@ -11135,7 +11566,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1983,
@@ -11157,7 +11589,8 @@
       "jangle pop"
     ],
     "tags": [
-      "annees-1990",
+      "annees-1980",
+      "rock",
       "pop"
     ],
     "trapWith": [],
@@ -11181,7 +11614,6 @@
     ],
     "tags": [
       "annees-1980",
-      "rock",
       "pop",
       "latino"
     ],
@@ -11227,7 +11659,9 @@
     "durationMs": 245296,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -11252,9 +11686,8 @@
     ],
     "tags": [
       "annees-1980",
-      "electro",
       "pop",
-      "rnb-funk-jazz"
+      "electro"
     ],
     "trapWith": [
       "5vmRQ3zELMLUQPo2FLQ76x"
@@ -11275,7 +11708,8 @@
     "durationMs": 255733,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1986,
@@ -11294,7 +11728,8 @@
     "durationMs": 252760,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1983,
@@ -11343,7 +11778,9 @@
     "durationMs": 231786,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz",
+      "electro"
     ],
     "trapWith": [],
     "year": 1990,
@@ -11362,7 +11799,9 @@
     "durationMs": 204893,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1998,
@@ -11384,8 +11823,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -11404,7 +11843,9 @@
     "durationMs": 236213,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1982,
@@ -11423,7 +11864,8 @@
     "durationMs": 239960,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1996,
@@ -11442,7 +11884,9 @@
     "durationMs": 298773,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rap",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1992,
@@ -11465,6 +11909,7 @@
     ],
     "tags": [
       "annees-1980",
+      "latino",
       "monde"
     ],
     "trapWith": [],
@@ -11487,6 +11932,7 @@
     ],
     "tags": [
       "annees-1990",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -11508,7 +11954,8 @@
       "eurodance"
     ],
     "tags": [
-      "annees-2000"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 2001,
@@ -11531,7 +11978,7 @@
     "tags": [
       "annees-2010",
       "pop",
-      "variete-francaise"
+      "monde"
     ],
     "trapWith": [],
     "year": 2016,
@@ -11544,20 +11991,23 @@
     "id": "30LqaDEAuommRGjoKWRnNt",
     "title": "The Way to Your Heart",
     "artist": "Soulsister",
-    "album": "Live Savings",
-    "spotifyId": "30LqaDEAuommRGjoKWRnNt",
-    "youtubeId": "EW1F8g0sXsE",
-    "durationMs": 280775,
+    "album": "It Takes Two",
+    "spotifyId": "7h7yYTlVSHY3Fk7mSb0cDZ",
+    "youtubeId": "-rzpX12fJy0",
+    "durationMs": 228293,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1988,
     "filePath": "audio/30LqaDEAuommRGjoKWRnNt.mp3",
     "coverPath": "covers/30LqaDEAuommRGjoKWRnNt.jpg",
-    "refrainStartMs": 132403,
-    "addedAt": "2026-08-19T05:25:55.712371+00:00"
+    "refrainStartMs": 187051,
+    "addedAt": "2026-08-19T05:25:55.712371+00:00",
+    "spotifyCoverUrl": "https://i.scdn.co/image/ab67616d0000b27319f552cc6ce7df9820a66ce0"
   },
   {
     "id": "5QrNXvTQEuBb5iLoIAAuvk",
@@ -11571,7 +12021,9 @@
       "christmas"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1988,
@@ -11592,7 +12044,9 @@
       "italo disco"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1988,
@@ -11615,9 +12069,7 @@
     ],
     "tags": [
       "annees-1990",
-      "rock",
-      "pop",
-      "latino"
+      "pop"
     ],
     "trapWith": [],
     "year": 1996,
@@ -11638,7 +12090,8 @@
       "french r&b"
     ],
     "tags": [
-      "annees-1990",
+      "annees-2000",
+      "electro",
       "rnb-funk-jazz"
     ],
     "trapWith": [],
@@ -11662,8 +12115,8 @@
     ],
     "tags": [
       "annees-1980",
-      "electro",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1985,
@@ -11682,7 +12135,8 @@
     "durationMs": 271333,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1999,
@@ -11705,6 +12159,7 @@
     ],
     "tags": [
       "annees-1990",
+      "rock",
       "pop"
     ],
     "trapWith": [],
@@ -11728,8 +12183,9 @@
       "yacht rock"
     ],
     "tags": [
-      "annees-1970",
-      "rock"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1979,
@@ -11748,7 +12204,9 @@
     "durationMs": 215773,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1988,
@@ -11791,7 +12249,9 @@
     "durationMs": 243160,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2000,
@@ -11810,7 +12270,9 @@
     "durationMs": 297847,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1986,
@@ -11852,7 +12314,8 @@
     "durationMs": 303666,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1988,
@@ -11871,7 +12334,8 @@
     "durationMs": 247200,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1994,
@@ -11894,7 +12358,9 @@
       "house"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1994,
@@ -11913,7 +12379,9 @@
     "durationMs": 233373,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2000,
@@ -11934,7 +12402,9 @@
       "big beat"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "rock"
     ],
     "trapWith": [],
     "year": 1998,
@@ -11958,7 +12428,6 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -12002,7 +12471,9 @@
       "disco"
     ],
     "tags": [
-      "annees-1970"
+      "annees-1980",
+      "rnb-funk-jazz",
+      "electro"
     ],
     "trapWith": [],
     "year": 1979,
@@ -12024,7 +12495,7 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "rock"
     ],
     "trapWith": [],
     "year": 1998,
@@ -12045,7 +12516,7 @@
       "synthpop"
     ],
     "tags": [
-      "annees-1990",
+      "annees-1980",
       "pop",
       "electro"
     ],
@@ -12066,7 +12537,8 @@
     "durationMs": 208000,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1983,
@@ -12085,7 +12557,8 @@
     "durationMs": 205466,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1998,
@@ -12106,7 +12579,9 @@
       "madchester"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1993,
@@ -12125,7 +12600,8 @@
     "durationMs": 235133,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2000,
@@ -12144,7 +12620,9 @@
     "durationMs": 245248,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1984,
@@ -12163,7 +12641,8 @@
     "durationMs": 287866,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 2001,
@@ -12182,7 +12661,9 @@
     "durationMs": 245200,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1994,
@@ -12206,7 +12687,6 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -12229,7 +12709,9 @@
       "italo disco"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1983,
@@ -12251,7 +12733,8 @@
       "new jack swing"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1997,
@@ -12276,7 +12759,8 @@
     ],
     "tags": [
       "annees-1990",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1992,
@@ -12296,7 +12780,9 @@
     "durationMs": 225706,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1981,
@@ -12315,7 +12801,9 @@
     "durationMs": 287440,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1989,
@@ -12385,7 +12873,7 @@
     "tags": [
       "annees-1990",
       "pop",
-      "electro"
+      "rock"
     ],
     "trapWith": [],
     "year": 1993,
@@ -12404,7 +12892,8 @@
     "durationMs": 188693,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock"
     ],
     "trapWith": [],
     "year": 1996,
@@ -12426,7 +12915,8 @@
     ],
     "tags": [
       "annees-1980",
-      "monde"
+      "monde",
+      "pop"
     ],
     "trapWith": [],
     "year": 1982,
@@ -12445,7 +12935,9 @@
     "durationMs": 225066,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz",
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -12489,7 +12981,9 @@
     "durationMs": 202825,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1995,
@@ -12510,7 +13004,9 @@
       "eurodance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1995,
@@ -12529,7 +13025,9 @@
     "durationMs": 343693,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1993,
@@ -12548,7 +13046,9 @@
     "durationMs": 168444,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "latino"
     ],
     "trapWith": [],
     "year": 1997,
@@ -12567,7 +13067,9 @@
     "durationMs": 237053,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1983,
@@ -12590,8 +13092,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [
       "2302lUwfZ4S4dVyPOCDFnQ"
@@ -12633,8 +13135,9 @@
       "soft rock"
     ],
     "tags": [
-      "annees-1990",
-      "rock"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1990,
@@ -12657,7 +13160,8 @@
     ],
     "tags": [
       "annees-1980",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1981,
@@ -12701,8 +13205,9 @@
       "yacht rock"
     ],
     "tags": [
-      "annees-1970",
-      "rock"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "4wH4dJgrsxONID6KS2tDQM"
@@ -12723,7 +13228,9 @@
     "durationMs": 293802,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "3BovdzfaX4jb5KFQwoPfAw"
@@ -12749,7 +13256,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -12773,7 +13281,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1983,
@@ -12796,7 +13305,8 @@
     ],
     "tags": [
       "annees-1980",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1982,
@@ -12819,8 +13329,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1980,
@@ -12843,7 +13353,8 @@
     ],
     "tags": [
       "annees-1980",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -12866,8 +13377,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1989,
@@ -12891,7 +13402,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1980,
@@ -12912,7 +13424,9 @@
       "italo disco"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "latino"
     ],
     "trapWith": [],
     "year": 1983,
@@ -12937,8 +13451,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1986,
@@ -12957,7 +13471,9 @@
     "durationMs": 183440,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1983,
@@ -12981,8 +13497,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1991,
@@ -13004,7 +13520,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1986,
@@ -13026,7 +13543,8 @@
     ],
     "tags": [
       "annees-1980",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -13047,7 +13565,8 @@
       "yacht rock"
     ],
     "tags": [
-      "annees-1990",
+      "annees-1980",
+      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -13073,7 +13592,6 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [
@@ -13098,7 +13616,8 @@
       "post-disco"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1982,
@@ -13122,8 +13641,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -13147,7 +13666,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -13168,8 +13688,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-1990",
-      "variete-francaise"
+      "annees-1980",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1990,
@@ -13188,7 +13709,9 @@
     "durationMs": 266600,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1989,
@@ -13210,7 +13733,9 @@
       "post-disco"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1982,
@@ -13234,8 +13759,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1985,
@@ -13257,6 +13782,7 @@
     ],
     "tags": [
       "annees-1980",
+      "latino",
       "rock"
     ],
     "trapWith": [],
@@ -13280,9 +13806,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-1980",
-      "pop",
-      "variete-francaise"
+      "annees-1970",
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [
       "2UC5XnHA1Wn9FjQmbjNca9"
@@ -13307,7 +13833,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1980,
@@ -13333,8 +13860,7 @@
     ],
     "tags": [
       "annees-1980",
-      "rnb-funk-jazz",
-      "rock"
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1980,
@@ -13358,8 +13884,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -13384,7 +13910,6 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -13427,7 +13952,9 @@
     "durationMs": 246440,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1984,
@@ -13452,8 +13979,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1986,
@@ -13474,7 +14001,9 @@
       "disco"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1982,
@@ -13498,8 +14027,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1984,
@@ -13566,7 +14095,9 @@
     "durationMs": 254000,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "latino",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -13588,7 +14119,8 @@
     ],
     "tags": [
       "annees-1980",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [
       "2374M0fQpWi3dLnB54qaLX"
@@ -13613,8 +14145,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1982,
@@ -13638,8 +14170,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1988,
@@ -13663,8 +14195,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [
       "3JA9Jsuxr4xgHXEawAdCp4"
@@ -13691,8 +14223,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1981,
@@ -13714,7 +14246,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "029NqmIySn1kOY305AAhxT",
@@ -13763,7 +14296,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1985,
@@ -13782,7 +14316,8 @@
     "durationMs": 258693,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1984,
@@ -13803,7 +14338,8 @@
       "europop"
     ],
     "tags": [
-      "annees-2010",
+      "annees-2000",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -13826,7 +14362,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2012,
@@ -13845,7 +14382,9 @@
     "durationMs": 214946,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2006,
@@ -13870,7 +14409,6 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
       "rock"
     ],
     "trapWith": [
@@ -13894,7 +14432,9 @@
     "durationMs": 239600,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2011,
@@ -13913,7 +14453,9 @@
     "durationMs": 276600,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -13934,7 +14476,9 @@
       "tropical house"
     ],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "electro",
+      "monde"
     ],
     "trapWith": [],
     "year": 2022,
@@ -13956,7 +14500,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rap"
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -13975,7 +14520,9 @@
     "durationMs": 214149,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rnb-funk-jazz",
+      "electro"
     ],
     "trapWith": [],
     "year": 2015,
@@ -13996,7 +14543,9 @@
       "house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2014,
@@ -14015,7 +14564,9 @@
     "durationMs": 204026,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2014,
@@ -14056,7 +14607,8 @@
     "durationMs": 184413,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2007,
@@ -14081,9 +14633,8 @@
     ],
     "tags": [
       "annees-2010",
-      "metal",
       "rock",
-      "rap"
+      "electro"
     ],
     "trapWith": [],
     "year": 2012,
@@ -14105,7 +14656,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2014,
@@ -14124,7 +14676,8 @@
     "durationMs": 206960,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2019,
@@ -14146,6 +14699,7 @@
     ],
     "tags": [
       "annees-2000",
+      "rock",
       "pop"
     ],
     "trapWith": [],
@@ -14165,7 +14719,9 @@
     "durationMs": 193058,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2013,
@@ -14184,7 +14740,9 @@
     "durationMs": 267960,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2006,
@@ -14203,7 +14761,8 @@
     "durationMs": 214813,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2007,
@@ -14224,7 +14783,9 @@
       "tropical house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2016,
@@ -14265,7 +14826,8 @@
     "durationMs": 233680,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock"
     ],
     "trapWith": [],
     "year": 2012,
@@ -14284,7 +14846,9 @@
     "durationMs": 202009,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2019,
@@ -14303,7 +14867,9 @@
     "durationMs": 185863,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2019,
@@ -14322,7 +14888,9 @@
     "durationMs": 215186,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -14341,7 +14909,9 @@
     "durationMs": 195200,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -14360,7 +14930,9 @@
     "durationMs": 191090,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2010,
@@ -14379,7 +14951,9 @@
     "durationMs": 177933,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [
       "3QxKpdTB8ZSFn8MGeCCpsQ"
@@ -14403,7 +14977,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2009,
@@ -14428,7 +15003,8 @@
     ],
     "tags": [
       "annees-2020",
-      "rnb-funk-jazz"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2021,
@@ -14447,7 +15023,8 @@
     "durationMs": 208613,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2007,
@@ -14466,7 +15043,9 @@
     "durationMs": 183093,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "monde"
     ],
     "trapWith": [],
     "year": 2009,
@@ -14485,7 +15064,9 @@
     "durationMs": 244360,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2013,
@@ -14526,7 +15107,9 @@
     "durationMs": 177506,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -14545,7 +15128,8 @@
     "durationMs": 244293,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2007,
@@ -14564,7 +15148,9 @@
     "durationMs": 213706,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2016,
@@ -14583,7 +15169,9 @@
     "durationMs": 231213,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2012,
@@ -14602,7 +15190,9 @@
     "durationMs": 307879,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2002,
@@ -14621,7 +15211,9 @@
     "durationMs": 212826,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -14640,7 +15232,9 @@
     "durationMs": 215360,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2015,
@@ -14659,7 +15253,9 @@
     "durationMs": 212953,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2024,
@@ -14678,7 +15274,8 @@
     "durationMs": 166813,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2008,
@@ -14699,7 +15296,9 @@
       "tropical house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2016,
@@ -14743,7 +15342,9 @@
     "durationMs": 241052,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 2013,
@@ -14762,7 +15363,9 @@
     "durationMs": 239894,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2013,
@@ -14781,7 +15384,9 @@
     "durationMs": 204266,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2013,
@@ -14800,7 +15405,9 @@
     "durationMs": 289066,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1989,
@@ -14821,7 +15428,7 @@
       "classic rock"
     ],
     "tags": [
-      "annees-1990",
+      "avant-1970",
       "rock"
     ],
     "trapWith": [],
@@ -14841,7 +15448,9 @@
     "durationMs": 240893,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "monde",
+      "rap"
     ],
     "trapWith": [],
     "year": 2005,
@@ -14862,7 +15471,9 @@
       "tropical house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -14884,6 +15495,7 @@
     ],
     "tags": [
       "avant-1970",
+      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -14903,7 +15515,9 @@
     "durationMs": 267373,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2008,
@@ -14924,7 +15538,9 @@
       "tropical house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2017,
@@ -14965,7 +15581,9 @@
     "durationMs": 206393,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -14984,7 +15602,9 @@
     "durationMs": 245866,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2014,
@@ -15008,7 +15628,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2013,
@@ -15030,7 +15651,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "rock"
     ],
     "trapWith": [],
     "year": 2019,
@@ -15049,7 +15671,9 @@
     "durationMs": 259893,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1997,
@@ -15068,7 +15692,9 @@
     "durationMs": 315602,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 2017,
@@ -15087,7 +15713,9 @@
     "durationMs": 156600,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2017,
@@ -15109,7 +15737,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "rock"
     ],
     "trapWith": [],
     "year": 2017,
@@ -15155,7 +15784,9 @@
       "trip hop"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1999,
@@ -15174,7 +15805,8 @@
     "durationMs": 195133,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2008,
@@ -15193,7 +15825,8 @@
     "durationMs": 167373,
     "genres": [],
     "tags": [
-      "avant-1970"
+      "avant-1970",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1966,
@@ -15212,7 +15845,9 @@
     "durationMs": 190185,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2013,
@@ -15231,7 +15866,9 @@
     "durationMs": 219426,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [
       "0qi4b1l0eT3jpzeNHeFXDT"
@@ -15252,7 +15889,9 @@
     "durationMs": 241688,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2014,
@@ -15271,7 +15910,9 @@
     "durationMs": 179120,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "rap"
     ],
     "trapWith": [],
     "year": 2007,
@@ -15290,7 +15931,9 @@
     "durationMs": 217493,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "rock"
     ],
     "trapWith": [],
     "year": 2009,
@@ -15312,6 +15955,7 @@
     ],
     "tags": [
       "annees-2000",
+      "pop",
       "rap"
     ],
     "trapWith": [
@@ -15336,6 +15980,7 @@
     ],
     "tags": [
       "annees-2000",
+      "rock",
       "pop"
     ],
     "trapWith": [],
@@ -15355,7 +16000,9 @@
     "durationMs": 243960,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2011,
@@ -15374,7 +16021,8 @@
     "durationMs": 243053,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2010,
@@ -15393,7 +16041,9 @@
     "durationMs": 174040,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2008,
@@ -15415,7 +16065,8 @@
     ],
     "tags": [
       "annees-2000",
-      "rap"
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2007,
@@ -15434,7 +16085,9 @@
     "durationMs": 230013,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2002,
@@ -15453,7 +16106,9 @@
     "durationMs": 284373,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2009,
@@ -15475,6 +16130,7 @@
     ],
     "tags": [
       "annees-1990",
+      "monde",
       "latino"
     ],
     "trapWith": [
@@ -15521,7 +16177,9 @@
     "durationMs": 259093,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 2011,
@@ -15543,7 +16201,9 @@
       "trip hop"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "rock"
     ],
     "trapWith": [],
     "year": 2002,
@@ -15565,7 +16225,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2024,
@@ -15586,7 +16247,9 @@
       "tropical house"
     ],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -15609,6 +16272,7 @@
     ],
     "tags": [
       "annees-2010",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -15631,6 +16295,7 @@
     ],
     "tags": [
       "annees-2010",
+      "rap",
       "pop"
     ],
     "trapWith": [],
@@ -15652,8 +16317,9 @@
       "pop"
     ],
     "tags": [
-      "annees-2020",
-      "pop"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2020,
@@ -15675,7 +16341,9 @@
       "new age"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "monde",
+      "pop"
     ],
     "trapWith": [],
     "year": 2000,
@@ -15696,7 +16364,9 @@
       "musicals"
     ],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1978,
@@ -15715,7 +16385,9 @@
     "durationMs": 208240,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2019,
@@ -15734,7 +16406,9 @@
     "durationMs": 147142,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -15756,7 +16430,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [
       "27AHAtAirQapVldIm4c9ZX",
@@ -15780,8 +16455,9 @@
       "europop"
     ],
     "tags": [
-      "annees-2020",
-      "pop"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2026,
@@ -15803,7 +16479,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rnb-funk-jazz"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2012,
@@ -15822,7 +16499,9 @@
     "durationMs": 238133,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "electro"
     ],
     "trapWith": [],
     "year": 2011,
@@ -15841,7 +16520,8 @@
     "durationMs": 176320,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2017,
@@ -15864,7 +16544,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rap"
+      "rap",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2016,
@@ -15889,7 +16570,7 @@
     "tags": [
       "annees-2010",
       "rap",
-      "rnb-funk-jazz"
+      "rock"
     ],
     "trapWith": [],
     "year": 2016,
@@ -15910,7 +16591,9 @@
       "trip hop"
     ],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -15932,7 +16615,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2016,
@@ -15951,7 +16635,9 @@
     "durationMs": 192774,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "electro",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2024,
@@ -15970,7 +16656,9 @@
     "durationMs": 229423,
     "genres": [],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1978,
@@ -15993,7 +16681,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1993,
@@ -16080,7 +16769,8 @@
     "durationMs": 184480,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1983,
@@ -16099,7 +16789,9 @@
     "durationMs": 288426,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1994,
@@ -16118,7 +16810,9 @@
     "durationMs": 263560,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1995,
@@ -16142,7 +16836,6 @@
     ],
     "tags": [
       "avant-1970",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -16168,7 +16861,6 @@
     ],
     "tags": [
       "annees-1970",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -16191,7 +16883,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "1JSTJqkT5qHq8MDJnJbRE1"
@@ -16212,7 +16905,8 @@
     "durationMs": 287933,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -16235,7 +16929,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2008,
@@ -16254,7 +16949,9 @@
     "durationMs": 202613,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -16277,7 +16974,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2008,
@@ -16300,7 +16998,8 @@
     ],
     "tags": [
       "annees-1970",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1979,
@@ -16319,7 +17018,9 @@
     "durationMs": 296800,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1988,
@@ -16338,7 +17039,8 @@
     "durationMs": 210840,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2013,
@@ -16357,7 +17059,9 @@
     "durationMs": 184586,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -16377,7 +17081,8 @@
     "durationMs": 273426,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2000,
@@ -16422,8 +17127,9 @@
       "pop"
     ],
     "tags": [
-      "annees-2000",
-      "pop"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2009,
@@ -16447,7 +17153,6 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -16472,8 +17177,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2023,
@@ -16495,8 +17200,10 @@
       "raï"
     ],
     "tags": [
-      "annees-2010",
-      "rnb-funk-jazz"
+      "annees-2000",
+      "variete-francaise",
+      "rnb-funk-jazz",
+      "monde"
     ],
     "trapWith": [],
     "year": 2015,
@@ -16520,8 +17227,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 2017,
@@ -16544,7 +17251,6 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "rap",
       "variete-francaise"
     ],
@@ -16570,7 +17276,6 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -16593,7 +17298,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rap"
+      "rap",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2017,
@@ -16616,8 +17322,7 @@
       "variété française"
     ],
     "tags": [
-      "annees-2010",
-      "pop",
+      "annees-2000",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -16645,9 +17350,7 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "rap",
-      "rnb-funk-jazz",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -16675,10 +17378,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "rap",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "variete-francaise",
+      "latino"
     ],
     "trapWith": [],
     "year": 2015,
@@ -16701,10 +17402,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-2010",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "annees-2000",
+      "variete-francaise",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2016,
@@ -16730,8 +17430,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rap"
     ],
     "trapWith": [],
     "year": 2018,
@@ -16755,7 +17455,6 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -16781,9 +17480,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2018,
@@ -16804,7 +17502,8 @@
       "britpop"
     ],
     "tags": [
-      "annees-2020",
+      "annees-2010",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -16824,7 +17523,9 @@
     "durationMs": 197142,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -16846,7 +17547,8 @@
     ],
     "tags": [
       "annees-2020",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -16871,8 +17573,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -16899,7 +17601,7 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
+      "electro",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -16919,7 +17621,9 @@
     "durationMs": 180740,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2026,
@@ -16938,7 +17642,9 @@
     "durationMs": 198425,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -16961,7 +17667,7 @@
     "tags": [
       "annees-2020",
       "pop",
-      "variete-francaise"
+      "electro"
     ],
     "trapWith": [],
     "year": 2026,
@@ -16980,7 +17686,9 @@
     "durationMs": 198000,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -16999,7 +17707,8 @@
     "durationMs": 129000,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17018,7 +17727,8 @@
     "durationMs": 153430,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17037,7 +17747,8 @@
     "durationMs": 199876,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -17056,7 +17767,8 @@
     "durationMs": 201000,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17080,10 +17792,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-2020",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "annees-2000",
+      "variete-francaise",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2020,
@@ -17102,7 +17813,8 @@
     "durationMs": 235355,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -17124,7 +17836,8 @@
     ],
     "tags": [
       "annees-2020",
-      "variete-francaise"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17148,8 +17861,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -17172,8 +17885,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17248,10 +17961,8 @@
       "variété française"
     ],
     "tags": [
-      "annees-2020",
-      "pop",
+      "annees-2010",
       "rap",
-      "rnb-funk-jazz",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -17273,7 +17984,9 @@
       "dub"
     ],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -17297,8 +18010,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2024,
@@ -17319,7 +18032,9 @@
       "dub"
     ],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17338,7 +18053,8 @@
     "durationMs": 221709,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17359,8 +18075,9 @@
       "chanson québécoise"
     ],
     "tags": [
-      "annees-2020",
-      "variete-francaise"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2021,
@@ -17381,8 +18098,9 @@
       "chanson québécoise"
     ],
     "tags": [
-      "annees-2020",
-      "variete-francaise"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2023,
@@ -17401,7 +18119,9 @@
     "durationMs": 199032,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2025,
@@ -17424,9 +18144,9 @@
       "indie soul"
     ],
     "tags": [
-      "annees-2020",
-      "pop",
-      "rnb-funk-jazz"
+      "annees-2010",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2024,
@@ -17447,8 +18167,9 @@
       "chanson québécoise"
     ],
     "tags": [
-      "annees-2020",
-      "variete-francaise"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2023,
@@ -17467,7 +18188,9 @@
     "durationMs": 224000,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17490,9 +18213,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-2020",
-      "pop",
-      "variete-francaise"
+      "annees-2010",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -17511,7 +18234,8 @@
     "durationMs": 209156,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop"
     ],
     "trapWith": [],
     "year": 2023,
@@ -17530,7 +18254,8 @@
     "durationMs": 176000,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17549,7 +18274,9 @@
     "durationMs": 201299,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -17595,8 +18322,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 2025,
@@ -17643,8 +18370,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2024,
@@ -17666,7 +18393,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2002,
@@ -17686,7 +18414,8 @@
     "durationMs": 241874,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro"
     ],
     "trapWith": [],
     "year": 2016,
@@ -17709,6 +18438,7 @@
     ],
     "tags": [
       "annees-1990",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -17733,7 +18463,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1986,
@@ -17752,7 +18483,9 @@
     "durationMs": 229760,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-1990",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2000,
@@ -17774,6 +18507,7 @@
     ],
     "tags": [
       "annees-2000",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -17798,8 +18532,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1990,
@@ -17823,7 +18557,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1985,
@@ -17844,7 +18579,9 @@
       "eurodance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1995,
@@ -17863,7 +18600,8 @@
     "durationMs": 181946,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro"
     ],
     "trapWith": [],
     "year": 2007,
@@ -17888,9 +18626,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [
       "2JO3HwMRPeya8bXbtbyPcf"
@@ -17911,7 +18648,9 @@
     "durationMs": 217099,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2019,
@@ -17937,8 +18676,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "latino"
+      "latino",
+      "pop"
     ],
     "trapWith": [],
     "year": 2011,
@@ -17957,7 +18696,9 @@
     "durationMs": 214440,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2002,
@@ -17976,7 +18717,9 @@
     "durationMs": 245400,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-2000",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1999,
@@ -17995,7 +18738,9 @@
     "durationMs": 193091,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2024,
@@ -18014,7 +18759,9 @@
     "durationMs": 244800,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -18036,8 +18783,7 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -18056,7 +18802,9 @@
     "durationMs": 263866,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2002,
@@ -18075,7 +18823,9 @@
     "durationMs": 226053,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock",
+      "pop"
     ],
     "trapWith": [
       "4jhsuQCUCJKA5f0bXb6XdJ"
@@ -18096,7 +18846,9 @@
     "durationMs": 448573,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2006,
@@ -18117,8 +18869,9 @@
       "edm"
     ],
     "tags": [
-      "annees-2010",
-      "electro"
+      "annees-2000",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2010,
@@ -18141,8 +18894,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -18164,7 +18917,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -18233,7 +18987,7 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "electro"
     ],
     "trapWith": [],
     "year": 1993,
@@ -18252,7 +19006,8 @@
     "durationMs": 274466,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1980,
@@ -18273,7 +19028,9 @@
       "eurodance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1996,
@@ -18295,7 +19052,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -18317,8 +19075,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "latino"
+      "latino",
+      "pop"
     ],
     "trapWith": [
       "0mnAmQX1pciMncT2qFCNmK"
@@ -18339,7 +19097,9 @@
     "durationMs": 288333,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2002,
@@ -18363,7 +19123,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1992,
@@ -18385,7 +19146,8 @@
     ],
     "tags": [
       "annees-1970",
-      "rock"
+      "rock",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1978,
@@ -18408,8 +19170,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [
       "7mQAteJZ8OfdGS3fOfgw0g"
@@ -18430,7 +19192,9 @@
     "durationMs": 280753,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1987,
@@ -18451,7 +19215,9 @@
       "french house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [
       "6HMvJcdw6qLsyV1b5x29sa"
@@ -18472,7 +19238,9 @@
     "durationMs": 224000,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1998,
@@ -18491,7 +19259,9 @@
     "durationMs": 234453,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap",
+      "electro"
     ],
     "trapWith": [],
     "year": 2011,
@@ -18510,7 +19280,9 @@
     "durationMs": 238226,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "latino"
     ],
     "trapWith": [],
     "year": 1999,
@@ -18532,7 +19304,9 @@
       "hi-nrg"
     ],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1979,
@@ -18551,7 +19325,9 @@
     "durationMs": 219973,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -18570,7 +19346,8 @@
     "durationMs": 340866,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [
       "4y1LsJpmMti1PfRQV9AWWe"
@@ -18591,7 +19368,9 @@
     "durationMs": 244999,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "rock"
     ],
     "trapWith": [],
     "year": 2005,
@@ -18615,7 +19394,7 @@
     "tags": [
       "annees-1990",
       "pop",
-      "electro"
+      "rock"
     ],
     "trapWith": [],
     "year": 1993,
@@ -18637,7 +19416,8 @@
       "italo dance"
     ],
     "tags": [
-      "annees-2000"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 2001,
@@ -18659,7 +19439,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2010,
@@ -18681,7 +19462,9 @@
       "french house"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2001,
@@ -18700,7 +19483,9 @@
     "durationMs": 284310,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1995,
@@ -18719,7 +19504,8 @@
     "durationMs": 245529,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1983,
@@ -18742,7 +19528,8 @@
       "hip house"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "electro"
     ],
     "trapWith": [],
     "year": 1989,
@@ -18761,7 +19548,8 @@
     "durationMs": 240040,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop"
     ],
     "trapWith": [],
     "year": 2003,
@@ -18784,6 +19572,7 @@
     ],
     "tags": [
       "annees-2000",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -18805,7 +19594,8 @@
       "disco house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -18824,7 +19614,9 @@
     "durationMs": 210853,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -18843,7 +19635,9 @@
     "durationMs": 217575,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2012,
@@ -18862,7 +19656,9 @@
     "durationMs": 204760,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -18881,7 +19677,9 @@
     "durationMs": 279026,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2013,
@@ -18904,7 +19702,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2015,
@@ -18926,7 +19725,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2011,
@@ -18950,7 +19750,8 @@
     ],
     "tags": [
       "annees-2000",
-      "rap"
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2009,
@@ -18969,7 +19770,9 @@
     "durationMs": 367413,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 2010,
@@ -18988,7 +19791,8 @@
     "durationMs": 157438,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -19011,7 +19815,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 2010,
@@ -19033,7 +19838,9 @@
     ],
     "tags": [
       "annees-2010",
-      "rnb-funk-jazz"
+      "pop",
+      "rnb-funk-jazz",
+      "electro"
     ],
     "trapWith": [],
     "year": 2011,
@@ -19055,6 +19862,7 @@
     ],
     "tags": [
       "annees-2000",
+      "rap",
       "rnb-funk-jazz"
     ],
     "trapWith": [],
@@ -19074,7 +19882,9 @@
     "durationMs": 228706,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 2003,
@@ -19096,7 +19906,8 @@
     ],
     "tags": [
       "annees-2000",
-      "latino"
+      "latino",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2002,
@@ -19117,7 +19928,9 @@
       "coupé décalé"
     ],
     "tags": [
-      "annees-2000"
+      "annees-1990",
+      "monde",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2003,
@@ -19161,7 +19974,9 @@
     "durationMs": 241293,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2006,
@@ -19180,7 +19995,9 @@
     "durationMs": 254026,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [
       "2CvOqDpQIMw69cCzWqr5yr"
@@ -19224,7 +20041,9 @@
     "durationMs": 235800,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2005,
@@ -19246,7 +20065,8 @@
     ],
     "tags": [
       "annees-1990",
-      "monde"
+      "monde",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1995,
@@ -19267,7 +20087,9 @@
       "french house"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "0DiWol3AO6WpXZgp0goxAV"
@@ -19288,7 +20110,9 @@
     "durationMs": 215480,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2003,
@@ -19311,8 +20135,8 @@
     ],
     "tags": [
       "annees-2000",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "variete-francaise",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2007,
@@ -19335,6 +20159,7 @@
     ],
     "tags": [
       "annees-2000",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -19357,7 +20182,7 @@
     ],
     "tags": [
       "annees-2000",
-      "metal"
+      "rock"
     ],
     "trapWith": [],
     "year": 2004,
@@ -19381,8 +20206,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 2006,
@@ -19424,7 +20249,9 @@
     "durationMs": 241933,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2008,
@@ -19446,7 +20273,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2002,
@@ -19465,7 +20293,8 @@
     "durationMs": 237493,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop"
     ],
     "trapWith": [],
     "year": 2002,
@@ -19492,10 +20321,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "rap",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "variete-francaise",
+      "rap"
     ],
     "trapWith": [],
     "year": 2004,
@@ -19521,9 +20348,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "variete-francaise",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2003,
@@ -19566,7 +20392,9 @@
     "durationMs": 209160,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2014,
@@ -19587,7 +20415,8 @@
       "french house"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro"
     ],
     "trapWith": [],
     "year": 2014,
@@ -19606,7 +20435,9 @@
     "durationMs": 212573,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2019,
@@ -19625,7 +20456,9 @@
     "durationMs": 161322,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2016,
@@ -19644,7 +20477,8 @@
     "durationMs": 281946,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -19666,8 +20500,9 @@
       "pop"
     ],
     "tags": [
-      "annees-2000",
-      "pop"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2009,
@@ -19686,7 +20521,9 @@
     "durationMs": 221253,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2005,
@@ -19705,7 +20542,9 @@
     "durationMs": 214973,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2014,
@@ -19725,7 +20564,9 @@
     "durationMs": 238693,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2010,
@@ -19740,17 +20581,19 @@
     "artist": "Naughty Boy, Beyoncé, Arrow Benjamin",
     "album": "Runnin' (Lose It All)",
     "spotifyId": "5yZvaUVyuXfSVUaMumFi6l",
-    "youtubeId": "DaNDxuAbPLg",
+    "youtubeId": "JX90jH7oqyw",
     "durationMs": 213019,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2015,
     "filePath": "audio/5yZvaUVyuXfSVUaMumFi6l.mp3",
     "coverPath": "covers/5yZvaUVyuXfSVUaMumFi6l.jpg",
-    "refrainStartMs": 151468,
+    "refrainStartMs": 148761,
     "addedAt": "2026-08-19T07:24:29.877272+00:00"
   },
   {
@@ -19766,7 +20609,7 @@
       "rap"
     ],
     "tags": [
-      "annees-2000",
+      "annees-2010",
       "rap"
     ],
     "trapWith": [],
@@ -19786,7 +20629,8 @@
     "durationMs": 255220,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop"
     ],
     "trapWith": [],
     "year": 1986,
@@ -19805,7 +20649,9 @@
     "durationMs": 215200,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -19824,7 +20670,9 @@
     "durationMs": 205560,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2013,
@@ -19843,7 +20691,9 @@
     "durationMs": 260773,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2018,
@@ -19868,7 +20718,6 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -19892,8 +20741,7 @@
       "variété française"
     ],
     "tags": [
-      "annees-1990",
-      "pop",
+      "annees-1970",
       "variete-francaise"
     ],
     "trapWith": [
@@ -19916,7 +20764,8 @@
     "durationMs": 185146,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2020,
@@ -19935,7 +20784,9 @@
     "durationMs": 261160,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [
       "2Mpj1Ul5OFPyyP4wB62Rvi"
@@ -19958,7 +20809,9 @@
       "new wave"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -20030,8 +20883,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [
       "2Vtq22cAI0Q6VuzYYsvLHV"
@@ -20052,7 +20905,9 @@
     "durationMs": 195546,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2016,
@@ -20119,7 +20974,9 @@
     "durationMs": 114464,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2024,
@@ -20138,7 +20995,9 @@
     "durationMs": 163226,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -20160,7 +21019,9 @@
       "nu disco"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2007,
@@ -20182,7 +21043,8 @@
       "melbourne bounce"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro"
     ],
     "trapWith": [],
     "year": 2014,
@@ -20226,7 +21088,8 @@
       "big beat"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 1998,
@@ -20249,7 +21112,8 @@
     ],
     "tags": [
       "annees-2000",
-      "rap"
+      "rap",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2000,
@@ -20270,7 +21134,9 @@
       "disco"
     ],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2021,
@@ -20289,7 +21155,9 @@
     "durationMs": 223666,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2005,
@@ -20332,7 +21200,9 @@
     "durationMs": 231400,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rap",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2008,
@@ -20354,7 +21224,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rap"
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2010,
@@ -20373,7 +21244,9 @@
     "durationMs": 161803,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2021,
@@ -20392,7 +21265,8 @@
     "durationMs": 214400,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rap"
     ],
     "trapWith": [],
     "year": 2004,
@@ -20413,7 +21287,8 @@
       "big room"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro"
     ],
     "trapWith": [],
     "year": 2012,
@@ -20434,8 +21309,8 @@
       "europop"
     ],
     "tags": [
-      "annees-2010",
-      "pop"
+      "annees-2000",
+      "electro"
     ],
     "trapWith": [],
     "year": 2012,
@@ -20454,7 +21329,9 @@
     "durationMs": 240746,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2008,
@@ -20476,7 +21353,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rap"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -20495,7 +21373,9 @@
     "durationMs": 224573,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2015,
@@ -20520,6 +21400,7 @@
     ],
     "tags": [
       "annees-1990",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -20585,7 +21466,9 @@
     "durationMs": 223458,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1985,
@@ -20604,7 +21487,9 @@
     "durationMs": 178480,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1983,
@@ -20650,7 +21535,9 @@
       "hi-nrg"
     ],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1978,
@@ -20669,7 +21556,9 @@
     "durationMs": 200000,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2025,
@@ -20688,7 +21577,8 @@
     "durationMs": 247067,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "rock"
     ],
     "trapWith": [],
     "year": 2022,
@@ -20707,7 +21597,9 @@
     "durationMs": 188918,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2022,
@@ -20728,7 +21620,9 @@
       "eurodance"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2001,
@@ -20757,9 +21651,7 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "electro",
-      "variete-francaise"
+      "electro"
     ],
     "trapWith": [],
     "year": 2026,
@@ -20778,7 +21670,9 @@
     "durationMs": 325426,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [
       "7q3qX7Ees3FZtRFJXWgPZs"
@@ -20799,7 +21693,9 @@
     "durationMs": 192789,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2013,
@@ -20818,7 +21714,9 @@
     "durationMs": 296186,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "rap"
     ],
     "trapWith": [],
     "year": 2003,
@@ -20837,7 +21735,9 @@
     "durationMs": 181826,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2002,
@@ -20882,7 +21782,9 @@
       "disco house"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2007,
@@ -20923,7 +21825,9 @@
     "durationMs": 263786,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2015,
@@ -20966,7 +21870,9 @@
     "durationMs": 217573,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [
       "4fixebDZAVToLbUCuEloa2"
@@ -20991,7 +21897,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1984,
@@ -21010,7 +21917,9 @@
     "durationMs": 258266,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2015,
@@ -21032,8 +21941,7 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -21056,8 +21964,8 @@
     ],
     "tags": [
       "annees-1980",
-      "electro",
-      "pop"
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1984,
@@ -21079,8 +21987,7 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "electro"
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -21102,7 +22009,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "rap"
     ],
     "trapWith": [],
     "year": 2012,
@@ -21121,7 +22029,9 @@
     "durationMs": 246786,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2017,
@@ -21143,6 +22053,7 @@
     ],
     "tags": [
       "annees-1980",
+      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -21188,7 +22099,8 @@
     "durationMs": 286253,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -21207,7 +22119,9 @@
     "durationMs": 211560,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "pop"
     ],
     "trapWith": [
       "1XyL3J7eTTKnxRZAM3LqIT"
@@ -21232,7 +22146,9 @@
       "italo disco"
     ],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1986,
@@ -21251,7 +22167,9 @@
     "durationMs": 207139,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2019,
@@ -21272,7 +22190,8 @@
       "disco"
     ],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1975,
@@ -21291,7 +22210,8 @@
     "durationMs": 257200,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -21316,9 +22236,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock",
-      "pop",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1987,
@@ -21365,7 +22284,8 @@
     ],
     "tags": [
       "annees-2020",
-      "electro"
+      "electro",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2023,
@@ -21384,7 +22304,8 @@
     "durationMs": 150635,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2010",
+      "electro"
     ],
     "trapWith": [
       "0eMVfsENqZ42yZBrIXLUG0"
@@ -21411,7 +22332,7 @@
       "trance"
     ],
     "tags": [
-      "annees-2010",
+      "annees-2020",
       "electro"
     ],
     "trapWith": [],
@@ -21457,7 +22378,8 @@
       "eurodance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop"
     ],
     "trapWith": [],
     "year": 1996,
@@ -21503,7 +22425,8 @@
       "soca"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [
       "4bAFo6r2ODMDoqM5YHV2gM"
@@ -21524,7 +22447,9 @@
     "durationMs": 184453,
     "genres": [],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2023,
@@ -21547,6 +22472,7 @@
     ],
     "tags": [
       "annees-1980",
+      "pop",
       "rock"
     ],
     "trapWith": [],
@@ -21569,7 +22495,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop"
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2012,
@@ -21590,7 +22517,9 @@
       "disco"
     ],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 1976,
@@ -21689,6 +22618,7 @@
     ],
     "tags": [
       "annees-2000",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -21708,7 +22638,8 @@
     "durationMs": 175493,
     "genres": [],
     "tags": [
-      "avant-1970"
+      "avant-1970",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1962,
@@ -21732,9 +22663,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-1980",
-      "pop",
-      "variete-francaise"
+      "annees-1990",
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [
       "6g536AyVT29vDCAsudadpY"
@@ -21757,7 +22688,8 @@
       "eurodance"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 1994,
@@ -21801,7 +22733,9 @@
     "durationMs": 197560,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 1997,
@@ -21823,7 +22757,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2019,
@@ -21842,7 +22777,8 @@
     "durationMs": 269595,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2017,
@@ -21861,7 +22797,9 @@
     "durationMs": 367333,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1998,
@@ -21883,7 +22821,8 @@
     ],
     "tags": [
       "annees-2020",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2022,
@@ -21925,7 +22864,9 @@
     "durationMs": 329800,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1989,
@@ -21948,7 +22889,8 @@
     ],
     "tags": [
       "annees-2010",
-      "rnb-funk-jazz"
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -21970,9 +22912,9 @@
       "synthpop"
     ],
     "tags": [
-      "annees-1990",
-      "pop",
-      "electro"
+      "annees-1980",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 1998,
@@ -21995,7 +22937,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -22014,7 +22957,8 @@
     "durationMs": 214400,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-1990",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1999,
@@ -22061,7 +23005,7 @@
     "tags": [
       "annees-1980",
       "pop",
-      "electro"
+      "rock"
     ],
     "trapWith": [],
     "year": 1985,
@@ -22082,7 +23026,9 @@
       "italo disco"
     ],
     "tags": [
-      "annees-1990"
+      "annees-1980",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 1992,
@@ -22109,8 +23055,7 @@
     "tags": [
       "annees-2010",
       "metal",
-      "rock",
-      "rap"
+      "rock"
     ],
     "trapWith": [],
     "year": 2015,
@@ -22134,7 +23079,7 @@
       "metal"
     ],
     "tags": [
-      "annees-2000",
+      "annees-1980",
       "metal",
       "rock"
     ],
@@ -22162,8 +23107,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2016,
@@ -22187,7 +23132,6 @@
     ],
     "tags": [
       "annees-1980",
-      "metal",
       "rock"
     ],
     "trapWith": [],
@@ -22214,8 +23158,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2013,
@@ -22237,6 +23181,7 @@
     ],
     "tags": [
       "annees-2020",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -22256,7 +23201,8 @@
     "durationMs": 226680,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock"
     ],
     "trapWith": [],
     "year": 2002,
@@ -22299,7 +23245,8 @@
       "house"
     ],
     "tags": [
-      "annees-2020"
+      "annees-2020",
+      "electro"
     ],
     "trapWith": [],
     "year": 2021,
@@ -22321,7 +23268,8 @@
     ],
     "tags": [
       "annees-1980",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1984,
@@ -22344,7 +23292,8 @@
     ],
     "tags": [
       "annees-1980",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 1988,
@@ -22369,7 +23318,6 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -22389,7 +23337,9 @@
     "durationMs": 237720,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2017,
@@ -22404,17 +23354,19 @@
     "artist": "Irene Cara",
     "album": "Fame (Original Motion Picture Soundtrack)",
     "spotifyId": "5CI1FP2Volc9wjz2MBZsGx",
-    "youtubeId": "ChhCpSVrjvU",
+    "youtubeId": "uN1BS-L1vx8",
     "durationMs": 316066,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 1980,
     "filePath": "audio/5CI1FP2Volc9wjz2MBZsGx.mp3",
     "coverPath": "covers/5CI1FP2Volc9wjz2MBZsGx.jpg",
-    "refrainStartMs": 108047,
+    "refrainStartMs": 124978,
     "addedAt": "2026-08-19T08:02:15.320132+00:00"
   },
   {
@@ -22430,6 +23382,7 @@
     ],
     "tags": [
       "annees-1990",
+      "rock",
       "pop"
     ],
     "trapWith": [],
@@ -22454,8 +23407,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1984,
@@ -22474,7 +23427,9 @@
     "durationMs": 181641,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2016,
@@ -22493,7 +23448,9 @@
     "durationMs": 270333,
     "genres": [],
     "tags": [
-      "annees-1980"
+      "annees-1980",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1987,
@@ -22514,7 +23471,8 @@
       "eurodance"
     ],
     "tags": [
-      "annees-2000"
+      "annees-1990",
+      "electro"
     ],
     "trapWith": [],
     "year": 2006,
@@ -22536,7 +23494,8 @@
     ],
     "tags": [
       "annees-2010",
-      "electro"
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2016,
@@ -22559,8 +23518,7 @@
     ],
     "tags": [
       "annees-2000",
-      "rock",
-      "pop"
+      "rock"
     ],
     "trapWith": [],
     "year": 2009,
@@ -22583,9 +23541,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-2020",
-      "pop",
-      "variete-francaise"
+      "annees-2000",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2022,
@@ -22608,9 +23566,9 @@
       "variété française"
     ],
     "tags": [
-      "annees-2020",
-      "pop",
-      "variete-francaise"
+      "annees-2010",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2026,
@@ -22634,8 +23592,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2007,
@@ -22660,8 +23618,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 2012,
@@ -22685,8 +23643,8 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [
       "0EOHf5wIscxwzXfzNNvUFl"
@@ -22711,7 +23669,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [
       "029NqmIySn1kOY305AAhxT",
@@ -22735,7 +23694,9 @@
       "eurodance"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2005,
@@ -22825,7 +23786,8 @@
     ],
     "tags": [
       "annees-2000",
-      "variete-francaise"
+      "variete-francaise",
+      "monde"
     ],
     "trapWith": [],
     "year": 2003,
@@ -22847,6 +23809,7 @@
     ],
     "tags": [
       "annees-2000",
+      "electro",
       "pop"
     ],
     "trapWith": [],
@@ -22892,10 +23855,9 @@
       "reggaeton"
     ],
     "tags": [
-      "annees-2020",
-      "pop",
+      "annees-2010",
       "latino",
-      "monde"
+      "pop"
     ],
     "trapWith": [
       "0Ph6L4l8dYUuXFmb71Ajnd"
@@ -22921,7 +23883,7 @@
     "tags": [
       "annees-1980",
       "pop",
-      "electro"
+      "rock"
     ],
     "trapWith": [
       "2WfaOiMkCvy7F5fcp2zZ8L"
@@ -22945,7 +23907,7 @@
     ],
     "tags": [
       "annees-2000",
-      "pop"
+      "electro"
     ],
     "trapWith": [
       "6e2OwnkapOwUDfhz6AP9iC"
@@ -22966,7 +23928,9 @@
     "durationMs": 181772,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rnb-funk-jazz",
+      "electro"
     ],
     "trapWith": [],
     "year": 2014,
@@ -22985,7 +23949,9 @@
     "durationMs": 224653,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rap",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -23004,7 +23970,9 @@
     "durationMs": 238213,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rnb-funk-jazz",
+      "pop"
     ],
     "trapWith": [],
     "year": 2013,
@@ -23025,7 +23993,8 @@
       "italo dance"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2000",
+      "electro"
     ],
     "trapWith": [],
     "year": 2010,
@@ -23044,7 +24013,9 @@
     "durationMs": 212266,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-2000",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -23066,8 +24037,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2000,
@@ -23086,7 +24057,9 @@
     "durationMs": 213640,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2000",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2010,
@@ -23105,7 +24078,9 @@
     "durationMs": 258800,
     "genres": [],
     "tags": [
-      "annees-1990"
+      "annees-2000",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 1999,
@@ -23127,7 +24102,9 @@
       "indie folk"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -23146,7 +24123,8 @@
     "durationMs": 142280,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop"
     ],
     "trapWith": [],
     "year": 2014,
@@ -23165,7 +24143,9 @@
     "durationMs": 218893,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 2008,
@@ -23187,7 +24167,9 @@
       "trip hop"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2005,
@@ -23209,7 +24191,9 @@
       "trip hop"
     ],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2000,
@@ -23228,7 +24212,9 @@
     "durationMs": 202133,
     "genres": [],
     "tags": [
-      "annees-2000"
+      "annees-2000",
+      "pop",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2008,
@@ -23247,7 +24233,9 @@
     "durationMs": 240746,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "rock"
     ],
     "trapWith": [],
     "year": 2014,
@@ -23272,8 +24260,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2008,
@@ -23292,7 +24280,9 @@
     "durationMs": 253200,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2017,
@@ -23316,9 +24306,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2013,
@@ -23340,7 +24329,8 @@
     ],
     "tags": [
       "annees-2010",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 2012,
@@ -23365,9 +24355,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2012,
@@ -23392,8 +24381,8 @@
     ],
     "tags": [
       "annees-2000",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 2001,
@@ -23418,8 +24407,8 @@
     ],
     "tags": [
       "annees-2010",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [
       "0Wr98MVkENZXddiLB3bPb0"
@@ -23445,8 +24434,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1997,
@@ -23471,7 +24460,6 @@
     ],
     "tags": [
       "annees-1980",
-      "pop",
       "variete-francaise"
     ],
     "trapWith": [],
@@ -23496,8 +24484,7 @@
       "variété française"
     ],
     "tags": [
-      "annees-2020",
-      "pop",
+      "annees-1980",
       "variete-francaise"
     ],
     "trapWith": [
@@ -23526,8 +24513,8 @@
     ],
     "tags": [
       "annees-1990",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "rock"
     ],
     "trapWith": [],
     "year": 1997,
@@ -23546,7 +24533,9 @@
     "durationMs": 243640,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "pop",
+      "electro"
     ],
     "trapWith": [],
     "year": 2015,
@@ -23565,7 +24554,9 @@
     "durationMs": 172414,
     "genres": [],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro",
+      "pop"
     ],
     "trapWith": [],
     "year": 2015,
@@ -23587,7 +24578,8 @@
       "italo dance"
     ],
     "tags": [
-      "annees-2010"
+      "annees-2010",
+      "electro"
     ],
     "trapWith": [],
     "year": 2018,
@@ -23606,7 +24598,8 @@
     "durationMs": 191946,
     "genres": [],
     "tags": [
-      "annees-1970"
+      "annees-1970",
+      "rock"
     ],
     "trapWith": [],
     "year": 1978,
@@ -23631,7 +24624,8 @@
     ],
     "tags": [
       "annees-1980",
-      "rock"
+      "rock",
+      "pop"
     ],
     "trapWith": [],
     "year": 1982,
@@ -23655,8 +24649,8 @@
     ],
     "tags": [
       "annees-2020",
-      "pop",
-      "variete-francaise"
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2024,
@@ -23675,6 +24669,7 @@
     "durationMs": 224040,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -23694,7 +24689,7 @@
     "durationMs": 171240,
     "genres": [],
     "tags": [
-      "annees-2000",
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -23719,9 +24714,8 @@
       "variété française"
     ],
     "tags": [
-      "disney",
-      "pop",
-      "variete-francaise"
+      "annees-1990",
+      "disney"
     ],
     "trapWith": [],
     "year": 2002,
@@ -23740,6 +24734,7 @@
     "durationMs": 164733,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -23759,7 +24754,8 @@
     "durationMs": 165280,
     "genres": [],
     "tags": [
-      "disney"
+      "annees-2000",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2016,
@@ -23778,7 +24774,7 @@
     "durationMs": 239066,
     "genres": [],
     "tags": [
-      "annees-2000",
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -23798,7 +24794,7 @@
     "durationMs": 212000,
     "genres": [],
     "tags": [
-      "annees-2000",
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -23818,7 +24814,7 @@
     "durationMs": 177786,
     "genres": [],
     "tags": [
-      "annees-2000",
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -23838,6 +24834,7 @@
     "durationMs": 215000,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -23877,6 +24874,7 @@
     "durationMs": 206586,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -23916,6 +24914,7 @@
     "durationMs": 281706,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -23940,10 +24939,8 @@
       "variété française"
     ],
     "tags": [
-      "disney",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "annees-1980",
+      "disney"
     ],
     "trapWith": [],
     "year": 2009,
@@ -23962,6 +24959,7 @@
     "durationMs": 112213,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24001,6 +24999,7 @@
     "durationMs": 152333,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24020,6 +25019,7 @@
     "durationMs": 212706,
     "genres": [],
     "tags": [
+      "annees-2020",
       "disney"
     ],
     "trapWith": [],
@@ -24039,6 +25039,7 @@
     "durationMs": 224533,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24058,6 +25059,7 @@
     "durationMs": 166026,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24077,6 +25079,7 @@
     "durationMs": 224226,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24100,8 +25103,8 @@
       "soundtrack"
     ],
     "tags": [
-      "disney",
-      "rnb-funk-jazz"
+      "annees-2000",
+      "disney"
     ],
     "trapWith": [],
     "year": 2007,
@@ -24123,8 +25126,8 @@
       "norwegian pop"
     ],
     "tags": [
-      "disney",
-      "pop"
+      "annees-2010",
+      "disney"
     ],
     "trapWith": [],
     "year": 2019,
@@ -24143,6 +25146,7 @@
     "durationMs": 125680,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24162,6 +25166,7 @@
     "durationMs": 140160,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24181,6 +25186,7 @@
     "durationMs": 139813,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24200,6 +25206,7 @@
     "durationMs": 261026,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24219,6 +25226,7 @@
     "durationMs": 186626,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24238,6 +25246,7 @@
     "durationMs": 124600,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24257,6 +25266,7 @@
     "durationMs": 219946,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24276,6 +25286,7 @@
     "durationMs": 355560,
     "genres": [],
     "tags": [
+      "annees-1970",
       "disney"
     ],
     "trapWith": [],
@@ -24295,6 +25306,7 @@
     "durationMs": 163866,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24314,6 +25326,7 @@
     "durationMs": 224640,
     "genres": [],
     "tags": [
+      "annees-2000",
       "disney"
     ],
     "trapWith": [],
@@ -24333,7 +25346,9 @@
     "durationMs": 163933,
     "genres": [],
     "tags": [
-      "disney"
+      "annees-2000",
+      "variete-francaise",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2010,
@@ -24352,6 +25367,7 @@
     "durationMs": 166306,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -24371,6 +25387,7 @@
     "durationMs": 192066,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24392,8 +25409,8 @@
       "soft rock"
     ],
     "tags": [
-      "disney",
-      "rock"
+      "annees-1990",
+      "disney"
     ],
     "trapWith": [],
     "year": 1999,
@@ -24412,6 +25429,7 @@
     "durationMs": 111200,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24431,6 +25449,7 @@
     "durationMs": 194040,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24450,6 +25469,7 @@
     "durationMs": 144306,
     "genres": [],
     "tags": [
+      "annees-2000",
       "disney"
     ],
     "trapWith": [],
@@ -24469,6 +25489,7 @@
     "durationMs": 230560,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -24488,6 +25509,7 @@
     "durationMs": 146893,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24507,6 +25529,7 @@
     "durationMs": 124026,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24526,6 +25549,7 @@
     "durationMs": 105093,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24545,6 +25569,7 @@
     "durationMs": 147800,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24566,6 +25591,7 @@
       "soundtrack"
     ],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24585,6 +25611,7 @@
     "durationMs": 184013,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24604,6 +25631,7 @@
     "durationMs": 74760,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24623,6 +25651,7 @@
     "durationMs": 209960,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24662,6 +25691,7 @@
     "durationMs": 146346,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24681,6 +25711,7 @@
     "durationMs": 224240,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -24703,8 +25734,7 @@
     ],
     "tags": [
       "annees-1990",
-      "disney",
-      "rock"
+      "disney"
     ],
     "trapWith": [],
     "year": 1999,
@@ -24723,6 +25753,7 @@
     "durationMs": 103920,
     "genres": [],
     "tags": [
+      "annees-1970",
       "disney"
     ],
     "trapWith": [],
@@ -24742,6 +25773,7 @@
     "durationMs": 71186,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24761,6 +25793,7 @@
     "durationMs": 115893,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -24780,6 +25813,7 @@
     "durationMs": 124120,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -24804,10 +25838,8 @@
       "variété française"
     ],
     "tags": [
-      "disney",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "annees-1980",
+      "disney"
     ],
     "trapWith": [],
     "year": 2009,
@@ -24826,7 +25858,8 @@
     "durationMs": 111240,
     "genres": [],
     "tags": [
-      "disney"
+      "annees-1990",
+      "variete-francaise"
     ],
     "trapWith": [],
     "year": 2019,
@@ -24845,6 +25878,7 @@
     "durationMs": 54453,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24864,6 +25898,7 @@
     "durationMs": 180706,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24887,6 +25922,7 @@
       "tamil dance"
     ],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -24906,7 +25942,7 @@
     "durationMs": 102880,
     "genres": [],
     "tags": [
-      "annees-2000",
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -24926,6 +25962,7 @@
     "durationMs": 51760,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24945,6 +25982,7 @@
     "durationMs": 73653,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24964,6 +26002,7 @@
     "durationMs": 179026,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -24985,6 +26024,7 @@
       "impressionism"
     ],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25004,6 +26044,7 @@
     "durationMs": 207866,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25023,6 +26064,7 @@
     "durationMs": 217666,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -25042,6 +26084,7 @@
     "durationMs": 138160,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25061,6 +26104,7 @@
     "durationMs": 123453,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25080,6 +26124,7 @@
     "durationMs": 193960,
     "genres": [],
     "tags": [
+      "annees-1980",
       "disney"
     ],
     "trapWith": [],
@@ -25099,6 +26144,7 @@
     "durationMs": 96640,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25122,9 +26168,8 @@
       "variété française"
     ],
     "tags": [
-      "disney",
-      "pop",
-      "variete-francaise"
+      "annees-1990",
+      "disney"
     ],
     "trapWith": [],
     "year": 2002,
@@ -25163,6 +26208,7 @@
     "durationMs": 151026,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25182,6 +26228,7 @@
     "durationMs": 173906,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25201,6 +26248,7 @@
     "durationMs": 190520,
     "genres": [],
     "tags": [
+      "annees-1980",
       "disney"
     ],
     "trapWith": [],
@@ -25220,6 +26268,7 @@
     "durationMs": 50760,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -25239,6 +26288,7 @@
     "durationMs": 107773,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25260,6 +26310,7 @@
       "impressionism"
     ],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25279,6 +26330,7 @@
     "durationMs": 196200,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25298,6 +26350,7 @@
     "durationMs": 155426,
     "genres": [],
     "tags": [
+      "annees-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25313,7 +26366,7 @@
     "artist": "Chorus",
     "album": "La Belle et le Clochard",
     "spotifyId": "3f2Z15x2We9W45jQeWANzJ",
-    "youtubeId": "JcBb0JaikPM",
+    "youtubeId": "CYe8kYQzvvU",
     "durationMs": 153146,
     "genres": [
       "bhajan",
@@ -25321,6 +26374,7 @@
       "tamil dance"
     ],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25340,6 +26394,7 @@
     "durationMs": 142226,
     "genres": [],
     "tags": [
+      "annees-2000",
       "disney"
     ],
     "trapWith": [],
@@ -25399,7 +26454,9 @@
     "durationMs": 140906,
     "genres": [],
     "tags": [
-      "disney"
+      "annees-2020",
+      "variete-francaise",
+      "pop"
     ],
     "trapWith": [],
     "year": 2002,
@@ -25418,6 +26475,7 @@
     "durationMs": 181413,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25437,7 +26495,8 @@
     "durationMs": 65212,
     "genres": [],
     "tags": [
-      "disney"
+      "annees-2010",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2002,
@@ -25456,6 +26515,7 @@
     "durationMs": 187560,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25475,7 +26535,7 @@
     "durationMs": 107346,
     "genres": [],
     "tags": [
-      "annees-2000",
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25495,7 +26555,8 @@
     "durationMs": 58066,
     "genres": [],
     "tags": [
-      "disney"
+      "annees-2010",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2002,
@@ -25514,6 +26575,7 @@
     "durationMs": 75146,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -25533,6 +26595,7 @@
     "durationMs": 118933,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -25552,6 +26615,7 @@
     "durationMs": 138066,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25571,6 +26635,7 @@
     "durationMs": 216320,
     "genres": [],
     "tags": [
+      "annees-2000",
       "disney"
     ],
     "trapWith": [],
@@ -25592,6 +26657,7 @@
       "impressionism"
     ],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25611,6 +26677,7 @@
     "durationMs": 219520,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25630,6 +26697,7 @@
     "durationMs": 118328,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25649,6 +26717,7 @@
     "durationMs": 181400,
     "genres": [],
     "tags": [
+      "annees-2020",
       "disney"
     ],
     "trapWith": [],
@@ -25668,6 +26737,7 @@
     "durationMs": 294386,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25687,6 +26757,7 @@
     "durationMs": 174106,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25706,6 +26777,7 @@
     "durationMs": 140826,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25725,6 +26797,7 @@
     "durationMs": 92960,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -25744,6 +26817,7 @@
     "durationMs": 30466,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
@@ -25763,6 +26837,7 @@
     "durationMs": 182893,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -25788,10 +26863,9 @@
       "variété française"
     ],
     "tags": [
-      "disney",
-      "pop",
-      "rnb-funk-jazz",
-      "variete-francaise"
+      "annees-2000",
+      "variete-francaise",
+      "rnb-funk-jazz"
     ],
     "trapWith": [],
     "year": 2017,
@@ -25810,6 +26884,7 @@
     "durationMs": 53240,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25829,6 +26904,7 @@
     "durationMs": 159906,
     "genres": [],
     "tags": [
+      "annees-2010",
       "disney"
     ],
     "trapWith": [],
@@ -25848,6 +26924,7 @@
     "durationMs": 212093,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25867,6 +26944,7 @@
     "durationMs": 149586,
     "genres": [],
     "tags": [
+      "annees-2000",
       "disney"
     ],
     "trapWith": [],
@@ -25886,6 +26964,7 @@
     "durationMs": 193026,
     "genres": [],
     "tags": [
+      "annees-1990",
       "disney"
     ],
     "trapWith": [],
@@ -25905,6 +26984,7 @@
     "durationMs": 253800,
     "genres": [],
     "tags": [
+      "avant-1970",
       "disney"
     ],
     "trapWith": [],
