@@ -51,10 +51,22 @@ public class AnswerMatcher : IAnswerMatcher
         return sb.ToString().Trim();
     }
 
-    public bool EstCorrecte(string reponseJoueur, string reponseAttendue, double toleranceRatio)
+    public bool EstCorrecte(
+        string reponseJoueur,
+        string reponseAttendue,
+        double toleranceRatio,
+        int longueurMinimalePourTolerance,
+        int longueurMinimalePourToleranceFixe,
+        int toleranceFixeReponseCourte)
     {
         var normaliseeAttendue = Normaliser(reponseAttendue);
         var normaliseeJoueur = Normaliser(reponseJoueur);
+
+        if (normaliseeAttendue.Length < longueurMinimalePourToleranceFixe)
+            return normaliseeJoueur == normaliseeAttendue;
+
+        if (normaliseeAttendue.Length < longueurMinimalePourTolerance)
+            return DistanceLevenshtein(normaliseeJoueur, normaliseeAttendue) <= toleranceFixeReponseCourte;
 
         var seuil = Math.Max(1, (int)Math.Floor(normaliseeAttendue.Length * toleranceRatio));
         return DistanceLevenshtein(normaliseeJoueur, normaliseeAttendue) <= seuil;

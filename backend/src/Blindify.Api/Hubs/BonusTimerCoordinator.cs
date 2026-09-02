@@ -51,17 +51,22 @@ public class BonusTimerCoordinator(
             var bonusRound = session?.SerieCourante().BonusRound;
             if (session is null || bonusRound is null) return;
 
-            bonusRoundService.AppliquerPaliersParDefaut(session, bonusRound);
-            bonusRoundService.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+            lock (session.Lock)
+            {
+                bonusRoundService.AppliquerPaliersParDefaut(session, bonusRound);
+                bonusRoundService.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+            }
             await DiffuserDebutPhaseQuestionAsync(session, bonusRound, config);
 
-            if (!await AttendreFinPhaseAsync(code, config.DureePhaseQuestionMs, br => br.DebutPhaseQuestion, token)) return;
+            // finAnticipee : en mode course, la phase se termine dès qu'un joueur a répondu (juste ou
+            // faux) plutôt que d'attendre la durée complète — voir BonusRoundService.SoumettreReponse.
+            if (!await AttendreFinPhaseAsync(code, config.DureePhaseQuestionMs, br => br.DebutPhaseQuestion, token, br => br.EstCourse && br.Reponses.Count > 0)) return;
 
             session = sessionStore.Get(code);
             bonusRound = session?.SerieCourante().BonusRound;
             if (session is null || bonusRound is null) return;
 
-            bonusRoundService.TerminerParTimeout(session, bonusRound, config);
+            lock (session.Lock) { bonusRoundService.TerminerParTimeout(session, bonusRound, config); }
             await DiffuserResultatAsync(session, bonusRound);
         }
         catch (OperationCanceledException)
@@ -74,7 +79,7 @@ public class BonusTimerCoordinator(
         }
     }
 
-    private async Task<bool> AttendreFinPhaseAsync(string code, int dureeMs, Func<BonusRound, DateTimeOffset?> debutSelector, CancellationToken token)
+    private async Task<bool> AttendreFinPhaseAsync(string code, int dureeMs, Func<BonusRound, DateTimeOffset?> debutSelector, CancellationToken token, Func<BonusRound, bool>? finAnticipee = null)
     {
         while (true)
         {
@@ -84,6 +89,8 @@ public class BonusTimerCoordinator(
             var bonusRound = session?.SerieCourante().BonusRound;
             var debut = bonusRound is null ? null : debutSelector(bonusRound);
             if (session is null || bonusRound is null || debut is null) return false;
+
+            if (finAnticipee is not null && finAnticipee(bonusRound)) return true;
 
             var pauseEnCoursMs = session.EnPause && session.PauseDemarreeA is not null
                 ? (DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds
@@ -117,12 +124,12 @@ public class BonusTimerCoordinator(
         if (session.HostConnectionId is not null)
         {
             await hubContext.Clients.Client(session.HostConnectionId).SendAsync("BonusQuestionStarted",
-                new BonusQuestionStartedForHostDto(track.Id, track.FilePath, track.RefrainStartMs, config.DureePhaseQuestionMs, session.Config.RalentissementBonusActive, session.Config.FacteurRalentissementBonus, bonusRound.Mode, qcmOptions));
+                new BonusQuestionStartedForHostDto(track.Id, track.FilePath, track.RefrainStartMs, config.DureePhaseQuestionMs, session.Config.RalentissementBonusActive, session.Config.FacteurRalentissementBonus, bonusRound.Mode, qcmOptions, bonusRound.EstCourse));
         }
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
         await hubContext.Clients.Clients(joueursConnectes).SendAsync("BonusQuestionStarted",
-            new BonusQuestionStartedForPlayersDto(config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index, bonusRound.Mode, qcmOptions));
+            new BonusQuestionStartedForPlayersDto(config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse));
     }
 
     private async Task DiffuserResultatAsync(GameSession session, BonusRound bonusRound)
@@ -135,7 +142,7 @@ public class BonusTimerCoordinator(
         var film = track is not null ? FilmNameResolver.Resoudre(track) : "?";
 
         await hubContext.Clients.Group(session.Id)
-            .SendAsync("BonusResult", new BonusResultDto(bonusRound.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, bonusRound.Cible, film, resultats));
+            .SendAsync("BonusResult", new BonusResultDto(bonusRound.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, bonusRound.Cible, film, resultats, bonusRound.EstCourse));
 
         await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
     }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -14,7 +15,7 @@ import '../models/score_update.dart';
 import '../models/serie_annoncee.dart';
 import '../models/team.dart';
 
-enum AppScreen { loading, connect, join, lobby, serieIntro, round, roundEnded, bonusStake, bonusQuestion, bonusResult, ended }
+enum AppScreen { loading, connect, join, lobby, serieIntro, round, roundEnded, bonusStake, bonusCourseIntro, bonusQuestion, bonusResult, ended }
 
 class PlayerInfo {
   PlayerInfo({required this.playerId, required this.nom, this.estConnecte = true, this.teamId});
@@ -32,9 +33,15 @@ const _prefsNom = 'blindify_nom';
 /// État central de l'app — un seul HubConnection, mirroring volontaire du pattern
 /// déjà validé côté host (`host/app.js`) : état global simple, écran courant piloté
 /// par les événements reçus du serveur plutôt qu'un Navigator.
+// Retour utilisateur : le mode course (voir BonusQuestionStarted.estCourse) passait inaperçu,
+// simple bannière au milieu de l'écran de question. Un écran dédié forcé pendant ce délai est
+// impossible à manquer, même en tapant vite sur la question précédente.
+const _dureeIntroCourse = Duration(milliseconds: 2500);
+
 class GameConnection extends ChangeNotifier {
   HubConnection? _hub;
   SharedPreferences? _prefs;
+  Timer? _introCourseTimer;
 
   String? playerId;
   String? serverUrl;
@@ -319,20 +326,41 @@ class GameConnection extends ChangeNotifier {
       notifyListeners();
     });
 
-    hub.on('BonusQuestionStarted', (args) {
-      final data = args![0] as Map<String, dynamic>;
-      bonusQuestion = BonusQuestionStarted.fromJson(data);
-      bonusAnswered = false;
-      screen = AppScreen.bonusQuestion;
-      notifyListeners();
-    });
+    hub.on('BonusQuestionStarted', (args) => onBonusQuestionStarted(args![0] as Map<String, dynamic>));
 
-    hub.on('BonusResult', (args) {
-      final data = args![0] as Map<String, dynamic>;
-      lastBonusResult = BonusResult.fromJson(data);
-      screen = AppScreen.bonusResult;
-      notifyListeners();
-    });
+    hub.on('BonusResult', (args) => onBonusResult(args![0] as Map<String, dynamic>));
+  }
+
+  // Extraits de _registerHandlers en méthodes nommées (visibilité fichier, pas privées) pour être
+  // exercables directement par des tests unitaires sans connexion SignalR réelle — voir
+  // app/test/services/game_connection_test.dart et docs/refactor-decisions.md section 4.
+  void onBonusQuestionStarted(Map<String, dynamic> data) {
+    bonusQuestion = BonusQuestionStarted.fromJson(data);
+    bonusAnswered = false;
+    _introCourseTimer?.cancel();
+
+    if (bonusQuestion!.estCourse) {
+      screen = AppScreen.bonusCourseIntro;
+      _introCourseTimer = Timer(_dureeIntroCourse, () {
+        // Ne bascule que si rien d'autre n'a fait avancer l'état entre-temps (BonusResult peut
+        // arriver très vite en mode course si un autre joueur a déjà répondu) — sinon on
+        // écraserait un écran plus récent avec l'ancien.
+        if (screen == AppScreen.bonusCourseIntro) {
+          screen = AppScreen.bonusQuestion;
+          notifyListeners();
+        }
+      });
+    } else {
+      screen = AppScreen.bonusQuestion;
+    }
+    notifyListeners();
+  }
+
+  void onBonusResult(Map<String, dynamic> data) {
+    _introCourseTimer?.cancel();
+    lastBonusResult = BonusResult.fromJson(data);
+    screen = AppScreen.bonusResult;
+    notifyListeners();
   }
 
   void _updatePlayerConnection(String id, bool estConnecte) {
@@ -419,7 +447,7 @@ class GameConnection extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _hub!.invoke('SubmitAnswer', args: [
+      await _hub?.invoke('SubmitAnswer', args: [
         {'reponse': reponse}
       ]);
     } catch (e) {
@@ -438,7 +466,7 @@ class GameConnection extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _hub!.invoke('SelectStake', args: [
+      await _hub?.invoke('SelectStake', args: [
         {'palierIndex': palierIndex}
       ]);
     } catch (e) {
@@ -454,7 +482,7 @@ class GameConnection extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _hub!.invoke('SubmitBonusAnswer', args: [
+      await _hub?.invoke('SubmitBonusAnswer', args: [
         {'reponse': reponse}
       ]);
     } catch (e) {
@@ -465,6 +493,7 @@ class GameConnection extends ChangeNotifier {
 
   @override
   void dispose() {
+    _introCourseTimer?.cancel();
     _hub?.stop();
     super.dispose();
   }

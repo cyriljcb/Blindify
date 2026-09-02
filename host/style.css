@@ -70,6 +70,17 @@ button.btn-secondary {
   box-shadow: 3px 3px 0 var(--ink);
 }
 
+/* Action destructrice (redémarrage serveur) — discrète dans le header, franche dans l'overlay de
+   confirmation, jamais confondue avec une action de jeu normale (cobalt). */
+button.btn-danger {
+  background: var(--surface-alt);
+  color: var(--coral);
+  border-color: var(--coral);
+  padding: 0.5rem 1rem;
+  font-size: 0.82rem;
+  box-shadow: 3px 3px 0 var(--coral);
+}
+
 .control-note {
   max-width: 900px;
   margin: 1rem auto 0;
@@ -130,6 +141,14 @@ main {
 }
 .hidden { display: none !important; }
 .screen--leaving, .screen--entering { opacity: 0; }
+
+/* Mode course (question bonus) — tout l'écran bascule en accent moutarde plutôt que de compter
+   uniquement sur la bannière ci-dessous pour signaler la variante de règle (retour utilisateur :
+   passait inaperçu). Même idée que app/lib/widgets/game_card.dart:accentColor côté Flutter. */
+.screen--course {
+  border-color: var(--mustard);
+  box-shadow: 7px 7px 0 var(--mustard);
+}
 
 /* Configuration du blindtest, imbriquée dans l'écran lobby (retour utilisateur du 2026-08-24 :
    créer le lobby avant de configurer) — reprend le rythme vertical de .screen puisque ce n'est
@@ -222,6 +241,68 @@ button#btn-end-game { background: var(--surface-alt); color: var(--ink); }
   letter-spacing: 0.16em;
   color: var(--ink);
   text-shadow: 3px 3px 0 var(--coral);
+}
+
+/* ----- QR code de connexion (lobby), aussi affiché ici en plus de l'écran public — retour
+   utilisateur : devoir ouvrir l'écran public seulement pour montrer le QR était pénible. Même
+   rendu que display.css:.qr-container (quiet-zone blanche généreuse, scannable sur fond sombre). */
+
+.qr-container {
+  width: min(240px, 55vw);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  padding: 0.85rem;
+  background: #ffffff;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: 6px 6px 0 var(--cobalt);
+}
+.qr-container:empty { display: none; }
+.qr-container svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ----- Bannière "course" (question bonus, retour utilisateur) — traitée comme une affichette
+   (icône + titre + règle), rotation légère et ombre dure façon .serie-intro-card, plutôt qu'un
+   simple paragraphe encadré qui passait inaperçu. ----- */
+
+.course-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  background: var(--surface-alt);
+  border: 3px solid var(--mustard);
+  border-radius: var(--radius);
+  padding: 0.85rem 1.2rem;
+  text-align: left;
+  transform: rotate(-1deg);
+  box-shadow: 5px 5px 0 var(--mustard);
+}
+.course-banner__icon {
+  font-size: 1.9rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.course-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.course-banner__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 1.05rem;
+  color: var(--mustard);
+}
+.course-banner__desc {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--ink);
 }
 
 /* ----- Annonce de série (avant le premier round de chaque série) ----- */

@@ -68,34 +68,49 @@ public class GameHub(
     public Task ConfigurerPartie(ConfigurerPartieRequestDto request)
     {
         var session = ResoudreSessionHost();
-        if (session.Etat != GameState.Lobby)
-            throw new HubException("La partie a déjà démarré — configuration verrouillée.");
-
-        var catalogue = tracksRepository.GetAll();
-        var dejaUtilises = new HashSet<string>();
-        var seriesList = new List<Series>();
-
-        foreach (var setup in request.SeriesSetups)
+        lock (session.Lock)
         {
-            if (setup.RoundModes.Count != setup.Config.NombreRoundsClassiques)
-                throw new HubException("RoundModes doit contenir exactement NombreRoundsClassiques entrées.");
+            if (session.Etat != GameState.Lobby)
+                throw new HubException("La partie a déjà démarré — configuration verrouillée.");
 
-            var morceaux = roundService.SelectionnerMorceaux(catalogue, setup.Tags, setup.Config.NombreRoundsClassiques, dejaUtilises, statsRepository.GetPlayCount);
-            if (morceaux.Count < setup.Config.NombreRoundsClassiques)
+            var tagsParSerie = SeriesPlanner.AssignerThemesAuxSeries(request.ThemesVivier, request.NombreSeries);
+            var catalogue = tracksRepository.GetAll();
+            var dejaUtilises = new HashSet<string>();
+            var seriesList = new List<Series>();
+
+            for (var index = 0; index < request.NombreSeries; index++)
             {
-                var themeLabel = setup.Tags.Count > 0 ? string.Join("/", setup.Tags) : "aléatoire";
-                throw new HubException(
-                    $"Thème « {themeLabel} » : seulement {morceaux.Count} morceau(x) disponible(s) pour {setup.Config.NombreRoundsClassiques} rounds demandés (déjà utilisés par une autre série exclus). Réduis le nombre de rounds ou choisis un thème plus large.");
+                var tags = tagsParSerie[index];
+                var morceaux = roundService.SelectionnerMorceaux(catalogue, tags, request.NombreRoundsClassiques, dejaUtilises, statsRepository.GetPlayCount);
+                if (morceaux.Count < request.NombreRoundsClassiques)
+                {
+                    var themeLabel = tags.Count > 0 ? string.Join("/", tags) : "aléatoire";
+                    throw new HubException(
+                        $"Thème « {themeLabel} » : seulement {morceaux.Count} morceau(x) disponible(s) pour {request.NombreRoundsClassiques} rounds demandés (déjà utilisés par une autre série exclus). Réduis le nombre de rounds ou choisis un thème plus large.");
+                }
+
+                var roundModes = SeriesPlanner.PickRandomRoundModes(request.NombreRoundsClassiques);
+                var rounds = morceaux.Select((track, i) => new Round { TrackId = track.Id, Mode = roundModes[i] }).ToList();
+                var seriesConfig = new SeriesConfig
+                {
+                    NombreRoundsClassiques = request.NombreRoundsClassiques,
+                    DureeFenetreReponseMs = request.DureeFenetreReponseMs,
+                    PointsMax = request.PointsMax,
+                    PointsMin = request.PointsMin,
+                    PenaliteMauvaiseReponseRatio = request.PenaliteMauvaiseReponseRatio,
+                    PenaliteAbsenceReponse = request.PenaliteAbsenceReponse,
+                    PaliersDeMise = SeriesPlanner.PaliersPourSerie(index, request.NombreSeries),
+                    DureePhaseMiseMs = request.DureePhaseMiseMs,
+                    DureePhaseQuestionMs = request.DureePhaseQuestionMs,
+                };
+                seriesList.Add(new Series { Index = index, Config = seriesConfig, Tags = tags, Rounds = rounds });
             }
 
-            var rounds = morceaux.Select((track, i) => new Round { TrackId = track.Id, Mode = setup.RoundModes[i] }).ToList();
-            seriesList.Add(new Series { Index = seriesList.Count, Config = setup.Config, Tags = setup.Tags, Rounds = rounds });
+            session.SeriesList = seriesList;
+            session.Config = request.Config ?? session.Config;
+            session.SerieCouranteIndex = 0;
+            session.RoundCourantIndex = -1;
         }
-
-        session.SeriesList = seriesList;
-        session.Config = request.Config ?? session.Config;
-        session.SerieCouranteIndex = 0;
-        session.RoundCourantIndex = -1;
 
         return Task.CompletedTask;
     }
@@ -106,16 +121,22 @@ public class GameHub(
         if (session.HostSecret != hostSecret)
             throw new HubException("Secret host invalide.");
 
-        session.HostConnectionId = Context.ConnectionId;
+        lock (session.Lock) { session.HostConnectionId = Context.ConnectionId; }
         sessionStore.AssocierConnexion(Context.ConnectionId, code);
         await Groups.AddToGroupAsync(Context.ConnectionId, code);
 
-        var round = session.RoundCourant();
-        if (round?.DebutRound is null)
-            return new HostStateSnapshotDto(session.EnPause, null, null, null, null, null, null, null);
+        Round? round;
+        long positionMs;
+        Track? track;
+        lock (session.Lock)
+        {
+            round = session.RoundCourant();
+            if (round?.DebutRound is null)
+                return new HostStateSnapshotDto(session.EnPause, null, null, null, null, null, null, null);
 
-        var track = tracksRepository.GetById(round.TrackId);
-        var positionMs = Math.Max(0, CalculerTempsEcouleMs(session, round));
+            track = tracksRepository.GetById(round.TrackId);
+            positionMs = Math.Max(0, CalculerTempsEcouleMs(session, round));
+        }
 
         return new HostStateSnapshotDto(
             session.EnPause,
@@ -131,32 +152,40 @@ public class GameHub(
     public async Task StartRound()
     {
         var session = ResoudreSessionHost();
-        if (session.SeriesList.Count == 0)
-            throw new HubException("Aucune série configurée — configure le blindtest (ConfigurerPartie) avant de le démarrer.");
+        Round round;
+        Series serie;
+        Track track;
+        List<QcmOptionDto>? qcmOptions;
 
-        if (session.RoundCourantIndex == -1) session.RoundCourantIndex = 0;
-
-        var serie = session.SerieCourante();
-        if (session.RoundCourantIndex >= serie.Rounds.Count)
-            throw new HubException("Plus de round classique à démarrer dans cette série.");
-
-        var round = serie.Rounds[session.RoundCourantIndex];
-        var track = tracksRepository.GetById(round.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
-
-        roundService.DemarrerRound(round, track, tracksRepository.GetAll(), serie.Tags, session.Config, DateTimeOffset.UtcNow);
-        session.Etat = GameState.EnCours;
-        statsRepository.IncrementPlayCount(track.Id);
-
-        var qcmOptions = round.QcmOptionTrackIds?
-            .Select(id => tracksRepository.GetById(id))
-            .Where(t => t is not null)
-            .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist, FilmNameResolver.Resoudre(t)))
-            .ToList();
-
-        if (qcmOptions is not null)
+        lock (session.Lock)
         {
-            AppliquerFeinteEventuelle(qcmOptions, track, round.Cible, session.Config);
-            AppliquerFeinteTexteEventuelle(qcmOptions, track, round.Cible, session.Config);
+            if (session.SeriesList.Count == 0)
+                throw new HubException("Aucune série configurée — configure le blindtest (ConfigurerPartie) avant de le démarrer.");
+
+            if (session.RoundCourantIndex == -1) session.RoundCourantIndex = 0;
+
+            serie = session.SerieCourante();
+            if (session.RoundCourantIndex >= serie.Rounds.Count)
+                throw new HubException("Plus de round classique à démarrer dans cette série.");
+
+            round = serie.Rounds[session.RoundCourantIndex];
+            track = tracksRepository.GetById(round.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
+
+            roundService.DemarrerRound(round, track, tracksRepository.GetAll(), serie.Tags, session.Config, DateTimeOffset.UtcNow);
+            session.Etat = GameState.EnCours;
+            statsRepository.IncrementPlayCount(track.Id);
+
+            qcmOptions = round.QcmOptionTrackIds?
+                .Select(id => tracksRepository.GetById(id))
+                .Where(t => t is not null)
+                .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist, FilmNameResolver.Resoudre(t)))
+                .ToList();
+
+            if (qcmOptions is not null)
+            {
+                AppliquerFeinteEventuelle(qcmOptions, track, round.Cible, session.Config);
+                AppliquerFeinteTexteEventuelle(qcmOptions, track, round.Cible, session.Config);
+            }
         }
 
         if (session.HostConnectionId is not null)
@@ -175,27 +204,32 @@ public class GameHub(
     public async Task StartBonusRound()
     {
         var session = ResoudreSessionHost();
-        if (session.SeriesList.Count == 0)
-            throw new HubException("Aucune série configurée — configure le blindtest (ConfigurerPartie) avant de le démarrer.");
+        Series serie;
 
-        var serie = session.SerieCourante();
+        lock (session.Lock)
+        {
+            if (session.SeriesList.Count == 0)
+                throw new HubException("Aucune série configurée — configure le blindtest (ConfigurerPartie) avant de le démarrer.");
 
-        if (serie.BonusRound is not null)
-            throw new HubException("La question bonus de cette série a déjà été démarrée.");
+            serie = session.SerieCourante();
 
-        var dejaUtilises = session.SeriesList
-            .SelectMany(s => s.Rounds.Select(r => r.TrackId))
-            .Concat(session.SeriesList.Where(s => s.BonusRound is not null).Select(s => s.BonusRound!.TrackId))
-            .ToHashSet();
+            if (serie.BonusRound is not null)
+                throw new HubException("La question bonus de cette série a déjà été démarrée.");
 
-        var morceaux = roundService.SelectionnerMorceaux(tracksRepository.GetAll(), serie.Tags, 1, dejaUtilises, statsRepository.GetPlayCount);
-        if (morceaux.Count == 0)
-            throw new HubException("Pas assez de morceaux disponibles pour la question bonus.");
+            var dejaUtilises = session.SeriesList
+                .SelectMany(s => s.Rounds.Select(r => r.TrackId))
+                .Concat(session.SeriesList.Where(s => s.BonusRound is not null).Select(s => s.BonusRound!.TrackId))
+                .ToHashSet();
 
-        var bonusRound = bonusRoundService.CreerBonusRound(morceaux[0], tracksRepository.GetAll(), serie.Tags, session.Config);
-        serie.BonusRound = bonusRound;
-        bonusRoundService.DemarrerPhaseMise(bonusRound, DateTimeOffset.UtcNow);
-        statsRepository.IncrementPlayCount(morceaux[0].Id);
+            var morceaux = roundService.SelectionnerMorceaux(tracksRepository.GetAll(), serie.Tags, 1, dejaUtilises, statsRepository.GetPlayCount);
+            if (morceaux.Count == 0)
+                throw new HubException("Pas assez de morceaux disponibles pour la question bonus.");
+
+            var bonusRound = bonusRoundService.CreerBonusRound(morceaux[0], tracksRepository.GetAll(), serie.Tags, session.Config);
+            serie.BonusRound = bonusRound;
+            bonusRoundService.DemarrerPhaseMise(bonusRound, DateTimeOffset.UtcNow);
+            statsRepository.IncrementPlayCount(morceaux[0].Id);
+        }
 
         await Clients.Group(session.Id).SendAsync("BonusStakeOptions", new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.Config.DureePhaseMiseMs, serie.Index));
 
@@ -222,23 +256,26 @@ public class GameHub(
     public Task NextRound()
     {
         var session = ResoudreSessionHost();
-        var serie = session.SerieCourante();
+        lock (session.Lock)
+        {
+            var serie = session.SerieCourante();
 
-        if (session.RoundCourantIndex + 1 < serie.Rounds.Count)
-        {
-            session.RoundCourantIndex++;
-        }
-        else if (session.SerieCouranteIndex + 1 < session.SeriesList.Count)
-        {
-            session.SerieCouranteIndex++;
-            session.RoundCourantIndex = -1;
-        }
-        else
-        {
-            // Dernière série épuisée — le host doit appeler StartBonusRound() puis EndGame(). On avance
-            // quand même le pointeur hors limites pour que StartRound() refuse désormais de rejouer le
-            // dernier round au lieu de le relancer silencieusement.
-            session.RoundCourantIndex++;
+            if (session.RoundCourantIndex + 1 < serie.Rounds.Count)
+            {
+                session.RoundCourantIndex++;
+            }
+            else if (session.SerieCouranteIndex + 1 < session.SeriesList.Count)
+            {
+                session.SerieCouranteIndex++;
+                session.RoundCourantIndex = -1;
+            }
+            else
+            {
+                // Dernière série épuisée — le host doit appeler StartBonusRound() puis EndGame(). On avance
+                // quand même le pointeur hors limites pour que StartRound() refuse désormais de rejouer le
+                // dernier round au lieu de le relancer silencieusement.
+                session.RoundCourantIndex++;
+            }
         }
 
         return Task.CompletedTask;
@@ -253,25 +290,35 @@ public class GameHub(
     public async Task<RoundAnswerResultDto> ValidateAnswerManually(ValidateAnswerManuallyRequestDto request)
     {
         var session = ResoudreSessionHost();
-        var round = session.RoundCourant() ?? throw new HubException("Aucun round en cours.");
-        var serie = session.SerieCourante();
+        RoundAnswer resultat;
+        Player joueur;
 
-        var resultat = roundService.ValiderManuellement(session, round, serie.Config, request.PlayerId, request.EstCorrecte)
+        lock (session.Lock)
+        {
+            var round = session.RoundCourant() ?? throw new HubException("Aucun round en cours.");
+            var serie = session.SerieCourante();
+
+            resultat = roundService.ValiderManuellement(session, round, serie.Config, request.PlayerId, request.EstCorrecte)
                        ?? throw new HubException("Aucune réponse enregistrée pour ce joueur sur ce round.");
+
+            joueur = session.Players.First(p => p.PlayerId == request.PlayerId);
+        }
 
         await Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
 
-        var joueur = session.Players.First(p => p.PlayerId == request.PlayerId);
         return new RoundAnswerResultDto(resultat.EstCorrecte, resultat.Points, joueur.Score);
     }
 
     public async Task PauseGame()
     {
         var session = ResoudreSessionHost();
-        if (session.EnPause) return;
+        lock (session.Lock)
+        {
+            if (session.EnPause) return;
 
-        session.EnPause = true;
-        session.PauseDemarreeA = DateTimeOffset.UtcNow;
+            session.EnPause = true;
+            session.PauseDemarreeA = DateTimeOffset.UtcNow;
+        }
 
         await Clients.Group(session.Id).SendAsync("GamePaused");
     }
@@ -279,19 +326,22 @@ public class GameHub(
     public async Task ResumeGame()
     {
         var session = ResoudreSessionHost();
-        if (!session.EnPause || session.PauseDemarreeA is null) return;
+        lock (session.Lock)
+        {
+            if (!session.EnPause || session.PauseDemarreeA is null) return;
 
-        var pauseMs = (long)(DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds;
+            var pauseMs = (long)(DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds;
 
-        var round = session.RoundCourant();
-        if (round?.DebutRound is not null) round.DureeEnPauseMs += pauseMs;
+            var round = session.RoundCourant();
+            if (round?.DebutRound is not null) round.DureeEnPauseMs += pauseMs;
 
-        var bonusRound = session.SerieCourante().BonusRound;
-        if (bonusRound is not null && (bonusRound.DebutPhaseMise is not null || bonusRound.DebutPhaseQuestion is not null))
-            bonusRound.DureeEnPauseMs += pauseMs;
+            var bonusRound = session.SerieCourante().BonusRound;
+            if (bonusRound is not null && (bonusRound.DebutPhaseMise is not null || bonusRound.DebutPhaseQuestion is not null))
+                bonusRound.DureeEnPauseMs += pauseMs;
 
-        session.EnPause = false;
-        session.PauseDemarreeA = null;
+            session.EnPause = false;
+            session.PauseDemarreeA = null;
+        }
 
         await Clients.Group(session.Id).SendAsync("GameResumed");
     }
@@ -299,7 +349,7 @@ public class GameHub(
     public async Task EndGame()
     {
         var session = ResoudreSessionHost();
-        session.Etat = GameState.Termine;
+        lock (session.Lock) { session.Etat = GameState.Termine; }
         timerCoordinator.Annuler(session.Id);
         bonusTimerCoordinator.Annuler(session.Id);
 
@@ -312,32 +362,35 @@ public class GameHub(
     public async Task RejouerPartie()
     {
         var session = ResoudreSessionHost();
-        if (session.Etat != GameState.Termine)
-            throw new HubException("La partie doit être terminée avant de pouvoir être relancée.");
-
-        var catalogue = tracksRepository.GetAll();
-        var dejaUtilises = new HashSet<string>();
-        var nouvellesSeries = new List<Series>();
-
-        foreach (var serie in session.SeriesList)
+        lock (session.Lock)
         {
-            var modes = serie.Rounds.Select(r => r.Mode).ToList();
-            var morceaux = roundService.SelectionnerMorceaux(catalogue, serie.Tags, modes.Count, dejaUtilises, statsRepository.GetPlayCount);
-            if (morceaux.Count < modes.Count)
-                throw new HubException("Pas assez de morceaux disponibles dans le catalogue pour relancer cette série.");
+            if (session.Etat != GameState.Termine)
+                throw new HubException("La partie doit être terminée avant de pouvoir être relancée.");
 
-            var rounds = morceaux.Select((track, i) => new Round { TrackId = track.Id, Mode = modes[i] }).ToList();
-            nouvellesSeries.Add(new Series { Index = nouvellesSeries.Count, Config = serie.Config, Tags = serie.Tags, Rounds = rounds });
+            var catalogue = tracksRepository.GetAll();
+            var dejaUtilises = new HashSet<string>();
+            var nouvellesSeries = new List<Series>();
+
+            foreach (var serie in session.SeriesList)
+            {
+                var modes = serie.Rounds.Select(r => r.Mode).ToList();
+                var morceaux = roundService.SelectionnerMorceaux(catalogue, serie.Tags, modes.Count, dejaUtilises, statsRepository.GetPlayCount);
+                if (morceaux.Count < modes.Count)
+                    throw new HubException("Pas assez de morceaux disponibles dans le catalogue pour relancer cette série.");
+
+                var rounds = morceaux.Select((track, i) => new Round { TrackId = track.Id, Mode = modes[i] }).ToList();
+                nouvellesSeries.Add(new Series { Index = nouvellesSeries.Count, Config = serie.Config, Tags = serie.Tags, Rounds = rounds });
+            }
+
+            session.SeriesList = nouvellesSeries;
+            session.SerieCouranteIndex = 0;
+            session.RoundCourantIndex = -1;
+            session.Etat = GameState.Lobby;
+            session.EnPause = false;
+            session.PauseDemarreeA = null;
+
+            foreach (var player in session.Players) player.Score = 0;
         }
-
-        session.SeriesList = nouvellesSeries;
-        session.SerieCouranteIndex = 0;
-        session.RoundCourantIndex = -1;
-        session.Etat = GameState.Lobby;
-        session.EnPause = false;
-        session.PauseDemarreeA = null;
-
-        foreach (var player in session.Players) player.Score = 0;
 
         await Clients.Group(session.Id).SendAsync("GameRestarted");
     }
@@ -349,18 +402,30 @@ public class GameHub(
         var session = sessionStore.Get(code);
         if (session is null) return new JoinGameResultDto(false, "Partie introuvable.", 0, null, [], []);
 
-        var joueur = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
-        var estReconnexion = joueur is not null;
+        Player joueur;
+        bool estReconnexion;
+        List<TeamDto> teams;
+        List<PlayerSummaryDto> joueurs;
 
-        if (joueur is null)
+        lock (session.Lock)
         {
-            joueur = new Player { PlayerId = playerId, Nom = nom, ConnectionId = Context.ConnectionId, EstConnecte = true };
-            session.Players.Add(joueur);
-        }
-        else
-        {
-            joueur.ConnectionId = Context.ConnectionId;
-            joueur.EstConnecte = true;
+            var existant = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
+            estReconnexion = existant is not null;
+
+            if (existant is null)
+            {
+                joueur = new Player { PlayerId = playerId, Nom = nom, ConnectionId = Context.ConnectionId, EstConnecte = true };
+                session.Players.Add(joueur);
+            }
+            else
+            {
+                joueur = existant;
+                joueur.ConnectionId = Context.ConnectionId;
+                joueur.EstConnecte = true;
+            }
+
+            teams = session.Teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList();
+            joueurs = session.Players.Select(p => new PlayerSummaryDto(p.PlayerId, p.Nom, p.EstConnecte, p.TeamId)).ToList();
         }
 
         sessionStore.AssocierConnexion(Context.ConnectionId, code);
@@ -371,8 +436,6 @@ public class GameHub(
         else
             await Clients.OthersInGroup(code).SendAsync("PlayerJoined", new PlayerJoinedDto(joueur.PlayerId, joueur.Nom));
 
-        var teams = session.Teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList();
-        var joueurs = session.Players.Select(p => new PlayerSummaryDto(p.PlayerId, p.Nom, p.EstConnecte, p.TeamId)).ToList();
         return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs);
     }
 
@@ -381,30 +444,44 @@ public class GameHub(
     public async Task JoinTeam(string teamId)
     {
         var session = ResoudreSession();
-        var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
-                     ?? throw new HubException("Joueur non reconnu dans cette partie.");
+        string playerId;
+        string teamIdRetenu;
 
-        var team = session.Teams.FirstOrDefault(t => t.Id == teamId)
-                   ?? throw new HubException("Équipe introuvable.");
+        lock (session.Lock)
+        {
+            var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
+                         ?? throw new HubException("Joueur non reconnu dans cette partie.");
 
-        joueur.TeamId = team.Id;
+            var team = session.Teams.FirstOrDefault(t => t.Id == teamId)
+                       ?? throw new HubException("Équipe introuvable.");
 
-        await Clients.Group(session.Id).SendAsync("PlayerTeamChanged", new PlayerTeamChangedDto(joueur.PlayerId, team.Id));
+            joueur.TeamId = team.Id;
+            playerId = joueur.PlayerId;
+            teamIdRetenu = team.Id;
+        }
+
+        await Clients.Group(session.Id).SendAsync("PlayerTeamChanged", new PlayerTeamChangedDto(playerId, teamIdRetenu));
     }
 
     public async Task<RoundAnswerResultDto> SubmitAnswer(SubmitAnswerRequestDto request)
     {
         var session = ResoudreSession();
-        var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
+        RoundAnswer? reponse;
+        Player joueur;
+
+        lock (session.Lock)
+        {
+            joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
                      ?? throw new HubException("Joueur non reconnu dans cette partie.");
 
-        var round = session.RoundCourant() ?? throw new HubException("Aucun round en cours.");
-        var track = tracksRepository.GetById(round.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
-        var serie = session.SerieCourante();
+            var round = session.RoundCourant() ?? throw new HubException("Aucun round en cours.");
+            var track = tracksRepository.GetById(round.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
+            var serie = session.SerieCourante();
 
-        var reponse = roundService.SoumettreReponse(session, round, serie.Config, track, joueur.PlayerId, request.Reponse, DateTimeOffset.UtcNow);
-        if (reponse is null)
-            return new RoundAnswerResultDto(false, 0, joueur.Score);
+            reponse = roundService.SoumettreReponse(session, round, serie.Config, track, joueur.PlayerId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
+            if (reponse is null)
+                return new RoundAnswerResultDto(false, 0, joueur.Score);
+        }
 
         await Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
 
@@ -414,27 +491,36 @@ public class GameHub(
     public bool SelectStake(SelectStakeRequestDto request)
     {
         var session = ResoudreSession();
-        var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
-                     ?? throw new HubException("Joueur non reconnu dans cette partie.");
+        lock (session.Lock)
+        {
+            var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
+                         ?? throw new HubException("Joueur non reconnu dans cette partie.");
 
-        var bonusRound = session.SerieCourante().BonusRound ?? throw new HubException("Aucune question bonus en cours.");
+            var bonusRound = session.SerieCourante().BonusRound ?? throw new HubException("Aucune question bonus en cours.");
 
-        return bonusRoundService.EnregistrerMise(session, bonusRound, joueur.PlayerId, request.PalierIndex);
+            return bonusRoundService.EnregistrerMise(session, bonusRound, joueur.PlayerId, request.PalierIndex);
+        }
     }
 
     public async Task<BonusAnswerResultDto> SubmitBonusAnswer(SubmitBonusAnswerRequestDto request)
     {
         var session = ResoudreSession();
-        var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
+        BonusAnswer? reponse;
+        Player joueur;
+
+        lock (session.Lock)
+        {
+            joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
                      ?? throw new HubException("Joueur non reconnu dans cette partie.");
 
-        var serie = session.SerieCourante();
-        var bonusRound = serie.BonusRound ?? throw new HubException("Aucune question bonus en cours.");
-        var track = tracksRepository.GetById(bonusRound.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
+            var serie = session.SerieCourante();
+            var bonusRound = serie.BonusRound ?? throw new HubException("Aucune question bonus en cours.");
+            var track = tracksRepository.GetById(bonusRound.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
 
-        var reponse = bonusRoundService.SoumettreReponse(session, bonusRound, serie.Config, track, joueur.PlayerId, request.Reponse, DateTimeOffset.UtcNow);
-        if (reponse is null)
-            return new BonusAnswerResultDto(false, 0, joueur.Score);
+            reponse = bonusRoundService.SoumettreReponse(session, bonusRound, serie.Config, track, joueur.PlayerId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
+            if (reponse is null)
+                return new BonusAnswerResultDto(false, 0, joueur.Score);
+        }
 
         await Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
 
@@ -450,12 +536,19 @@ public class GameHub(
 
         if (code is not null && sessionStore.Get(code) is { } session)
         {
-            var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
-            if (joueur is not null)
+            string? playerId = null;
+            lock (session.Lock)
             {
-                joueur.EstConnecte = false;
-                await Clients.Group(code).SendAsync("PlayerDisconnected", new PlayerConnectionChangedDto(joueur.PlayerId, false));
+                var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
+                if (joueur is not null)
+                {
+                    joueur.EstConnecte = false;
+                    playerId = joueur.PlayerId;
+                }
             }
+
+            if (playerId is not null)
+                await Clients.Group(code).SendAsync("PlayerDisconnected", new PlayerConnectionChangedDto(playerId, false));
         }
 
         await base.OnDisconnectedAsync(exception);

@@ -7,6 +7,15 @@ public interface IAnswerMatcher
 
     string Normaliser(string texte);
 
-    /// <summary>seuil = max(1, floor(longueur(texteNormalisé) × toleranceRatio)).</summary>
-    bool EstCorrecte(string reponseJoueur, string reponseAttendue, double toleranceRatio);
+    /// <summary>Trois zones selon la longueur du texte attendu normalisé (voir GameConfig) :
+    /// en dessous de longueurMinimalePourToleranceFixe, réponse exacte exigée ; entre ce seuil et
+    /// longueurMinimalePourTolerance, écart toléré fixe de toleranceFixeReponseCourte caractères ;
+    /// au-delà, seuil = max(1, floor(longueur(texteNormalisé) × toleranceRatio)).</summary>
+    bool EstCorrecte(
+        string reponseJoueur,
+        string reponseAttendue,
+        double toleranceRatio,
+        int longueurMinimalePourTolerance,
+        int longueurMinimalePourToleranceFixe,
+        int toleranceFixeReponseCourte);
 }

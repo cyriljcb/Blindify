@@ -31,6 +31,7 @@ class BonusResult {
     required this.cible,
     required this.film,
     required this.resultats,
+    this.estCourse = false,
   });
 
   final String trackId;
@@ -47,12 +48,9 @@ class BonusResult {
 
   final List<BonusResultEntry> resultats;
 
-  /// Ce qui doit être mis en avant comme "bonne réponse" à l'écran, selon la cible.
-  String get reponseAttendue => switch (cible) {
-        'Film' => film,
-        'Auteur' => artist,
-        _ => title,
-      };
+  /// "Course" (retour utilisateur) : seul le premier qui a répondu apparaît dans `resultats` — les
+  /// autres n'ont ni gagné ni perdu leur mise. Voir BonusRound.EstCourse côté serveur.
+  final bool estCourse;
 
   factory BonusResult.fromJson(Map<String, dynamic> json) => BonusResult(
         trackId: json['trackId'] as String,
@@ -64,5 +62,6 @@ class BonusResult {
         resultats: (json['resultats'] as List<dynamic>)
             .map((e) => BonusResultEntry.fromJson(e as Map<String, dynamic>))
             .toList(),
+        estCourse: json['estCourse'] as bool? ?? false,
       );
 }

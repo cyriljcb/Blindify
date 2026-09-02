@@ -26,12 +26,16 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
             ? RoundCible.Film
             : Random.Shared.Next(2) == 0 && TitreVariantes.EstEligibleCommeCible(track.Title) ? RoundCible.Titre : RoundCible.Auteur;
         var mode = (RoundMode)Random.Shared.Next(3);
+        // "Course" (retour utilisateur) : réservée au Qcm — répondre à voix haute ou par écrit n'a
+        // pas de sens pour trancher qui a "buzzé" en premier, alors que les options Qcm restent le
+        // même clic qu'un round normal, seul l'ORDRE d'arrivée compte côté serveur.
+        var estCourse = mode == RoundMode.Qcm && Random.Shared.NextDouble() < config.ProbabiliteBonusCourse;
 
-        var bonusRound = new BonusRound { TrackId = track.Id, Cible = cible, Mode = mode };
+        var bonusRound = new BonusRound { TrackId = track.Id, Cible = cible, Mode = mode, EstCourse = estCourse };
 
         if (mode == RoundMode.Qcm)
         {
-            var pool = RoundService.PoolPourQcm(cible, catalogueComplet, tags);
+            var pool = RoundService.PoolPourQcm(cible, track, catalogueComplet, tags);
             var options = qcmGenerator.GenererOptions(track, pool, config, Random.Shared);
             bonusRound.QcmOptionTrackIds = options.OptionsTrackIds.ToList();
         }
@@ -65,11 +69,14 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
         bonusRound.DureeEnPauseMs = 0;
     }
 
-    public BonusAnswer? SoumettreReponse(GameSession session, BonusRound bonusRound, SeriesConfig config, Track track, string playerId, string reponse, DateTimeOffset maintenant)
+    public BonusAnswer? SoumettreReponse(GameSession session, BonusRound bonusRound, SeriesConfig config, Track track, string playerId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null)
     {
         if (session.EnPause) return null;
         if (bonusRound.DebutPhaseQuestion is null) return null;
         if (bonusRound.Reponses.Any(r => r.PlayerId == playerId)) return null;
+        // Course déjà tranchée par un autre joueur (retour utilisateur) : "c'est seulement le
+        // premier qui répond qui a ou perd les points" — les suivants n'affectent plus rien.
+        if (bonusRound.EstCourse && bonusRound.Reponses.Count > 0) return null;
 
         var mise = bonusRound.Mises.FirstOrDefault(m => m.PlayerId == playerId);
         if (mise is null) return null;
@@ -82,9 +89,14 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
         };
         var estCorrecte = bonusRound.Mode switch
         {
-            RoundMode.Qcm => reponse == track.Id,
+            RoundMode.Qcm => RoundService.EstQcmCorrect(bonusRound.Cible, track, reponse, resolveTrack),
             RoundMode.PremiereLettre => reponsesAcceptables.Any(texte => EstPremiereLettreCorrecte(reponse, texte)),
-            _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(reponse, texte, session.Config.SeuilToleranceLevenshteinRatio)),
+            _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(
+                reponse, texte,
+                session.Config.SeuilToleranceLevenshteinRatio,
+                session.Config.LongueurMinimalePourTolerance,
+                session.Config.LongueurMinimalePourToleranceFixe,
+                session.Config.ToleranceFixeReponseCourte)),
         };
         var valeurMise = bonusScoring.ValeurPalier(config, mise.PalierIndex);
         var points = bonusScoring.PointsResultat(valeurMise, estCorrecte);
@@ -107,6 +119,11 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
     public void TerminerParTimeout(GameSession session, BonusRound bonusRound, SeriesConfig config)
     {
         var repondants = bonusRound.Reponses.Select(r => r.PlayerId).ToHashSet();
+
+        // Course déjà tranchée (un joueur a répondu, juste ou faux) : les autres mises ne sont ni
+        // gagnées ni perdues — voir SoumettreReponse. Seule l'absence TOTALE de réponse déclenche
+        // la perte générale ci-dessous (comportement inchangé pour les autres modes).
+        if (bonusRound.EstCourse && repondants.Count > 0) return;
 
         foreach (var mise in bonusRound.Mises.Where(m => !repondants.Contains(m.PlayerId)))
         {

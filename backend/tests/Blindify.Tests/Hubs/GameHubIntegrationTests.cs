@@ -31,27 +31,24 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         await _playerConnection.DisposeAsync();
     }
 
-    private static SeriesConfig NouveauSeriesConfig(int nombreRounds) => new()
-    {
-        NombreRoundsClassiques = nombreRounds,
-        DureeFenetreReponseMs = 800,
-        PointsMax = 100,
-        PointsMin = 20,
-        PenaliteMauvaiseReponseRatio = 0.5,
-        PenaliteAbsenceReponse = -5,
-        PaliersDeMise = [10, 20, 30, 50],
-        DureePhaseMiseMs = 5000,
-        DureePhaseQuestionMs = 5000
-    };
-
     // CreateGame ne configure plus rien (retour utilisateur du 2026-08-24 : permettre de recréer une
     // configuration ratée sans recréer le lobby) — regroupe CreateGame + ConfigurerPartie pour garder
-    // les tests concis, comme l'ancien CreateGame combiné.
+    // les tests concis, comme l'ancien CreateGame combiné. ConfigurerPartieRequestDto est une
+    // intention (nombre de séries/rounds/durée + vivier de thèmes) depuis docs/refactor-decisions.md
+    // section 1 — le serveur (SeriesPlanner) calcule désormais la répartition des thèmes, les paliers
+    // de mise et le mode de chaque round, qui n'est donc plus imposable directement par le test.
     private static async Task<CreateGameResultDto> CreerEtConfigurerPartie(
-        HubConnection host, bool modeEquipe, List<SeriesSetupDto> seriesSetups, GameConfig? config, List<string>? nomsEquipes = null)
+        HubConnection host, bool modeEquipe, int nombreRoundsClassiques, List<string> themesVivier, GameConfig? config, List<string>? nomsEquipes = null)
     {
         var creation = await host.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(modeEquipe, nomsEquipes));
-        await host.InvokeAsync("ConfigurerPartie", new ConfigurerPartieRequestDto(seriesSetups, config));
+        await host.InvokeAsync("ConfigurerPartie", new ConfigurerPartieRequestDto(
+            NombreSeries: 1,
+            NombreRoundsClassiques: nombreRoundsClassiques,
+            DureeFenetreReponseMs: 800,
+            ThemesVivier: themesVivier,
+            Config: config,
+            DureePhaseMiseMs: 5000,
+            DureePhaseQuestionMs: 5000));
         return creation;
     }
 
@@ -68,19 +65,33 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _playerConnection.On<RoundEndedDto>("RoundEnded", payload => roundEndedTcs.TrySetResult(payload));
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
 
-        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+        // Round.Mode est désormais tiré aléatoirement côté serveur (SeriesPlanner.PickRandomRoundModes,
+        // docs/refactor-decisions.md section 1) — ce test a besoin d'un round Qcm pour pouvoir asserter
+        // sur QcmOptions ; on relance la création de partie jusqu'à l'obtenir plutôt que de figer
+        // artificiellement le mode (même stratégie que QcmFeinteTexteArtiste_ProbabiliteMaximale...
+        // ci-dessous pour la combinaison Cible/TrackId).
+        CreateGameResultDto creation = null!;
+        JoinGameResultDto join = null!;
+        for (var tentative = 0; tentative < 50; tentative++)
+        {
+            roundStartedHost = null;
+            roundStartedPlayer = null;
+            creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+            join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+            await _hostConnection.InvokeAsync("StartRound");
+            await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+            if (roundStartedHost!.Mode == RoundMode.Qcm) break;
+
+            // Tentative abandonnée : annule le minuteur de round de fond avant de recréer une partie,
+            // sinon son RoundEnded tardif (naturel, personne n'a répondu) arrive plus tard sur cette
+            // même connexion (restée membre du groupe de la partie abandonnée) et pollue le
+            // roundEndedTcs ci-dessous avec le mauvais morceau.
+            await _hostConnection.InvokeAsync("EndGame");
+        }
 
         Assert.Equal(5, creation.Code.Length);
-
-        var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
         Assert.True(join.Success);
         Assert.Equal(0, join.Score);
-
-        await _hostConnection.InvokeAsync("StartRound");
-
-        await AttendreAsync(() => roundStartedPlayer is not null);
-        await AttendreAsync(() => roundStartedHost is not null);
 
         Assert.Equal(RoundMode.Qcm, roundStartedPlayer!.Mode);
         Assert.NotNull(roundStartedPlayer.QcmOptions);
@@ -113,8 +124,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         var roundEndedTcs = new TaskCompletionSource<RoundEndedDto>();
         _hostConnection.On<RoundEndedDto>("RoundEnded", payload => roundEndedTcs.TrySetResult(payload));
 
-        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+        await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
 
         await _hostConnection.InvokeAsync("StartRound");
         await AvecTimeout(roundEndedTcs.Task, TimeSpan.FromSeconds(5));
@@ -136,8 +146,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         // Catalogue de test réduit à des morceaux "disney" sans tags (voir GameHubTestFactory) —
         // thème vide ("aléatoire") pour ne pas dépendre d'un tag qui n'existe pas dans ce catalogue.
-        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
         await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
 
         await _hostConnection.InvokeAsync("AnnoncerSerieCourante");
@@ -154,12 +163,11 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     [Fact]
     public async Task ConfigurerPartie_ApresLeDemarrage_EstRefusee()
     {
-        await CreerEtConfigurerPartie(_hostConnection, false,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+        await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
         await _hostConnection.InvokeAsync("StartRound");
 
         var exception = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync(
-            "ConfigurerPartie", new ConfigurerPartieRequestDto([new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null)));
+            "ConfigurerPartie", new ConfigurerPartieRequestDto(1, 1, 800, [], null, DureePhaseMiseMs: 5000, DureePhaseQuestionMs: 5000)));
         Assert.Contains("déjà démarré", exception.Message);
     }
 
@@ -181,7 +189,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         // voir GameHubTestFactory : seulement 4 morceaux) — ne doit pas laisser de configuration
         // partielle derrière lui.
         var premierEssai = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync(
-            "ConfigurerPartie", new ConfigurerPartieRequestDto([new SeriesSetupDto(NouveauSeriesConfig(10), Enumerable.Repeat(RoundMode.Qcm, 10).ToList(), [])], null)));
+            "ConfigurerPartie", new ConfigurerPartieRequestDto(1, 10, 800, [], null, DureePhaseMiseMs: 5000, DureePhaseQuestionMs: 5000)));
         Assert.Contains("seulement", premierEssai.Message);
 
         var exceptionAvantReconfig = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync("StartRound"));
@@ -189,7 +197,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         // Reconfiguration réussie, sans recréer le lobby.
         await _hostConnection.InvokeAsync(
-            "ConfigurerPartie", new ConfigurerPartieRequestDto([new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null));
+            "ConfigurerPartie", new ConfigurerPartieRequestDto(1, 1, 800, [], null, DureePhaseMiseMs: 5000, DureePhaseQuestionMs: 5000));
 
         RoundStartedForHostDto? roundStartedHost = null;
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
@@ -207,17 +215,25 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _hostConnection.On<RoundEndedDto>("RoundEnded", payload => roundEndedTcs.TrySetResult(payload));
         _hostConnection.On("GameRestarted", () => gameRestartedTcs.TrySetResult());
 
-        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
-
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
-
         RoundStartedForPlayersDto? roundStartedPlayer = null;
         RoundStartedForHostDto? roundStartedHost = null;
         _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
-        await _hostConnection.InvokeAsync("StartRound");
-        await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+
+        CreateGameResultDto creation = null!;
+        for (var tentative = 0; tentative < 50; tentative++)
+        {
+            roundStartedHost = null;
+            roundStartedPlayer = null;
+            creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+            await _hostConnection.InvokeAsync("StartRound");
+            await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+            if (roundStartedHost!.Mode == RoundMode.Qcm) break;
+
+            // Voir commentaire équivalent dans PartieComplete_... ci-dessus.
+            await _hostConnection.InvokeAsync("EndGame");
+        }
 
         var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
         var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
@@ -244,25 +260,6 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     [Fact]
     public async Task ModeEquipe_CreationEtJoinTeam_AgregeLeScoreParEquipe()
     {
-        var creation = await CreerEtConfigurerPartie(_hostConnection, true,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null, nomsEquipes: ["Rouge", "Bleu"]);
-
-        Assert.Equal(2, creation.Teams.Count);
-        Assert.Contains(creation.Teams, t => t.Nom == "Rouge");
-        var equipeRouge = creation.Teams.First(t => t.Nom == "Rouge");
-
-        var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
-        Assert.Equal(2, join.Teams.Count);
-        Assert.Null(join.TeamId); // pas encore rejoint d'équipe
-
-        var teamChangedTcs = new TaskCompletionSource<PlayerTeamChangedDto>();
-        _hostConnection.On<PlayerTeamChangedDto>("PlayerTeamChanged", payload => teamChangedTcs.TrySetResult(payload));
-
-        await _playerConnection.InvokeAsync("JoinTeam", equipeRouge.Id);
-        var teamChanged = await AvecTimeout(teamChangedTcs.Task, TimeSpan.FromSeconds(5));
-        Assert.Equal("player-1", teamChanged.PlayerId);
-        Assert.Equal(equipeRouge.Id, teamChanged.TeamId);
-
         RoundStartedForPlayersDto? roundStartedPlayer = null;
         RoundStartedForHostDto? roundStartedHost = null;
         var scoreUpdates = new List<ScoreUpdateDto>();
@@ -270,8 +267,33 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
         _playerConnection.On<ScoreUpdateDto>("ScoreUpdate", scores => scoreUpdates.Add(scores));
 
-        await _hostConnection.InvokeAsync("StartRound");
-        await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+        CreateGameResultDto creation = null!;
+        TeamDto equipeRouge = null!;
+        for (var tentative = 0; tentative < 50; tentative++)
+        {
+            roundStartedHost = null;
+            roundStartedPlayer = null;
+
+            creation = await CreerEtConfigurerPartie(_hostConnection, true, 1, [], null, nomsEquipes: ["Rouge", "Bleu"]);
+            equipeRouge = creation.Teams.First(t => t.Nom == "Rouge");
+
+            var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+            if (tentative == 0)
+            {
+                Assert.Equal(2, creation.Teams.Count);
+                Assert.Contains(creation.Teams, t => t.Nom == "Rouge");
+                Assert.Equal(2, join.Teams.Count);
+                Assert.Null(join.TeamId); // pas encore rejoint d'équipe
+            }
+
+            await _playerConnection.InvokeAsync("JoinTeam", equipeRouge.Id);
+            await _hostConnection.InvokeAsync("StartRound");
+            await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+            if (roundStartedHost!.Mode == RoundMode.Qcm) break;
+
+            // Voir commentaire équivalent dans PartieComplete_... ci-dessus.
+            await _hostConnection.InvokeAsync("EndGame");
+        }
 
         var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
         var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
@@ -310,12 +332,20 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
 
         var config = new GameConfig { ProbabiliteQcmPiege = 0, ProbabiliteQcmFeinteChamp = 1.0 };
-        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], config);
 
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
-        await _hostConnection.InvokeAsync("StartRound");
-        await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+        for (var tentative = 0; tentative < 50; tentative++)
+        {
+            roundStartedHost = null;
+            roundStartedPlayer = null;
+            var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], config);
+            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", $"player-champ-{tentative}");
+            await _hostConnection.InvokeAsync("StartRound");
+            await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+            if (roundStartedHost!.Mode == RoundMode.Qcm) break;
+
+            // Voir commentaire équivalent dans PartieComplete_... ci-dessus.
+            await _hostConnection.InvokeAsync("EndGame");
+        }
 
         var correctId = roundStartedHost!.TrackId;
         var champAttendu = roundStartedHost.Cible == RoundCible.Titre ? auteursParId[correctId] : titresParId[correctId];
@@ -332,9 +362,11 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     public async Task QcmFeinteTexteArtiste_ProbabiliteMaximale_UnDistracteurAfficheLeLeurreInvente()
     {
         // Seul t1 (voir GameHubTestFactory) a un TrapTextArtist renseigné. Le morceau du round est
-        // tiré au hasard dans les 4 morceaux du catalogue (RoundService.SelectionnerMorceaux), et la
-        // cible (Titre/Auteur) l'est aussi séparément à 50/50 (RoundService.DemarrerRound) : on relance
-        // des parties jusqu'à tomber sur (t1, Auteur), seule combinaison où la feinte s'applique.
+        // tiré au hasard dans les 4 morceaux du catalogue (RoundService.SelectionnerMorceaux), la
+        // cible (Titre/Auteur) l'est aussi séparément à 50/50 (RoundService.DemarrerRound), et depuis
+        // docs/refactor-decisions.md section 1 le Mode l'est également côté serveur
+        // (SeriesPlanner.PickRandomRoundModes) : on relance des parties jusqu'à tomber sur
+        // (t1, Auteur, Qcm), seule combinaison où la feinte s'applique et où QcmOptions est peuplé.
         RoundStartedForPlayersDto? roundStartedPlayer = null;
         RoundStartedForHostDto? roundStartedHost = null;
         _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
@@ -342,22 +374,22 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         var config = new GameConfig { ProbabiliteQcmPiege = 0, ProbabiliteQcmFeinteChamp = 0, ProbabiliteQcmFeinteTexteArtiste = 1.0 };
 
-        bool Trouve() => roundStartedHost is { Cible: RoundCible.Auteur, TrackId: "t1" };
+        bool Trouve() => roundStartedHost is { Cible: RoundCible.Auteur, TrackId: "t1", Mode: RoundMode.Qcm };
 
         for (var tentative = 0; tentative < 200 && !Trouve(); tentative++)
         {
             roundStartedPlayer = null;
             roundStartedHost = null;
 
-            var creation = await CreerEtConfigurerPartie(_hostConnection, false,
-                [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], config);
+            var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], config);
 
             await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", $"player-texte-{tentative}");
             await _hostConnection.InvokeAsync("StartRound");
             await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+            if (!Trouve()) await _hostConnection.InvokeAsync("EndGame");
         }
 
-        Assert.True(Trouve(), "Pas obtenu (t1, Auteur) en 200 tentatives.");
+        Assert.True(Trouve(), "Pas obtenu (t1, Auteur, Qcm) en 200 tentatives.");
 
         var distracteurs = roundStartedPlayer!.QcmOptions!.Where(o => o.TrackId != roundStartedHost!.TrackId);
         Assert.Contains("Faux Artiste Test", distracteurs.Select(o => o.Artist));
@@ -366,8 +398,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     [Fact]
     public async Task JoinGame_RenvoieLeRosterCompletYComprisSoiMeme()
     {
-        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
 
         // Retour utilisateur : un joueur seul se voyait comme "0 joueur connecté" (PlayerJoined
         // n'est diffusé qu'aux AUTRES joueurs déjà présents) — le roster renvoyé par JoinGame
@@ -407,12 +438,19 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
 
-        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+        for (var tentative = 0; tentative < 50; tentative++)
+        {
+            roundStartedHost = null;
+            roundStartedPlayer = null;
+            var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", $"player-pause-{tentative}");
+            await _hostConnection.InvokeAsync("StartRound");
+            await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+            if (roundStartedHost!.Mode == RoundMode.Qcm) break;
 
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
-        await _hostConnection.InvokeAsync("StartRound");
-        await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
+            // Voir commentaire équivalent dans PartieComplete_... ci-dessus.
+            await _hostConnection.InvokeAsync("EndGame");
+        }
 
         await _hostConnection.InvokeAsync("PauseGame");
         await AttendreAsync(() => gamePausedTcs.Task.IsCompleted);
@@ -443,8 +481,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         RoundStartedForHostDto? roundStartedHost = null;
         _hostConnection.On<RoundStartedForHostDto>("RoundStarted", payload => roundStartedHost = payload);
 
-        var creation = await CreerEtConfigurerPartie(_hostConnection, false,
-            [new SeriesSetupDto(NouveauSeriesConfig(1), [RoundMode.Qcm], [])], null);
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
 
         await _hostConnection.InvokeAsync("StartRound");
         await AttendreAsync(() => roundStartedHost is not null);

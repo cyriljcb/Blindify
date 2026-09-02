@@ -68,7 +68,7 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
 
         if (round.Mode == RoundMode.Qcm)
         {
-            var pool = PoolPourQcm(round.Cible, catalogueComplet, tags);
+            var pool = PoolPourQcm(round.Cible, track, catalogueComplet, tags);
             var options = qcmGenerator.GenererOptions(track, pool, config, Random.Shared);
             round.QcmOptionTrackIds = options.OptionsTrackIds.ToList();
         }
@@ -80,20 +80,36 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     /// Cible Film : restreint aux autres morceaux "disney" (seuls à avoir un nom de film cohérent) —
     /// jamais de repli catalogue complet ici, mieux vaut moins d'options que des incohérentes.
     /// Sinon : respecte le thème (tags), avec repli sur le catalogue complet seulement si le pool
-    /// filtré est trop restreint pour fournir les 3 distracteurs + la bonne réponse.</summary>
+    /// filtré est trop restreint pour fournir les 3 distracteurs + la bonne réponse — restreint ne
+    /// veut pas seulement dire "moins de 4 morceaux" : un thème niche peut avoir 4+ morceaux mais
+    /// moins de 3 AUTRES artistes distincts (retour utilisateur : "Angèle" deux fois dans un QCM
+    /// "années 2020", catalogue avec exactement 2 titres d'Angèle tagués ainsi) — un pool insuffisant
+    /// en diversité d'artistes forçait alors le filet de sécurité de QcmGenerator à dupliquer un
+    /// libellé faute d'alternative, plutôt que d'élargir la recherche de distracteurs.</summary>
     /// <summary>Interne plutôt que privé : réutilisé par BonusRoundService.CreerBonusRound pour le
     /// même calcul de pool de distracteurs QCM (retour utilisateur : QCM aussi disponible en
     /// question bonus, pas seulement en round classique).</summary>
-    internal static IReadOnlyList<Track> PoolPourQcm(RoundCible cible, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags)
+    internal static IReadOnlyList<Track> PoolPourQcm(RoundCible cible, Track correct, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags)
     {
         if (cible == RoundCible.Film)
             return catalogueComplet.Where(t => t.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)).ToList();
 
         var filtre = FiltrerParTagsOuGenres(catalogueComplet, tags).ToList();
-        return filtre.Count >= 4 ? filtre : catalogueComplet;
+        var artistesAutresDistincts = filtre
+            .Select(t => PremierAuteur(t.Artist))
+            .Where(a => !string.Equals(a, PremierAuteur(correct.Artist), StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+        if (filtre.Count >= 4 && artistesAutresDistincts >= 3) return filtre;
+
+        // Repli catalogue complet (thème trop niche pour fournir 4 options avec assez d'artistes
+        // distincts) : les morceaux "disney" restent exclus même ici (retour utilisateur : ils
+        // réapparaissaient comme distracteurs QCM dans une série hors thème "disney", faute d'être
+        // filtrés dans ce repli).
+        return catalogueComplet.Where(t => !t.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)).ToList();
     }
 
-    public RoundAnswer? SoumettreReponse(GameSession session, Round round, SeriesConfig seriesConfig, Track track, string playerId, string reponse, DateTimeOffset maintenant)
+    public RoundAnswer? SoumettreReponse(GameSession session, Round round, SeriesConfig seriesConfig, Track track, string playerId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null)
     {
         if (session.EnPause) return null;
         if (round.DebutRound is null) return null;
@@ -102,9 +118,14 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         var reponsesAcceptables = ReponsesAcceptables(round.Cible, track);
         var estCorrecte = round.Mode switch
         {
-            RoundMode.Qcm => reponse == track.Id,
+            RoundMode.Qcm => EstQcmCorrect(round.Cible, track, reponse, resolveTrack),
             RoundMode.PremiereLettre => reponsesAcceptables.Any(texte => EstPremiereLettreCorrecte(reponse, texte)),
-            _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(reponse, texte, session.Config.SeuilToleranceLevenshteinRatio)),
+            _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(
+                reponse, texte,
+                session.Config.SeuilToleranceLevenshteinRatio,
+                session.Config.LongueurMinimalePourTolerance,
+                session.Config.LongueurMinimalePourToleranceFixe,
+                session.Config.ToleranceFixeReponseCourte)),
         };
 
         var pointsEnJeu = scoring.CalculerPointsEnJeu(round.DebutRound.Value, maintenant, round.DureeEnPauseMs, seriesConfig);
@@ -205,4 +226,33 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         RoundCible.Film => [FilmNameResolver.Resoudre(track)],
         _ => TitreVariantes.Acceptables(track.Title)
     };
+
+    /// <summary>Une réponse Qcm est correcte si le TrackId cliqué correspond, OU — repli — si le
+    /// libellé RÉELLEMENT affiché pour ce TrackId est identique à celui de la bonne réponse. Interne
+    /// plutôt que privé : réutilisé par BonusRoundService.SoumettreReponse (voir PoolPourQcm pour le
+    /// même principe de partage).</summary>
+    internal static bool EstQcmCorrect(RoundCible cible, Track correct, string reponseTrackId, Func<string, Track?>? resolveTrack)
+    {
+        if (reponseTrackId == correct.Id) return true;
+        var soumis = resolveTrack?.Invoke(reponseTrackId);
+        return soumis is not null && EstQcmEquivalent(cible, correct, soumis);
+    }
+
+    /// <summary>Deux morceaux différents peuvent afficher EXACTEMENT le même texte en Qcm — le filet
+    /// de sécurité de QcmGenerator (catalogue trop restreint pour un thème) peut laisser passer un
+    /// distracteur du même auteur/titre que la bonne réponse (retour utilisateur : "Myles Smith" en
+    /// double, TrackId différent mais texte affiché identique, réponse comptée fausse à tort). Compare
+    /// donc le même libellé que celui réellement affiché au joueur (Qcm : premier auteur seulement,
+    /// voir app/lib/screens/answer_phase_screen.dart:_QcmAnswers.label / host/display.js:
+    /// libelleOptionQcm) — jamais via AuteurVariantes/TitreVariantes (tolérance de saisie texte, pas
+    /// équivalence d'affichage), et jamais via les DTOs QcmOptionDto (les feintes de GameHub n'y
+    /// changent que le texte envoyé aux clients, jamais ces champs bruts ni le TrackId soumis).</summary>
+    internal static bool EstQcmEquivalent(RoundCible cible, Track a, Track b) => cible switch
+    {
+        RoundCible.Auteur => string.Equals(PremierAuteur(a.Artist), PremierAuteur(b.Artist), StringComparison.OrdinalIgnoreCase),
+        RoundCible.Film => string.Equals(FilmNameResolver.Resoudre(a), FilmNameResolver.Resoudre(b), StringComparison.OrdinalIgnoreCase),
+        _ => string.Equals(a.Title, b.Title, StringComparison.OrdinalIgnoreCase),
+    };
+
+    private static string PremierAuteur(string artist) => artist.Split(',')[0].Trim();
 }

@@ -29,17 +29,18 @@ class BonusResultScreen extends StatelessWidget {
           const SizedBox(height: 16),
           CoverArt(imageUrl: game.coverUrl(result.coverPath)),
           const SizedBox(height: 16),
-          Text(result.reponseAttendue, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
-          if (result.cible == 'Film')
-            Text(
-              '${result.title} — ${result.artist}',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            )
-          else if (result.cible == 'Auteur')
-            Text(result.title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium)
-          else
-            Text(result.artist, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+          // Titre toujours au-dessus de l'artiste, quelle que soit la cible — même ordre que
+          // l'écran public (host/shared/format.js:libelleReveal).
+          Text(
+            result.cible == 'Film' ? result.film : result.title,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          Text(
+            result.cible == 'Film' ? '${result.title} — ${result.artist}' : result.artist,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: 24),
           if (monResultat != null) ...[
             Icon(
@@ -54,6 +55,10 @@ class BonusResultScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text('Mise : ${monResultat.mise} pts', style: Theme.of(context).textTheme.bodySmall),
+          ] else if (result.estCourse) ...[
+            const Icon(Icons.bolt_rounded, color: BlindifyColors.mustard, size: 48),
+            const SizedBox(height: 8),
+            const Text('Un autre joueur a répondu en premier — ta mise est récupérée intacte.', textAlign: TextAlign.center),
           ],
           const Spacer(),
           Text(

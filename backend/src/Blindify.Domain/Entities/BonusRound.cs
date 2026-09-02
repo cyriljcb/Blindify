@@ -20,6 +20,11 @@ public class BonusRound
     /// <summary>Les 4 IDs de morceaux proposés (Mode Qcm uniquement), générés à la création du bonus round — voir Round.QcmOptionTrackIds.</summary>
     public List<string>? QcmOptionTrackIds { get; set; }
 
+    /// <summary>"Course" (Mode Qcm uniquement, voir GameConfig.ProbabiliteBonusCourse) : le premier
+    /// joueur à répondre — juste ou faux — décide seul du sort de sa mise ; tant qu'aucune réponse
+    /// n'est enregistrée, personne n'est affecté. Toujours false hors Mode.Qcm.</summary>
+    public bool EstCourse { get; set; }
+
     public DateTimeOffset? DebutPhaseMise { get; set; }
     public DateTimeOffset? DebutPhaseQuestion { get; set; }
 

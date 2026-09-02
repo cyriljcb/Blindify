@@ -81,6 +81,13 @@
 
     <section id="screen-bonus-question" class="screen hidden">
       <h2 id="bonus-question-title">Question bonus — à deviner !</h2>
+      <div id="bonus-course-banner" class="course-banner course-banner--display hidden">
+        <span class="course-banner__icon" aria-hidden="true">🏁</span>
+        <div class="course-banner__text">
+          <strong class="course-banner__title">Mode course</strong>
+          <span class="course-banner__desc">Le premier qui répond décide — juste, il rafle la mise ; faux, il la perd.</span>
+        </div>
+      </div>
       <div class="cover-frame cover-frame--mystere cover-frame--big"><span class="cover-placeholder">❓</span></div>
       <p id="bonus-ralenti-note" class="reveal"></p>
       <div class="timer-row">
@@ -120,6 +127,6 @@
   </main>
 
   <script src="vendor/qrcode.js"></script>
-  <script src="display.js"></script>
+  <script type="module" src="display.js"></script>
 </body>
 </html>

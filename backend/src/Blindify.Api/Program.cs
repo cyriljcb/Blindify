@@ -1,5 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Security.Cryptography;
+using System.Text;
+using Blindify.Api.Contracts;
 using Blindify.Api.Hubs;
 using Blindify.Application.DependencyInjection;
 using Blindify.Infrastructure.DependencyInjection;
@@ -16,9 +17,10 @@ builder.Services.AddSingleton<BonusTimerCoordinator>();
 
 builder.Services.AddSignalR().AddJsonProtocol(options =>
 {
-    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.PayloadSerializerOptions.PropertyNamingPolicy = ContractJsonOptions.Instance.PropertyNamingPolicy;
     options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
-    options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    foreach (var converter in ContractJsonOptions.Instance.Converters)
+        options.PayloadSerializerOptions.Converters.Add(converter);
 });
 
 // Réseau local uniquement (voir architecture.md section 2) : CORS ouvert aux clients LAN, pas de credentials.
@@ -79,6 +81,31 @@ app.MapGet("/api/tags", (ITracksRepository tracksRepository) =>
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
         .ToList());
+
+// Redémarrage à distance (retour utilisateur : pouvoir relancer le backend depuis la page host sans
+// accès physique/SSH au Raspberry Pi). Protégé par un mot de passe (Admin:RestartPassword, jamais
+// en dur — vide par défaut = fonctionnalité désactivée) : le réseau local n'est pas une frontière de
+// confiance suffisante pour exposer un arrêt de process sans contrôle. N'arrête PAS le conteneur —
+// se contente d'arrêter proprement le process ASP.NET Core ; c'est `restart: unless-stopped` côté
+// docker-compose.yml qui relance le conteneur, voir docs/architecture.md section "Dockerisation".
+app.MapPost("/api/admin/restart", (RestartRequestDto request, IConfiguration configuration, IHostApplicationLifetime lifetime) =>
+{
+    var motDePasseConfigure = configuration["Admin:RestartPassword"];
+    if (string.IsNullOrEmpty(motDePasseConfigure))
+        return Results.Problem("Redémarrage désactivé — aucun mot de passe configuré (Admin:RestartPassword).", statusCode: StatusCodes.Status503ServiceUnavailable);
+
+    // Comparaison à temps constant : évite qu'un minutage de la réponse ne laisse deviner le mot de
+    // passe caractère par caractère depuis le réseau local.
+    var estValide = CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(motDePasseConfigure), Encoding.UTF8.GetBytes(request.Password ?? ""));
+    if (!estValide)
+        return Results.Unauthorized();
+
+    // Différé plutôt qu'appelé en synchrone ici : StopApplication() déclenche immédiatement la
+    // dispose des services (logging compris) — appelé en synchrone, ça court-circuite l'envoi de
+    // cette réponse HTTP elle-même (constaté avec TestServer : l'appelant ne reçoit jamais de 200).
+    _ = Task.Delay(TimeSpan.FromMilliseconds(300)).ContinueWith(_ => lifetime.StopApplication());
+    return Results.Ok(new { message = "Redémarrage en cours." });
+});
 
 app.MapHub<GameHub>("/hubs/game");
 

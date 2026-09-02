@@ -15,6 +15,10 @@
 # BLINDIFY_DATA_ROOT pointe vers ce dossier de données sur le Pi (défaut : /mnt/hdd2to/blindify).
 # Remplace la valeur par défaut ci-dessous ou exporte la variable d'environnement avant de lancer
 # `docker compose up -d` si ton point de montage HDD diffère.
+#
+# BLINDIFY_RESTART_PASSWORD (optionnel) : active le bouton "Redémarrer le serveur" sur la page host
+# (POST /api/admin/restart) — laissé vide, la fonctionnalité reste désactivée (503). Exporte-la avant
+# `docker compose up -d`, ne la commite jamais en dur ici.
 
 services:
   backend:
@@ -39,3 +43,4 @@ services:
       - Data__CoversPath=/data/covers
       - Data__RootPath=/data
       - Host__StaticPath=/host
+      - Admin__RestartPassword=${BLINDIFY_RESTART_PASSWORD:-}

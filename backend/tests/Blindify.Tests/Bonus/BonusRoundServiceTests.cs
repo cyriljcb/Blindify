@@ -23,7 +23,12 @@ public class BonusRoundServiceTests
     // Catalogue/tags/config minimaux : suffisants pour les tests ci-dessous, qui ne portent pas
     // sur la génération QCM elle-même (voir BonusRoundServiceTests_Modes) — Mode forcé à
     // TapeReponse juste après quand le test dépend de la comparaison texte.
-    private BonusRound CreerBonusRound(Track track) => _service.CreerBonusRound(track, [track], [], new GameConfig());
+    // ProbabiliteBonusCourse à 0 par défaut : la plupart des tests de ce fichier vérifient des
+    // pénalités/scores incompatibles avec le mode course (retour utilisateur — un tirage à 0.5
+    // rendait TerminerParTimeout_PenaliseLesJoueursAyantMiseSansRepondre flaky, cf. même correctif
+    // déjà appliqué à GameHubBonusIntegrationTests). Les tests dédiés au mode course passent leur
+    // propre config directement à _service.CreerBonusRound, sans passer par ce helper.
+    private BonusRound CreerBonusRound(Track track) => _service.CreerBonusRound(track, [track], [], new GameConfig { ProbabiliteBonusCourse = 0 });
 
     private static GameSession NouvelleSession(params Player[] joueurs) => new()
     {
@@ -312,6 +317,28 @@ public class BonusRoundServiceTests
     }
 
     [Fact]
+    public void SoumettreReponse_ModeQcm_CibleAuteur_DeuxOptionsMemeAuteur_LesDeuxSontAcceptees()
+    {
+        // Même correctif que RoundService (retour utilisateur : "Myles Smith" en double dans un
+        // QCM, filet de sécurité de QcmGenerator sur un thème trop restreint) — même repli par
+        // libellé affiché pour la question bonus.
+        var alice = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(alice);
+        var correct = new Track { Id = "a", Title = "Stargazing", Artist = "Myles Smith", FilePath = "audio/a.mp3" };
+        var doublon = new Track { Id = "b", Title = "Nice To Meet You", Artist = "Myles Smith", FilePath = "audio/b.mp3" };
+        var catalogue = new[] { correct, doublon }.ToDictionary(t => t.Id);
+        var bonusRound = CreerBonusRound(correct);
+        bonusRound.Cible = RoundCible.Auteur;
+        bonusRound.Mode = RoundMode.Qcm;
+        _service.EnregistrerMise(session, bonusRound, "p1", 2);
+        _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+
+        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), correct, "p1", "b", DateTimeOffset.UtcNow, id => catalogue.GetValueOrDefault(id));
+
+        Assert.True(reponse!.EstCorrecte);
+    }
+
+    [Fact]
     public void SoumettreReponse_ModePremiereLettre_CompareLaPremiereLettreDuTitre()
     {
         var alice = new Player { PlayerId = "p1", Nom = "Alice" };
@@ -326,5 +353,118 @@ public class BonusRoundServiceTests
         var bonneReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "U", DateTimeOffset.UtcNow);
 
         Assert.True(bonneReponse!.EstCorrecte);
+    }
+
+    // ----- Mode "course" (retour utilisateur) : premier qui répond, juste ou faux, décide seul —
+    // réservé au Mode.Qcm, probabilité configurable (GameConfig.ProbabiliteBonusCourse). -----
+
+    [Fact]
+    public void CreerBonusRound_ModeQcmProbabiliteCourseA1_EstCourseVrai()
+    {
+        var config = new GameConfig { ProbabiliteBonusCourse = 1.0 };
+        var track = NouveauTrack();
+
+        BonusRound? bonusRound = null;
+        for (var i = 0; i < 100 && bonusRound?.Mode != RoundMode.Qcm; i++)
+            bonusRound = _service.CreerBonusRound(track, [track], [], config);
+
+        Assert.Equal(RoundMode.Qcm, bonusRound!.Mode);
+        Assert.True(bonusRound.EstCourse);
+    }
+
+    [Fact]
+    public void CreerBonusRound_ModeQcmProbabiliteCourseA0_EstCourseFaux()
+    {
+        var config = new GameConfig { ProbabiliteBonusCourse = 0.0 };
+        var track = NouveauTrack();
+
+        BonusRound? bonusRound = null;
+        for (var i = 0; i < 100 && bonusRound?.Mode != RoundMode.Qcm; i++)
+            bonusRound = _service.CreerBonusRound(track, [track], [], config);
+
+        Assert.Equal(RoundMode.Qcm, bonusRound!.Mode);
+        Assert.False(bonusRound.EstCourse);
+    }
+
+    [Fact]
+    public void CreerBonusRound_ModeNonQcm_EstCourseToujoursFauxMemeAvecProbabiliteA1()
+    {
+        // "Seulement dispo en QCM" (retour utilisateur) : la probabilité ne doit jamais s'appliquer
+        // à TapeReponse/PremiereLettre, même à 100%.
+        var config = new GameConfig { ProbabiliteBonusCourse = 1.0 };
+        var track = NouveauTrack();
+
+        BonusRound bonusRound;
+        var tentative = 0;
+        do
+        {
+            bonusRound = _service.CreerBonusRound(track, [track], [], config);
+            tentative++;
+        } while (bonusRound.Mode == RoundMode.Qcm && tentative < 100);
+
+        Assert.NotEqual(RoundMode.Qcm, bonusRound.Mode);
+        Assert.False(bonusRound.EstCourse);
+    }
+
+    [Fact]
+    public void SoumettreReponse_Course_DeuxiemeReponseApresLaPremiereEstIgnoree()
+    {
+        var alice = new Player { PlayerId = "p1", Nom = "Alice" };
+        var bob = new Player { PlayerId = "p2", Nom = "Bob" };
+        var session = NouvelleSession(alice, bob);
+        var track = NouveauTrack();
+        var bonusRound = CreerBonusRound(track);
+        bonusRound.Mode = RoundMode.Qcm;
+        bonusRound.EstCourse = true;
+        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p2", 3); // palier 50
+        _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+
+        var premiereReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "autre-id", DateTimeOffset.UtcNow);
+        var deuxiemeReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p2", track.Id, DateTimeOffset.UtcNow);
+
+        Assert.NotNull(premiereReponse);
+        Assert.False(premiereReponse!.EstCorrecte);
+        Assert.Equal(-30, alice.Score);
+        Assert.Null(deuxiemeReponse); // arrivé après la course déjà tranchée — ignoré
+        Assert.Equal(0, bob.Score); // ni gagné ni perdu
+    }
+
+    [Fact]
+    public void TerminerParTimeout_Course_NePenalisePasLesAutresSiQuelquUnADejaRepondu()
+    {
+        var alice = new Player { PlayerId = "p1", Nom = "Alice" };
+        var bob = new Player { PlayerId = "p2", Nom = "Bob" };
+        var session = NouvelleSession(alice, bob);
+        var track = NouveauTrack();
+        var bonusRound = CreerBonusRound(track);
+        bonusRound.Mode = RoundMode.Qcm;
+        bonusRound.EstCourse = true;
+        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p2", 3); // palier 50
+        _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+
+        _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", track.Id, DateTimeOffset.UtcNow);
+        _service.TerminerParTimeout(session, bonusRound, NouveauConfig());
+
+        Assert.Equal(30, alice.Score); // premier, correct : gagne sa mise
+        Assert.Equal(0, bob.Score); // n'a pas eu l'occasion de répondre : ni gagné ni perdu
+    }
+
+    [Fact]
+    public void TerminerParTimeout_Course_PenaliseToutLeMondeSiPersonneNaRepondu()
+    {
+        var alice = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(alice);
+        var track = NouveauTrack();
+        var bonusRound = CreerBonusRound(track);
+        bonusRound.Mode = RoundMode.Qcm;
+        bonusRound.EstCourse = true;
+        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+
+        _service.TerminerParTimeout(session, bonusRound, NouveauConfig());
+
+        Assert.Equal(-30, alice.Score); // aucune réponse du tout : comportement inchangé (perte de la mise)
     }
 }

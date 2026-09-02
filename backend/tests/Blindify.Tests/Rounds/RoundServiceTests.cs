@@ -157,6 +157,32 @@ public class RoundServiceTests
     }
 
     [Fact]
+    public void DemarrerRound_ModeQcm_PoolThematiqueTropPauvreEnArtistes_ElargitAuCatalogueComplet()
+    {
+        // Retour utilisateur : "Angèle" apparaissait deux fois dans un QCM "années 2020" — le thème
+        // avait bien 4 morceaux, mais seulement 2 AUTRES artistes distincts ("b" partage l'artiste
+        // de la bonne réponse), insuffisant pour les 3 distracteurs de QcmGenerator. Avant le
+        // correctif, PoolPourQcm ne regardait que le nombre de morceaux (4 >= 4, jugé "suffisant")
+        // et ne s'élargissait jamais au catalogue complet, forçant le filet de sécurité de
+        // QcmGenerator à réutiliser "b" (même libellé affiché que la bonne réponse) plutôt que "e"
+        // (hors thème mais seul artiste réellement disponible).
+        var correct = new Track { Id = "a", Title = "T-a", Artist = "Angele", FilePath = "audio/a.mp3", Tags = ["annees-2020"] };
+        var memeArtiste = new Track { Id = "b", Title = "T-b", Artist = "Angele", FilePath = "audio/b.mp3", Tags = ["annees-2020"] };
+        var autre1 = new Track { Id = "c", Title = "T-c", Artist = "Bob", FilePath = "audio/c.mp3", Tags = ["annees-2020"] };
+        var autre2 = new Track { Id = "d", Title = "T-d", Artist = "Carl", FilePath = "audio/d.mp3", Tags = ["annees-2020"] };
+        var horsTheme = new Track { Id = "e", Title = "T-e", Artist = "Dave", FilePath = "audio/e.mp3" };
+        var catalogue = new List<Track> { correct, memeArtiste, autre1, autre2, horsTheme };
+        var config = new GameConfig { ProbabiliteQcmPiege = 0 };
+        var round = new Round { TrackId = correct.Id, Mode = RoundMode.Qcm };
+
+        _service.DemarrerRound(round, correct, catalogue, tags: ["annees-2020"], config, DateTimeOffset.UtcNow);
+
+        Assert.Equal(4, round.QcmOptionTrackIds!.Count);
+        Assert.DoesNotContain("b", round.QcmOptionTrackIds);
+        Assert.Contains("e", round.QcmOptionTrackIds);
+    }
+
+    [Fact]
     public void DemarrerRound_ModeTapeReponse_NeGenereAucuneOption()
     {
         var correct = NouveauTrack("a");
@@ -196,6 +222,56 @@ public class RoundServiceTests
         Assert.False(reponse!.EstCorrecte);
         Assert.Equal(-50, reponse.Points);
         Assert.Equal(-50, joueur.Score);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAuteur_QcmDeuxOptionsMemeAuteur_LesDeuxSontAcceptees()
+    {
+        // Retour utilisateur : le filet de sécurité de QcmGenerator peut, sur un catalogue trop
+        // restreint pour un thème, laisser passer un distracteur du même auteur que la bonne réponse
+        // (deux morceaux différents de "Myles Smith" dans le même QCM) — les deux options affichent
+        // alors le même texte, un TrackId différent ne doit plus suffire à compter la réponse fausse.
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var correct = new Track { Id = "a", Title = "Stargazing", Artist = "Myles Smith", FilePath = "audio/a.mp3" };
+        var doublon = new Track { Id = "b", Title = "Nice To Meet You", Artist = "Myles Smith", FilePath = "audio/b.mp3" };
+        var catalogue = new[] { correct, doublon }.ToDictionary(t => t.Id);
+        var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), correct, "p1", "b", round.DebutRound!.Value, id => catalogue.GetValueOrDefault(id));
+
+        Assert.True(reponse!.EstCorrecte);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAuteur_QcmAuteurDifferent_ResteRefusee()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var correct = new Track { Id = "a", Title = "Stargazing", Artist = "Myles Smith", FilePath = "audio/a.mp3" };
+        var autreAuteur = new Track { Id = "b", Title = "Autre chanson", Artist = "Teddy Swims", FilePath = "audio/b.mp3" };
+        var catalogue = new[] { correct, autreAuteur }.ToDictionary(t => t.Id);
+        var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), correct, "p1", "b", round.DebutRound!.Value, id => catalogue.GetValueOrDefault(id));
+
+        Assert.False(reponse!.EstCorrecte);
+    }
+
+    [Fact]
+    public void SoumettreReponse_ModeQcm_SansResolveTrack_ResteEnComparaisonStricteParId()
+    {
+        // resolveTrack optionnel (null) : les appelants qui n'en ont pas besoin (tests existants,
+        // futurs appels) gardent le comportement d'origine plutôt que de planter ou de forcer le
+        // repli par libellé.
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var correct = new Track { Id = "a", Title = "Stargazing", Artist = "Myles Smith", FilePath = "audio/a.mp3" };
+        var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), correct, "p1", "b", round.DebutRound!.Value);
+
+        Assert.False(reponse!.EstCorrecte);
     }
 
     [Fact]
@@ -308,6 +384,33 @@ public class RoundServiceTests
         Assert.DoesNotContain("hors-theme-2", round.QcmOptionTrackIds!);
         var options = round.QcmOptionTrackIds!.Select(id => catalogue.First(t => t.Id == id));
         Assert.All(options, t => Assert.Contains("disney", t.Tags, StringComparer.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void DemarrerRound_CibleAutreQueFilm_ReplitCatalogueCompletExcluTDisney()
+    {
+        // Retour utilisateur : une série hors thème "disney" (ex. "années 2010") proposait quand
+        // même des morceaux Disney comme options QCM, dès que le thème filtré ne fournissait pas
+        // assez de distracteurs et retombait sur le catalogue complet SANS réappliquer l'exclusion
+        // disney (voir RoundService.PoolPourQcm).
+        var correct = NouveauTrack("a", tags: ["annees-2010"]);
+        var catalogue = new List<Track>
+        {
+            correct,
+            NouveauTrack("b", tags: ["annees-2010"]),
+            NouveauTrack("disney-a", tags: ["disney", "annees-2010"]),
+            NouveauTrack("disney-b", tags: ["disney"]),
+            NouveauTrack("hors-theme-1"),
+            NouveauTrack("hors-theme-2"),
+        };
+        var config = new GameConfig { ProbabiliteQcmPiege = 0 };
+        var round = new Round { TrackId = correct.Id, Mode = RoundMode.Qcm };
+
+        _service.DemarrerRound(round, correct, catalogue, tags: ["annees-2010"], config, DateTimeOffset.UtcNow);
+
+        Assert.NotEqual(RoundCible.Film, round.Cible);
+        var options = round.QcmOptionTrackIds!.Select(id => catalogue.First(t => t.Id == id));
+        Assert.All(options, t => Assert.DoesNotContain("disney", t.Tags, StringComparer.OrdinalIgnoreCase));
     }
 
     [Fact]

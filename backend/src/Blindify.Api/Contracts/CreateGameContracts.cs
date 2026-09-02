@@ -1,14 +1,8 @@
 using Blindify.Domain.Configuration;
-using Blindify.Domain.Enums;
 
 namespace Blindify.Api.Contracts;
 
 public record TeamDto(string Id, string Nom);
-
-/// <summary>Tags : thème de cette série uniquement (vide = tout le catalogue) — chaque série a son
-/// propre thème depuis le retour utilisateur "je veux vraiment que la série deux ne concerne QUE
-/// du rock", plus de thème global partagé par toute la partie (voir Series.Tags côté domaine).</summary>
-public record SeriesSetupDto(SeriesConfig Config, List<RoundMode> RoundModes, List<string> Tags);
 
 /// <summary>NomsEquipes : uniquement pris en compte si ModeEquipe est actif — une Team est créée
 /// par nom fourni. Ignoré (aucune équipe créée) si ModeEquipe est false.
@@ -25,5 +19,24 @@ public record CreateGameResultDto(string Code, List<TeamDto> Teams, string HostS
 
 /// <summary>Configure (ou reconfigure entièrement) le blindtest d'une partie déjà créée — remplace
 /// toute configuration précédente (recalcule la sélection de morceaux depuis zéro à chaque appel).
-/// Refusé par GameHub.ConfigurerPartie si la partie a déjà quitté l'état Lobby.</summary>
-public record ConfigurerPartieRequestDto(List<SeriesSetupDto> SeriesSetups, GameConfig? Config);
+/// Refusé par GameHub.ConfigurerPartie si la partie a déjà quitté l'état Lobby.
+///
+/// Intention plutôt que résultat déjà calculé (retour utilisateur, docs/refactor-decisions.md
+/// section 1) : le client fournit nombre de séries/rounds/durée + vivier de thèmes, le serveur
+/// répartit les thèmes par série (SeriesPlanner.AssignerThemesAuxSeries), calcule les paliers de
+/// mise bonus (SeriesPlanner.PaliersPourSerie) et tire les modes de round
+/// (SeriesPlanner.PickRandomRoundModes) — logique auparavant dupliquée et non testée côté
+/// host/app.js. Les 6 derniers champs reprennent les valeurs jusqu'ici codées en dur côté JS, non
+/// exposées dans l'écran de configuration actuel.</summary>
+public record ConfigurerPartieRequestDto(
+    int NombreSeries,
+    int NombreRoundsClassiques,
+    int DureeFenetreReponseMs,
+    List<string> ThemesVivier,
+    GameConfig? Config,
+    int PointsMax = 100,
+    int PointsMin = 20,
+    double PenaliteMauvaiseReponseRatio = 0.5,
+    int PenaliteAbsenceReponse = -5,
+    int DureePhaseMiseMs = 15000,
+    int DureePhaseQuestionMs = 20000);

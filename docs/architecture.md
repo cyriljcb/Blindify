@@ -93,6 +93,10 @@ Les volumes audio/covers/host sont montés en lecture seule (`ro`) côté conten
 
 Le backend reste toujours actif sur le Raspberry Pi (déjà utilisé comme homelab). Aucune synchronisation de fichiers à faire avant une partie : le PC host et les téléphones se connectent simplement à l'IP du Pi sur le réseau local.
 
+### Redémarrage à distance (retour utilisateur)
+
+`POST /api/admin/restart` (payload `{ "password": "..." }`) permet de relancer le backend depuis la page host sans accès physique/SSH au Pi. N'arrête que le **process** ASP.NET Core (`IHostApplicationLifetime.StopApplication()`) — c'est la politique `restart: unless-stopped` ci-dessus qui relance ensuite le conteneur, pas cet endpoint. Protégé par un mot de passe (`Admin:RestartPassword`, variable d'environnement `Admin__RestartPassword` / `BLINDIFY_RESTART_PASSWORD` côté `docker-compose.yml`) : vide par défaut, l'endpoint répond alors `503` et reste désactivé — le réseau local n'est pas jugé assez fermé pour exposer un arrêt de process sans contrôle. Comparaison mot de passe à temps constant (`CryptographicOperations.FixedTimeEquals`). Toute partie en cours est perdue (état 100 % en mémoire, pas de persistance) : la page host affiche un avertissement explicite avant de demander confirmation.
+
 ### Nom local au lieu de l'IP (mDNS/Bonjour)
 
 Retour utilisateur (2026-08-25) : taper l'IP du Pi depuis un iPhone est pénible. Pas besoin d'un vrai serveur DNS local (overkill pour un usage familial) — le mDNS (Bonjour) suffit et est nativement supporté par iOS/Safari et macOS, sans rien installer côté client.
@@ -224,8 +228,11 @@ Chaque round tire aléatoirement (50/50, indépendamment du mode QCM/TapeReponse
 
 ### Génération des QCM
 
-- Par défaut : 3 distracteurs tirés aléatoirement dans le même pool genre/tag que le morceau à deviner.
-- **Fallback pool insuffisant** : si le pool genre/tag ne contient pas assez de morceaux distincts pour compléter les 3 distracteurs (thème trop niche, ou série mal configurée), compléter avec des morceaux tirés du pool global (tout `tracks.json`), même hors thème — garantit toujours 4 options valides plutôt qu'un crash ou un round bloqué. Le QCM est alors un peu plus facile dans ce cas limite, ce qui est préférable à l'absence de round.
+- Par défaut : 3 distracteurs tirés dans le même pool genre/tag que le morceau à deviner, en trois replis successifs si le pool se révèle insuffisant.
+- **Palier 1 — ancre unique (`QcmGenerator.ChoisirMeilleureAncre`)** : parmi les genres/tags *significatifs* du morceau correct (fréquence ≤ 8 % du catalogue — un genre trop répandu comme "pop" ou une décennie ne suffit pas à lui seul à garantir une cohérence stylistique, seuil relatif plutôt qu'une liste de noms en dur), on choisit celui qui a le plus de candidats éligibles dans le pool, puis **tous** les distracteurs de ce palier doivent partager **cette même ancre**. **Correction (retour utilisateur)** : valider chaque distracteur indépendamment ("partage au moins un tag avec le bon morceau") permettait à un morceau tagué à la fois `pop` et `variete-francaise` de ramener un distracteur anglais via `pop` **et** un distracteur français via `variete-francaise`, sans que les deux distracteurs aient quoi que ce soit en commun entre eux (ex. Fall Out Boy / Patrick Sébastien / Avicii dans le même QCM). Une ancre unique partagée par l'ensemble du groupe évite ça.
+- **Barrière francophone** : en plus de l'ancre, tout candidat doit avoir le même statut `variete-francaise` (présent ou absent) que le morceau correct — une ancre générique comme `pop` reste sinon partagée par des morceaux français et anglais à la fois. Retour utilisateur : des titres français apparaissaient comme distracteurs d'un morceau anglais. Cette barrière s'applique aussi au palier 2 ci-dessous.
+- **Palier 2 — repli année proche** : si le palier 1 ne suffit pas (aucune ancre significative, ou trop peu de candidats) et que le morceau correct a une année connue, on complète avec les morceaux dont l'année est la plus proche (écart minimal, égalité départagée au hasard) — pas un bucket "même décennie" strict, pour éviter que deux morceaux à un an d'écart (1999/2001) tombent dans des décennies différentes.
+- **Palier 3 — pool global** : si toujours insuffisant (thème trop niche, ou série mal configurée), on complète avec des morceaux tirés de tout `tracks.json`, même hors thème et sans contrainte de langue — garantit toujours 4 options valides plutôt qu'un crash ou un round bloqué. Le QCM est alors un peu plus facile dans ce cas limite, ce qui est préférable à l'absence de round.
 
 Trois niveaux de piège indépendants, chacun avec sa propre probabilité (`GameConfig`), pour ne pas que ça tombe trop souvent sur plusieurs parties :
 
@@ -258,6 +265,15 @@ Série 10 (index 9) : [600, 1200, 1800, 3000]
 ```
 
 Avec une seule série, pas de progression possible : les paliers restent `[10, 20, 30, 50]`.
+
+### Mode "course" (retour utilisateur)
+
+Variante réservée au mode Qcm de la question bonus (tiré aléatoirement parmi Qcm/TapeReponse/PremiereLettre, voir plus haut) : probabilité configurable `GameConfig.ProbabiliteBonusCourse` (50 % par défaut) qu'un round Qcm devienne une "course" (`BonusRound.EstCourse`), jamais appliquée aux deux autres modes — répondre à voix haute ou par écrit n'a pas de sens pour départager qui a "buzzé" en premier, alors que les options Qcm restent le même clic qu'un round normal, seul l'ordre d'arrivée compte côté serveur.
+
+- Le **premier joueur à répondre** — juste ou faux — décide seul du sort de sa mise (`+mise` si correct, `-mise` sinon). La phase question se termine alors immédiatement pour tout le monde (pas d'attente du timer complet).
+- Tant qu'aucune réponse n'est enregistrée, les autres joueurs ayant misé ne sont **ni gagnants ni perdants** : leur mise leur reste acquise (pas de perte), et ils n'apparaissent pas dans `BonusResult.resultats`. Toute réponse reçue après la première est silencieusement ignorée côté serveur.
+- Si **personne** ne répond avant l'expiration du timer, comportement inchangé : tout le monde perd sa mise.
+- Révélé aux clients seulement dans `BonusQuestionStarted` (champ `estCourse`) — jamais pendant la phase de mise à l'aveugle (`BonusStakeOptions`), pour ne pas influencer le choix du palier avant même de savoir que ce sera un Qcm.
 
 ## 8. Mode équipes (optionnel)
 
@@ -317,8 +333,8 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 | `ScoreUpdate` | Scores à jour de tous les joueurs |
 | `RoundEnded` | Réponse correcte (titre + artiste), détail des points de chacun, cible du round et film déduit (`Cible`/`Film`) — l'écran de révélation met le film en avant quand `Cible == Film` |
 | `BonusStakeOptions` | Les 4 paliers de la série courante |
-| `BonusQuestionStarted` | Morceau révélé, timer fixe démarré + `refrainStartMs` (host uniquement — appliqué au `BonusResult`, pas pendant la devinette). Version joueurs inclut la cible (Titre/Film) |
-| `BonusResult` | Résultat de chaque joueur (mise gagnée/perdue), cible et film déduit (mêmes champs `Cible`/`Film` que `RoundEnded`) |
+| `BonusQuestionStarted` | Morceau révélé, timer fixe démarré + `refrainStartMs` (host uniquement — appliqué au `BonusResult`, pas pendant la devinette). Version joueurs inclut la cible (Titre/Film). `estCourse` (Qcm uniquement, voir section 7) : révélé ici, jamais avant |
+| `BonusResult` | Résultat de chaque joueur (mise gagnée/perdue), cible et film déduit (mêmes champs `Cible`/`Film` que `RoundEnded`). `estCourse` : si vrai, seul le premier répondant apparaît dans `resultats` — voir section 7 |
 | `LeaderboardShown` | Classement général, diffusé en fin de série |
 | `GamePaused` / `GameResumed` | État de pause |
 | `GameEnded` | Scores finaux |
@@ -338,7 +354,11 @@ Tous ces éléments sont des paramètres de partie/série, pas des valeurs figé
 | Probabilité d'un QCM piège réel (`trapWith`) | Global | 5 % par défaut, ajustable |
 | Probabilité d'une feinte champ croisé | Global | 10 % par défaut, ajustable |
 | Probabilité d'une feinte texte inventé (`trapTextArtist`) | Global | 5 % par défaut, ajustable, cible Auteur uniquement |
-| Seuil de tolérance Levenshtein | Global | Voir recommandation ci-dessous |
+| Seuil de tolérance Levenshtein (ratio) | Global | Voir recommandation ci-dessous |
+| Longueur minimale pour le ratio (`LongueurMinimalePourTolerance`) | Global | 10 caractères par défaut — en dessous, tolérance fixe (voir recommandation ci-dessous) |
+| Longueur minimale pour toute tolérance (`LongueurMinimalePourToleranceFixe`) | Global | 4 caractères par défaut — en dessous, réponse exacte exigée |
+| Tolérance fixe zone intermédiaire (`ToleranceFixeReponseCourte`) | Global | 2 caractères d'écart par défaut, entre les deux seuils de longueur ci-dessus |
+| Probabilité de mode "course" (question bonus, Qcm uniquement) | Global | 50 % par défaut, voir section 7 |
 | Ralentissement audio (question bonus) | Global | Activé/désactivé + facteur de ralentissement (ex. 0.8), voir section 7 |
 | Affichage du tableau général | Partie | Au moins une fois par partie, par défaut après la série médiane, déclenchable aussi manuellement par le host |
 | Mode équipe | Partie | Activé/désactivé, voir section 8 |
@@ -354,6 +374,19 @@ seuil = max(1, floor(longueur(texteNormalisé) × 0.2))
 ```
 
 Concrètement : ~20 % de caractères d'écart tolérés, avec un minimum de 1. Ça reste un point de départ — à ajuster après quelques parties de test si ça se montre trop laxiste (des réponses clairement fausses validées) ou trop strict (des réponses correctes rejetées pour une faute de frappe).
+
+**Correction (retour utilisateur)** : ce seuil minimal d'1 caractère rendait presque n'importe quelle réponse acceptable sur un texte très court (ex. "Xo" accepté pour "Go", distance 1 ≤ seuil 1). En dessous de `LongueurMinimalePourTolerance` (10 caractères par défaut, texte normalisé), la tolérance était désactivée : seule une réponse strictement exacte était acceptée. Au-delà, la formule ci-dessus s'applique normalement.
+
+**Deuxième correction (retour utilisateur)** : ce "tout ou rien" en dessous de 10 caractères était devenu trop strict dans l'autre sens — "Hayley" tapé pour "Halsey" (6 caractères, distance 2) comptait faux. Trois zones désormais, selon la longueur du texte attendu normalisé :
+
+```
+longueur < LongueurMinimalePourToleranceFixe (4)        -> réponse exacte exigée
+LongueurMinimalePourToleranceFixe <= longueur < LongueurMinimalePourTolerance (10)
+                                                          -> distance <= ToleranceFixeReponseCourte (2)
+longueur >= LongueurMinimalePourTolerance (10)           -> seuil = max(1, floor(longueur × 0.2)) [formule ci-dessus]
+```
+
+La zone intermédiaire évite à la fois le laxisme sur un texte à 2-3 lettres (toujours réponse exacte) et la sévérité excessive sur un nom à 5-9 lettres (2 caractères d'écart tolérés, indépendamment du ratio qui donnerait un seuil ridiculement bas).
 
 ### Outil de curation des tags
 

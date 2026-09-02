@@ -22,6 +22,10 @@
       <button id="btn-open-display" class="btn-secondary">Ouvrir l'écran public</button>
       <span id="display-indicator" class="pill pill--off">écran public : fermé</span>
       <span id="connection-indicator" class="pill pill--off">déconnecté</span>
+      <!-- Retour utilisateur : pouvoir relancer le backend (POST /api/admin/restart) sans accès
+           physique/SSH au Raspberry Pi. Volontairement discret (btn-danger) et confirmé par mot de
+           passe — voir #restart-overlay ci-dessous. -->
+      <button id="btn-open-restart" class="btn-danger">Redémarrer le serveur</button>
     </div>
   </header>
   <p class="control-note">
@@ -76,6 +80,7 @@
       <div class="game-code">
         Code de la partie : <span id="lobby-code"></span>
       </div>
+      <div id="lobby-qrcode" class="qr-container"></div>
       <h3>Joueurs connectés</h3>
       <ul id="lobby-players" class="player-list"></ul>
 
@@ -186,6 +191,13 @@
       <h2 id="bonus-question-title">Question bonus — à deviner !</h2>
       <div class="cover-frame cover-frame--mystere"><span class="cover-placeholder">❓</span></div>
       <p id="bonus-question-mode-label"></p>
+      <div id="bonus-course-banner" class="course-banner hidden">
+        <span class="course-banner__icon" aria-hidden="true">🏁</span>
+        <div class="course-banner__text">
+          <strong class="course-banner__title">Mode course</strong>
+          <span class="course-banner__desc">Le premier qui répond décide — juste, il rafle la mise ; faux, il la perd.</span>
+        </div>
+      </div>
       <p>Morceau ralenti, un seul essai, pas de dégressivité.</p>
       <div class="timer-bar"><div id="bonus-question-timer-fill" class="timer-fill"></div></div>
     </section>
@@ -193,6 +205,7 @@
     <!-- Écran 8 : question bonus — résultat -->
     <section id="screen-bonus-result" class="screen hidden">
       <h2 id="bonus-result-title">Résultat de la question bonus</h2>
+      <p id="bonus-result-course-banner" class="course-banner hidden">🏁 Course : seul le premier qui a répondu apparaît ci-dessous — les autres récupèrent leur mise intacte.</p>
       <div class="cover-frame">
         <img id="bonus-reveal-cover" class="hidden" alt="Pochette de l'album" />
         <span id="bonus-reveal-cover-placeholder" class="cover-placeholder">🎵</span>
@@ -232,9 +245,32 @@
         <button id="btn-close-leaderboard">Fermer</button>
       </div>
     </section>
+
+    <!-- Redémarrage du serveur (retour utilisateur) — arrête le process backend (Admin:RestartPassword
+         requis côté serveur, sinon 503) ; c'est `restart: unless-stopped` (docker-compose.yml) qui
+         relance le conteneur, pas cette page. Toute partie en cours est perdue (état 100% en mémoire,
+         voir CLAUDE.md), d'où l'avertissement explicite avant la case mot de passe. -->
+    <section id="restart-overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <h2>Redémarrer le serveur ?</h2>
+        <p class="error">
+          ⚠️ La partie en cours sera perdue (scores, morceau en cours) — à utiliser seulement en cas de
+          blocage/crash du serveur, jamais en cours de jeu normal.
+        </p>
+        <label for="restart-password">Mot de passe administrateur</label>
+        <input id="restart-password" type="password" autocomplete="off" />
+        <p id="restart-error" class="error"></p>
+        <p id="restart-note" class="reveal"></p>
+        <div class="actions">
+          <button id="btn-confirm-restart" class="btn-danger">Redémarrer maintenant</button>
+          <button id="btn-cancel-restart" class="btn-secondary">Annuler</button>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script src="vendor/signalr.min.js"></script>
-  <script src="app.js"></script>
+  <script src="vendor/qrcode.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>

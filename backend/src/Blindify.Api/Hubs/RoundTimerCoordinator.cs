@@ -52,18 +52,26 @@ public class RoundTimerCoordinator(
                 var session = sessionStore.Get(code);
                 if (session is null) return;
 
-                var round = session.RoundCourant();
-                if (round?.DebutRound is null) return;
-
-                var pauseEnCoursMs = session.EnPause && session.PauseDemarreeA is not null
-                    ? (DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds
-                    : 0;
-                var tempsEcouleMs = (DateTimeOffset.UtcNow - round.DebutRound.Value).TotalMilliseconds
-                                     - (round.DureeEnPauseMs + pauseEnCoursMs);
-
-                if (tempsEcouleMs >= config.DureeFenetreReponseMs)
+                bool termine;
+                Round round;
+                lock (session.Lock)
                 {
-                    roundService.TerminerParTimeout(session, round, config);
+                    var roundCourant = session.RoundCourant();
+                    if (roundCourant?.DebutRound is null) return;
+                    round = roundCourant;
+
+                    var pauseEnCoursMs = session.EnPause && session.PauseDemarreeA is not null
+                        ? (DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds
+                        : 0;
+                    var tempsEcouleMs = (DateTimeOffset.UtcNow - round.DebutRound.Value).TotalMilliseconds
+                                         - (round.DureeEnPauseMs + pauseEnCoursMs);
+
+                    termine = tempsEcouleMs >= config.DureeFenetreReponseMs;
+                    if (termine) roundService.TerminerParTimeout(session, round, config);
+                }
+
+                if (termine)
+                {
                     await DiffuserFinDeRoundAsync(session, round);
                     return;
                 }

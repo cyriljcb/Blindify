@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+using Blindify.Api.Contracts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -55,7 +55,11 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
                 options.HttpMessageHandlerFactory = _ => Server.CreateHandler();
                 options.Transports = HttpTransportType.LongPolling;
             })
-            .AddJsonProtocol(options => options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
+            .AddJsonProtocol(options =>
+            {
+                foreach (var converter in ContractJsonOptions.Instance.Converters)
+                    options.PayloadSerializerOptions.Converters.Add(converter);
+            })
             .Build();
 
     protected override void Dispose(bool disposing)

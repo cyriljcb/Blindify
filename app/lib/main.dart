@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import 'screens/bonus_question_screen.dart';
+import 'screens/answer_phase_screen.dart';
+import 'screens/bonus_course_intro_screen.dart';
 import 'screens/bonus_result_screen.dart';
 import 'screens/bonus_stake_screen.dart';
 import 'screens/connect_screen.dart';
@@ -13,10 +14,10 @@ import 'screens/leaderboard_overlay.dart';
 import 'screens/loading_screen.dart';
 import 'screens/lobby_screen.dart';
 import 'screens/round_ended_screen.dart';
-import 'screens/round_screen.dart';
 import 'screens/serie_intro_screen.dart';
 import 'services/game_connection.dart';
 import 'theme.dart';
+import 'widgets/settings_sheet.dart';
 
 void main() async {
   // Buzzer tenu à deux mains en mode portrait — un paysage accidentel casserait la mise en page
@@ -60,10 +61,11 @@ class _RootScreen extends StatelessWidget {
       AppScreen.join => const JoinScreen(),
       AppScreen.lobby => const LobbyScreen(),
       AppScreen.serieIntro => const SerieIntroScreen(),
-      AppScreen.round => const RoundScreen(),
+      AppScreen.round => const AnswerPhaseScreen(variant: AnswerPhaseVariant.classique),
       AppScreen.roundEnded => const RoundEndedScreen(),
       AppScreen.bonusStake => const BonusStakeScreen(),
-      AppScreen.bonusQuestion => const BonusQuestionScreen(),
+      AppScreen.bonusCourseIntro => const BonusCourseIntroScreen(),
+      AppScreen.bonusQuestion => const AnswerPhaseScreen(variant: AnswerPhaseVariant.bonus),
       AppScreen.bonusResult => const BonusResultScreen(),
       AppScreen.ended => const EndedScreen(),
     };
@@ -100,6 +102,12 @@ class _RootScreen extends StatelessWidget {
                     ),
                     const Spacer(),
                     _ConnectionPill(connected: game.connected),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => showSettingsSheet(context),
+                      icon: const Icon(Icons.settings_rounded, color: BlindifyColors.ink),
+                      tooltip: 'Réglages',
+                    ),
                   ],
                 ),
               ),

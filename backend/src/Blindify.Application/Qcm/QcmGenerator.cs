@@ -36,17 +36,34 @@ public class QcmGenerator : IQcmGenerator
         // artiste, illisible en cible Auteur puisqu'elles afficheraient alors un texte identique).
         // Best-effort seulement — voir filet de sécurité plus bas, jamais au prix de bloquer le
         // round faute d'options.
+        //
+        // Retour utilisateur : valider chaque distracteur INDÉPENDAMMENT ("partage au moins un tag
+        // avec le bon morceau") permettait à un morceau tagué à la fois "pop" et "variete-francaise"
+        // de ramener un distracteur anglais (via "pop") ET un distracteur français (via
+        // "variete-francaise") sans qu'ils aient quoi que ce soit en commun ENTRE EUX (ex. Fall Out
+        // Boy / Patrick Sébastien / Avicii dans le même QCM). On choisit maintenant UNE seule
+        // "ancre" (le genre/tag significatif du bon morceau qui a le plus de candidats éligibles
+        // dans le pool) et TOUS les distracteurs de ce palier doivent partager CETTE MÊME ancre —
+        // garantit un ensemble cohérent entre eux, pas juste avec la bonne réponse chacun de son
+        // côté. En complément, MemeStatutFrancophone empêche tout mélange français/anglais même via
+        // une ancre partagée par les deux (ex. "pop").
         var frequenceGenres = ConstruireFrequenceGenres(pool);
-        CompleterDepuisPool(distracteurs, pool, NombreDistracteurs, idsChoisis, artistesChoisis, random,
-            t => PartageGenreOuTag(t, correct, frequenceGenres, pool.Count));
+        var frequenceTags = ConstruireFrequenceTags(pool);
+        var ancre = ChoisirMeilleureAncre(correct, pool, frequenceGenres, frequenceTags, idsChoisis, artistesChoisis, random);
+        if (ancre is not null)
+        {
+            CompleterDepuisPool(distracteurs, pool, NombreDistracteurs, idsChoisis, artistesChoisis, random,
+                t => MemeStatutFrancophone(t, correct) && PartageAncrage(t, ancre));
+        }
 
         // Repli intermédiaire : pas assez de morceaux du même genre/tag (catalogue trop niche, ou
         // morceau sans genre renseigné — ~40 % du catalogue actuel) -> on privilégie les morceaux de
         // l'année la plus proche plutôt que de sauter directement à un tirage totalement aléatoire.
         // Un tri par proximité (plutôt qu'un bucket "même décennie") évite l'effet de bord où deux
-        // morceaux à un an d'écart (1999/2001) tombent dans des décennies différentes.
+        // morceaux à un an d'écart (1999/2001) tombent dans des décennies différentes. La barrière
+        // francophone reste appliquée ici (sinon elle referait surface via ce repli).
         if (distracteurs.Count < NombreDistracteurs && correct.Year is not null)
-            CompleterParAnneeProche(distracteurs, pool, NombreDistracteurs, idsChoisis, artistesChoisis, random, correct.Year.Value);
+            CompleterParAnneeProche(distracteurs, pool, NombreDistracteurs, idsChoisis, artistesChoisis, random, correct);
 
         if (distracteurs.Count < NombreDistracteurs)
             CompleterDepuisPool(distracteurs, pool, NombreDistracteurs, idsChoisis, artistesChoisis, random, _ => true);
@@ -83,6 +100,12 @@ public class QcmGenerator : IQcmGenerator
     // ils sont par construction fiables et jamais génériques au point de fausser un distracteur.
     private const double SeuilPartFrequenceGenreGenerique = 0.08;
 
+    // Retour utilisateur : des titres français apparaissaient comme distracteurs d'un morceau
+    // anglais (et inversement) — même avec une ancre partagée (ex. "pop"), il faut aussi que les
+    // deux morceaux soient du même "monde" linguistique. Vérifié via le tag manuel
+    // "variete-francaise" plutôt qu'un champ dédié (aucun champ langue dans le schéma).
+    private const string TagVarieteFrancaise = "variete-francaise";
+
     private static Dictionary<string, int> ConstruireFrequenceGenres(IReadOnlyList<Track> pool)
     {
         var frequence = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -92,15 +115,67 @@ public class QcmGenerator : IQcmGenerator
         return frequence;
     }
 
-    private static bool PartageGenreOuTag(Track a, Track b, Dictionary<string, int> frequenceGenres, int tailleCatalogue)
+    // Même principe que ConstruireFrequenceGenres, appliqué aux Tags manuels — nécessaire pour que
+    // ChoisirMeilleureAncre écarte aussi les tags devenus trop génériques (ex. une décennie couvre
+    // ~14 % du catalogue à elle seule, "variete-francaise" est également très répandu) sans les
+    // lister en dur : le seuil relatif s'applique uniformément aux deux champs.
+    private static Dictionary<string, int> ConstruireFrequenceTags(IReadOnlyList<Track> pool)
     {
-        bool EstSignificatif(string genre) =>
-            frequenceGenres.TryGetValue(genre, out var n) && (double)n / tailleCatalogue <= SeuilPartFrequenceGenreGenerique;
+        var frequence = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var t in pool)
+        foreach (var tag in t.Tags)
+            frequence[tag] = frequence.GetValueOrDefault(tag) + 1;
+        return frequence;
+    }
 
-        var genresA = a.Genres.Where(EstSignificatif);
-        var genresB = b.Genres.Where(EstSignificatif);
-        return genresA.Intersect(genresB, StringComparer.OrdinalIgnoreCase).Any()
-            || a.Tags.Intersect(b.Tags, StringComparer.OrdinalIgnoreCase).Any();
+    private static bool MemeStatutFrancophone(Track a, Track b) =>
+        a.Tags.Contains(TagVarieteFrancaise, StringComparer.OrdinalIgnoreCase) ==
+        b.Tags.Contains(TagVarieteFrancaise, StringComparer.OrdinalIgnoreCase);
+
+    private static bool PartageAncrage(Track t, string ancre) =>
+        t.Genres.Contains(ancre, StringComparer.OrdinalIgnoreCase) || t.Tags.Contains(ancre, StringComparer.OrdinalIgnoreCase);
+
+    private static IEnumerable<string> AncresSignificatives(Track t, Dictionary<string, int> frequenceGenres, Dictionary<string, int> frequenceTags, int tailleCatalogue)
+    {
+        bool EstSignificatif(Dictionary<string, int> frequence, string valeur) =>
+            frequence.TryGetValue(valeur, out var n) && (double)n / tailleCatalogue <= SeuilPartFrequenceGenreGenerique;
+
+        var genres = t.Genres.Where(g => EstSignificatif(frequenceGenres, g));
+        var tags = t.Tags.Where(g => EstSignificatif(frequenceTags, g));
+        return genres.Concat(tags).Distinct(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Choisit, parmi les genres/tags significatifs de <paramref name="correct"/>, celui
+    /// qui a le plus de candidats éligibles dans le pool (égalité départagée au hasard) — voir le
+    /// commentaire dans GenererOptions sur pourquoi une ancre UNIQUE (pas "au moins un tag chacun")
+    /// est nécessaire pour garantir un ensemble de distracteurs cohérent entre eux.</summary>
+    private static string? ChoisirMeilleureAncre(Track correct, IReadOnlyList<Track> pool,
+        Dictionary<string, int> frequenceGenres, Dictionary<string, int> frequenceTags,
+        HashSet<string> idsChoisis, HashSet<string> artistesChoisis, Random random)
+    {
+        var ancresCandidates = AncresSignificatives(correct, frequenceGenres, frequenceTags, pool.Count).ToList();
+        if (ancresCandidates.Count == 0) return null;
+
+        bool EstEligible(Track t) => !idsChoisis.Contains(t.Id) && !artistesChoisis.Contains(t.Artist) && MemeStatutFrancophone(t, correct);
+
+        var meilleurCompte = 0;
+        var meilleures = new List<string>();
+        foreach (var ancre in ancresCandidates)
+        {
+            var compte = pool.Count(t => EstEligible(t) && PartageAncrage(t, ancre));
+            if (compte > meilleurCompte)
+            {
+                meilleurCompte = compte;
+                meilleures.Clear();
+                meilleures.Add(ancre);
+            }
+            else if (compte > 0 && compte == meilleurCompte)
+            {
+                meilleures.Add(ancre);
+            }
+        }
+
+        return meilleures.Count > 0 ? meilleures[random.Next(meilleures.Count)] : null;
     }
 
     /// <summary>Complète <paramref name="distracteurs"/> jusqu'à <paramref name="cible"/> en tirant
@@ -125,13 +200,17 @@ public class QcmGenerator : IQcmGenerator
         }
     }
 
-    /// <summary>Prend, un par un, le(s) morceau(x) dont l'année est la plus proche de
-    /// <paramref name="anneeCorrecte"/> (égalité départagée au hasard), en ré-excluant après chaque
-    /// tirage — un candidat restant peut partager l'artiste qu'on vient de sélectionner.</summary>
+    /// <summary>Prend, un par un, le(s) morceau(x) dont l'année est la plus proche de celle de
+    /// <paramref name="correct"/> (égalité départagée au hasard), en ré-excluant après chaque
+    /// tirage — un candidat restant peut partager l'artiste qu'on vient de sélectionner. La barrière
+    /// francophone (MemeStatutFrancophone) reste appliquée à ce repli, sinon le mélange
+    /// français/anglais y referait surface.</summary>
     private static void CompleterParAnneeProche(List<Track> distracteurs, IReadOnlyList<Track> pool, int cible,
-        HashSet<string> idsChoisis, HashSet<string> artistesChoisis, Random random, int anneeCorrecte)
+        HashSet<string> idsChoisis, HashSet<string> artistesChoisis, Random random, Track correct)
     {
-        bool EstEligible(Track t) => !idsChoisis.Contains(t.Id) && !artistesChoisis.Contains(t.Artist) && t.Year is not null;
+        var anneeCorrecte = correct.Year!.Value;
+        bool EstEligible(Track t) => !idsChoisis.Contains(t.Id) && !artistesChoisis.Contains(t.Artist)
+            && t.Year is not null && MemeStatutFrancophone(t, correct);
 
         while (distracteurs.Count < cible)
         {

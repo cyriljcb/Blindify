@@ -216,4 +216,53 @@ public class QcmGeneratorTests
         var distracteurs = result.OptionsTrackIds.Where(id => id != correct.Id).ToHashSet();
         Assert.Equal(["pop0", "pop1", "pop2"], distracteurs.OrderBy(x => x));
     }
+
+    [Fact]
+    public void GenererOptions_PlusieursAncresPossibles_DistracteursViennentDUneSeuleAncre()
+    {
+        // Retour utilisateur : Fall Out Boy / Patrick Sébastien / Avicii dans le même QCM — valider
+        // chaque distracteur indépendamment ("partage au moins un tag avec le bon morceau")
+        // permettait à un morceau tagué à la fois "pop" et "variete-francaise" de ramener un
+        // distracteur via CHAQUE tag séparément, sans qu'ils aient rien en commun entre eux. Ici
+        // "correct" porte les deux tags ; les distracteurs doivent tous venir du MÊME groupe (soit
+        // tous "pop", soit tous "variete-francaise"), jamais un mélange des deux.
+        var correct = new Track { Id = "a", Title = "T", Artist = "Correct", FilePath = "audio/a.mp3", Tags = ["pop", "variete-francaise"] };
+
+        var pool = new List<Track> { correct };
+        pool.AddRange(Enumerable.Range(0, 3).Select(i => NouveauTrack($"pop{i}", tags: ["pop"])));
+        pool.AddRange(Enumerable.Range(0, 3).Select(i => NouveauTrack($"vf{i}", tags: ["variete-francaise"])));
+        pool.AddRange(Enumerable.Range(0, 60).Select(i => NouveauTrack($"filler{i}")));
+
+        var config = new GameConfig { ProbabiliteQcmPiege = 0 };
+
+        var result = _generator.GenererOptions(correct, pool, config, new Random(17));
+
+        var distracteurs = result.OptionsTrackIds.Where(id => id != correct.Id).ToHashSet();
+        var toutPop = distracteurs.All(id => id.StartsWith("pop"));
+        var toutVf = distracteurs.All(id => id.StartsWith("vf"));
+        Assert.True(toutPop || toutVf, $"Distracteurs mélangés entre les deux ancres : {string.Join(", ", distracteurs)}");
+    }
+
+    [Fact]
+    public void GenererOptions_AncrePartageeParDeuxLangues_NeMelangePasFrancaisEtAnglais()
+    {
+        // Retour utilisateur : des titres français apparaissaient comme distracteurs d'un morceau
+        // anglais. Ici l'ancre "pop" est partagée par des morceaux anglais ET français, mais
+        // "correct" n'est pas "variete-francaise" : seuls les candidats non-francophones doivent
+        // être retenus malgré le tag "pop" commun.
+        var correct = new Track { Id = "a", Title = "T", Artist = "Correct", FilePath = "audio/a.mp3", Tags = ["pop"] };
+
+        var pool = new List<Track> { correct };
+        pool.AddRange(Enumerable.Range(0, 3).Select(i => NouveauTrack($"en{i}", tags: ["pop"])));
+        pool.AddRange(Enumerable.Range(0, 3).Select(i => NouveauTrack($"fr{i}", tags: ["pop", "variete-francaise"])));
+        pool.AddRange(Enumerable.Range(0, 90).Select(i => NouveauTrack($"filler{i}")));
+
+        var config = new GameConfig { ProbabiliteQcmPiege = 0 };
+
+        var result = _generator.GenererOptions(correct, pool, config, new Random(17));
+
+        var distracteurs = result.OptionsTrackIds.Where(id => id != correct.Id).ToHashSet();
+        Assert.DoesNotContain(distracteurs, id => id.StartsWith("fr"));
+        Assert.Equal(3, distracteurs.Count(id => id.StartsWith("en")));
+    }
 }

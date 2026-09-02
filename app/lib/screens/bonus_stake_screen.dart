@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../services/game_connection.dart';
 import '../theme.dart';
+import '../widgets/answer_banner.dart';
+import '../widgets/fill_height_list.dart';
 import '../widgets/game_card.dart';
 import '../widgets/serie_badge.dart';
 import '../widgets/timer_bar.dart';
@@ -88,14 +90,13 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
           const SizedBox(height: 12),
           TimerBar(progress: progress, secondesRestantes: (_remainingMs / 1000).ceil()),
           const SizedBox(height: 16),
-          if (game.paused) const _Banner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
+          if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.bonusStakeEnvoyee && !game.paused)
-            const _Banner(text: 'Mise envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
+            const AnswerBanner(text: 'Mise envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
           const SizedBox(height: 12),
           Expanded(
-            child: ListView.separated(
+            child: FillHeightList(
               itemCount: options.paliers.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final valeur = options.paliers[index];
                 final selectionne = game.bonusPalierSelectionne == index;
@@ -106,7 +107,12 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
                     borderRadius: BorderRadius.circular(8),
                     onTap: disabled ? null : () => context.read<GameConnection>().selectStake(index),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      width: double.infinity,
+                      alignment: Alignment.center,
+                      // Centré plutôt qu'un padding fixe (16) : la tuile a désormais une hauteur
+                      // calculée pour remplir l'espace disponible, parfois plus serrée qu'avant —
+                      // un padding fixe y déborderait, alors qu'un centrage s'adapte à toute hauteur.
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: BlindifyColors.ink, width: selectionne ? 3 : 2),
@@ -127,27 +133,6 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Banner extends StatelessWidget {
-  const _Banner({required this.text, required this.color});
-
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
-      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
     );
   }
 }

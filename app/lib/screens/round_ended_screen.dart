@@ -29,21 +29,19 @@ class RoundEndedScreen extends StatelessWidget {
           const SizedBox(height: 16),
           CoverArt(imageUrl: game.coverUrl(result.coverPath)),
           const SizedBox(height: 16),
+          // Titre toujours au-dessus de l'artiste, quelle que soit la cible du round — même ordre
+          // que l'écran public (host/shared/format.js:libelleReveal), pour que les deux écrans se
+          // lisent pareil pendant une partie.
           Text(
-            result.reponseAttendue,
+            result.cible == 'Film' ? result.film : result.title,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          if (result.cible == 'Film')
-            // Cible Film (morceaux "disney") : la vraie chanson/artiste reste affichée en dessous,
-            // à titre de bonus trivia — la réponse attendue était le film, pas ce titre-ci.
-            Text(
-              '${result.title} — ${result.artist}',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            )
-          else
-            Text(result.artist, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            result.cible == 'Film' ? '${result.title} — ${result.artist}' : result.artist,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: 24),
           if (monResultat != null) ...[
             Icon(

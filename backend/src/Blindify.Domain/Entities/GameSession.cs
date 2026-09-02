@@ -28,4 +28,10 @@ public class GameSession
 
     /// <summary>Index du round courant dans Series[SerieCouranteIndex].Rounds. -1 = aucun round démarré.</summary>
     public int RoundCourantIndex { get; set; } = -1;
+
+    /// <summary>Verrou pris autour de toute mutation de cette session (GameHub + les deux
+    /// TimerCoordinators) — plusieurs connexions SignalR et des timers de fond peuvent muter
+    /// Players/Reponses/Mises en parallèle sans ça. `lock` ne pouvant pas englober un `await`, seule
+    /// la portion synchrone de chaque méthode est verrouillée ; les SendAsync restent hors verrou.</summary>
+    public object Lock { get; } = new();
 }

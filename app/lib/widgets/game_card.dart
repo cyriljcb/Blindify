@@ -5,20 +5,26 @@ import '../theme.dart';
 /// Carte "scène" utilisée comme conteneur principal de chaque écran — même esprit que les
 /// écrans en carte du host (host/style.css:.screen), pour une identité visuelle cohérente.
 class GameCard extends StatelessWidget {
-  const GameCard({super.key, required this.child});
+  const GameCard({super.key, required this.child, this.accentColor});
 
   final Widget child;
 
+  /// Contour + ombre — mustard en mode course (bonus) pour que l'écran bascule visuellement dès
+  /// l'annonce plutôt que de répéter une bannière pleine largeur sur l'écran de question (retour
+  /// utilisateur : boutons de réponse écrasés par le texte).
+  final Color? accentColor;
+
   @override
   Widget build(BuildContext context) {
+    final accent = accentColor ?? BlindifyColors.ink;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: BlindifyColors.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: BlindifyColors.ink, width: 3),
-        boxShadow: hardShadow(BlindifyColors.cobalt, offset: 7),
+        border: Border.all(color: accent, width: 3),
+        boxShadow: hardShadow(accentColor ?? BlindifyColors.cobalt, offset: 7),
       ),
       child: child,
     );

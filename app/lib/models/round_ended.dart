@@ -45,9 +45,6 @@ class RoundEnded {
 
   final List<RoundResultEntry> resultats;
 
-  /// Ce qui doit être mis en avant comme "bonne réponse" à l'écran, selon la cible du round.
-  String get reponseAttendue => cible == 'Film' ? film : title;
-
   factory RoundEnded.fromJson(Map<String, dynamic> json) => RoundEnded(
         trackId: json['trackId'] as String,
         title: json['title'] as String,

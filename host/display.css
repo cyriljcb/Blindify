@@ -71,6 +71,18 @@ main {
   width: min(420px, 60vw);
 }
 
+/* ----- Bannière "mode course", plus grande que sur le panneau de contrôle — lisible depuis le
+   fond de la salle. ----- */
+
+.course-banner--display {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 1.1rem 1.6rem;
+}
+.course-banner--display .course-banner__icon { font-size: 2.6rem; }
+.course-banner--display .course-banner__title { font-size: 1.5rem; }
+.course-banner--display .course-banner__desc { font-size: 1.05rem; }
+
 /* ----- Minuteur, plus visible depuis le fond de la pièce ----- */
 
 .timer-bar--big {

@@ -34,19 +34,6 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
         await _bob.DisposeAsync();
     }
 
-    private static SeriesConfig NouveauSeriesConfigSansRoundClassique() => new()
-    {
-        NombreRoundsClassiques = 0,
-        DureeFenetreReponseMs = 1000,
-        PointsMax = 100,
-        PointsMin = 20,
-        PenaliteMauvaiseReponseRatio = 0.5,
-        PenaliteAbsenceReponse = -5,
-        PaliersDeMise = [10, 20, 30, 50],
-        DureePhaseMiseMs = 400,
-        DureePhaseQuestionMs = 800
-    };
-
     [Fact]
     public async Task QuestionBonus_MiseExpliciteEtPalierParDefaut_ProduitLeResultatAttendu()
     {
@@ -63,8 +50,18 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
         _alice.On<BonusResultDto>("BonusResult", payload => bonusResultTcs.TrySetResult(payload));
 
         var creation = await _hostConnection.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(ModeEquipe: false));
+        // ProbabiliteBonusCourse à 0 : ce test vérifie le comportement "indépendant" (Bob absent de
+        // réponse perd sa mise seul, sans affecter Alice) — le mode "course" a un comportement
+        // différent et volontairement distinct, couvert par BonusRoundServiceTests.
         await _hostConnection.InvokeAsync(
-            "ConfigurerPartie", new ConfigurerPartieRequestDto([new SeriesSetupDto(NouveauSeriesConfigSansRoundClassique(), [], [])], null));
+            "ConfigurerPartie", new ConfigurerPartieRequestDto(
+                NombreSeries: 1,
+                NombreRoundsClassiques: 0,
+                DureeFenetreReponseMs: 1000,
+                ThemesVivier: [],
+                Config: new GameConfig { ProbabiliteBonusCourse = 0 },
+                DureePhaseMiseMs: 400,
+                DureePhaseQuestionMs: 800));
 
         await _alice.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-alice");
         await _bob.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Bob", "player-bob");

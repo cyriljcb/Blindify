@@ -25,7 +25,8 @@ public interface IBonusRoundService
     /// Soumet la réponse d'un joueur (correspondance texte, comme en mode TapeReponse). Retourne null si
     /// invalide (partie en pause, phase question pas démarrée, joueur a déjà répondu ou n'a pas misé).
     /// </summary>
-    BonusAnswer? SoumettreReponse(GameSession session, BonusRound bonusRound, SeriesConfig config, Track track, string playerId, string reponse, DateTimeOffset maintenant);
+    /// <param name="resolveTrack">Voir IRoundService.SoumettreReponse — même repli en mode Qcm.</param>
+    BonusAnswer? SoumettreReponse(GameSession session, BonusRound bonusRound, SeriesConfig config, Track track, string playerId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null);
 
     /// <summary>Absence de réponse en fin de phase question → traitée comme une réponse fausse (perte de la mise).</summary>
     void TerminerParTimeout(GameSession session, BonusRound bonusRound, SeriesConfig config);

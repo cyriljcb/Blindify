@@ -1,0 +1,402 @@
+<title>Éditeur de tags</title>
+<style>
+  :root {
+    --bg: #121014;
+    --surface: #1c1a1f;
+    --surface-alt: #242229;
+    --border: #322f36;
+    --ink: #f2ede1;
+    --ink-dim: #8a8578;
+    --coral: #ff4b3e;
+    --mustard: #ffc93c;
+    --good: #2ed573;
+    --font-body: "Segoe UI", system-ui, sans-serif;
+    --font-mono: "Consolas", "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+  }
+  .page { max-width: 1100px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  header {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+    padding: 14px 0 12px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 14px;
+  }
+  h1 { font-size: 19px; margin: 0 0 10px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #search {
+    font-family: var(--font-body);
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    min-width: 220px;
+    flex: 1 1 220px;
+  }
+  label.check {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12.5px; color: var(--ink-dim); cursor: pointer;
+    white-space: nowrap;
+  }
+  .spacer { flex: 1 1 auto; }
+  button.action {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  button.action:hover { border-color: var(--ink-dim); }
+  button.action.primary { background: var(--good); color: #0b1f14; border-color: var(--good); }
+  button.action.danger { color: var(--coral); }
+  #counter { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-dim); }
+  #counter b { color: var(--mustard); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--ink-dim); padding: 6px 8px; border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr[hidden] { display: none; }
+  tbody tr.is-modified { background: rgba(46, 213, 115, 0.05); }
+  td { padding: 8px; vertical-align: top; }
+
+  .track-title { font-weight: 600; }
+  .track-artist { color: var(--ink-dim); font-size: 12px; }
+  .decade-badge {
+    font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-dim);
+    border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; margin-top: 4px; display: inline-block;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .chip {
+    font-family: var(--font-mono); font-size: 11.5px; padding: 4px 9px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink-dim); cursor: pointer;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--ink-dim); }
+  .chip.on { background: var(--good); color: #0b1f14; border-color: var(--good); font-weight: 700; }
+  .chip.special.on { background: var(--mustard); border-color: var(--mustard); }
+  .chip.hint {
+    background: transparent; color: var(--mustard); border-style: dashed; border-color: var(--mustard);
+  }
+  .chip.custom-remove { background: var(--coral); color: #2a0e0b; border-color: var(--coral); font-weight: 700; }
+
+  .add-tag-form { display: flex; gap: 4px; margin-top: 4px; }
+  .add-tag-form input {
+    font-family: var(--font-mono); font-size: 11px; padding: 3px 6px; width: 110px;
+    border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  }
+  .add-tag-form button {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border);
+    background: var(--surface-alt); color: var(--ink-dim); cursor: pointer;
+  }
+
+  .row-actions { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+  .reset-btn {
+    font-size: 10.5px; color: var(--ink-dim); background: none; border: none; cursor: pointer;
+    text-decoration: underline; padding: 0;
+  }
+  .reset-btn:hover { color: var(--coral); }
+
+  .hint-line {
+    font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-dim); margin-top: 5px;
+    max-width: 260px;
+  }
+  .hint-line b { color: var(--mustard); }
+
+  .toast {
+    position: fixed; bottom: 18px; right: 18px; background: var(--good); color: #0b1f14;
+    font-weight: 700; font-size: 13px; padding: 9px 16px; border-radius: 8px; opacity: 0;
+    transform: translateY(8px); transition: opacity 0.2s, transform 0.2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+
+<div class="page">
+  <header>
+    <h1>Éditeur de tags — Blindify</h1>
+    <div class="toolbar">
+      <input id="search" type="text" placeholder="Filtrer par titre ou artiste…" autocomplete="off">
+      <label class="check"><input type="checkbox" id="only-modified"> modifiés seulement</label>
+      <label class="check"><input type="checkbox" id="only-hints"> avec indice MusicBrainz</label>
+      <div class="spacer"></div>
+      <span id="counter"><b>0</b> modifié(s) / __TOTAL__</span>
+      <button class="action danger" id="reset-all">Tout réinitialiser</button>
+      <button class="action primary" id="export-csv">Exporter CSV</button>
+    </div>
+  </header>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:220px">Morceau</th>
+        <th>Tags</th>
+        <th style="width:70px"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const TRACKS = __DATA_JSON__;
+  const HINTS = __HINTS_JSON__;
+  const BUCKETS = __BUCKETS_JSON__;
+  const STORAGE_KEY = "blindify-tag-editor-v1";
+
+  const normalize = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+  let overrides = {};
+  try { overrides = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) { overrides = {}; }
+
+  function currentTags(track) {
+    return overrides[track.id] ? overrides[track.id].slice() : track.baseTags.slice();
+  }
+
+  function isModified(track) {
+    const cur = currentTags(track);
+    const base = track.baseTags;
+    if (cur.length !== base.length) return true;
+    const a = cur.slice().sort(), b = base.slice().sort();
+    return a.some((t, i) => t !== b[i]);
+  }
+
+  function saveOverride(track, tags) {
+    const base = track.baseTags.slice().sort();
+    const sorted = tags.slice().sort();
+    const same = sorted.length === base.length && sorted.every((t, i) => t === base[i]);
+    if (same) {
+      delete overrides[track.id];
+    } else {
+      overrides[track.id] = tags;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+  }
+
+  function toast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove("show"), 1400);
+  }
+
+  function updateCounter() {
+    document.getElementById("counter").innerHTML =
+      "<b>" + Object.keys(overrides).length + "</b> modifié(s) / __TOTAL__";
+  }
+
+  const tbody = document.getElementById("tbody");
+  const rowIndex = [];
+
+  TRACKS.forEach(track => {
+    const tr = document.createElement("tr");
+    tr.dataset.search = normalize(track.title + " " + track.artist);
+
+    // -- colonne morceau --
+    const tdTrack = document.createElement("td");
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "track-title";
+    titleDiv.textContent = track.title;
+    const artistDiv = document.createElement("div");
+    artistDiv.className = "track-artist";
+    artistDiv.textContent = track.artist;
+    tdTrack.append(titleDiv, artistDiv);
+    if (track.decade) {
+      const badge = document.createElement("span");
+      badge.className = "decade-badge";
+      badge.textContent = track.decade;
+      tdTrack.appendChild(document.createElement("br"));
+      tdTrack.appendChild(badge);
+    }
+
+    // -- colonne tags --
+    const tdTags = document.createElement("td");
+    const chipsWrap = document.createElement("div");
+    chipsWrap.className = "chips";
+    tdTags.appendChild(chipsWrap);
+
+    const hint = HINTS[track.id];
+    let hintLine = null;
+    if (hint) {
+      hintLine = document.createElement("div");
+      hintLine.className = "hint-line";
+      hintLine.innerHTML = "<b>MusicBrainz :</b> " + (hint.raw.length ? hint.raw.join(", ") : "—");
+      tdTags.appendChild(hintLine);
+    }
+
+    const addForm = document.createElement("div");
+    addForm.className = "add-tag-form";
+    const addInput = document.createElement("input");
+    addInput.placeholder = "autre tag…";
+    const addBtn = document.createElement("button");
+    addBtn.textContent = "+";
+    addForm.append(addInput, addBtn);
+    tdTags.appendChild(addForm);
+
+    function render() {
+      chipsWrap.innerHTML = "";
+      const tags = currentTags(track);
+
+      // tags spéciaux fixes
+      const disneyOn = tags.includes("disney");
+      const disneyChip = document.createElement("span");
+      disneyChip.className = "chip special" + (disneyOn ? " on" : "");
+      disneyChip.textContent = "disney";
+      disneyChip.title = "Cible forcée sur Film";
+      disneyChip.addEventListener("click", () => toggleTag("disney"));
+      chipsWrap.appendChild(disneyChip);
+
+      // 9 buckets genre
+      BUCKETS.forEach(bucket => {
+        const on = tags.includes(bucket);
+        const chip = document.createElement("span");
+        chip.className = "chip" + (on ? " on" : "");
+        chip.textContent = bucket;
+        chip.addEventListener("click", () => toggleTag(bucket));
+        chipsWrap.appendChild(chip);
+      });
+
+      // tags libres (hors buckets connus + décennie + disney) déjà présents
+      const knownExtra = new Set([...BUCKETS, "disney", track.decade].filter(Boolean));
+      tags.filter(t => !knownExtra.has(t)).forEach(t => {
+        const chip = document.createElement("span");
+        chip.className = "chip on custom-remove";
+        chip.textContent = t + " ×";
+        chip.title = "Cliquer pour retirer";
+        chip.addEventListener("click", () => toggleTag(t));
+        chipsWrap.appendChild(chip);
+      });
+
+      // suggestions MusicBrainz non encore appliquées, en raccourci cliquable
+      if (hint) {
+        hint.suggestion.filter(s => !tags.includes(s)).forEach(s => {
+          const chip = document.createElement("span");
+          chip.className = "chip hint";
+          chip.textContent = "+ " + s;
+          chip.title = "Suggestion MusicBrainz — cliquer pour ajouter";
+          chip.addEventListener("click", () => toggleTag(s));
+          chipsWrap.appendChild(chip);
+        });
+      }
+
+      tr.classList.toggle("is-modified", isModified(track));
+      resetBtn.style.visibility = isModified(track) ? "visible" : "hidden";
+    }
+
+    function toggleTag(tag) {
+      const tags = currentTags(track);
+      const idx = tags.indexOf(tag);
+      if (idx >= 0) tags.splice(idx, 1); else tags.push(tag);
+      saveOverride(track, tags);
+      render();
+      updateCounter();
+    }
+
+    addBtn.addEventListener("click", () => {
+      const val = addInput.value.trim().toLowerCase().replace(/\s+/g, "-");
+      if (!val) return;
+      toggleTag(val);
+      addInput.value = "";
+    });
+    addInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); addBtn.click(); }
+    });
+
+    // -- colonne actions --
+    const tdActions = document.createElement("td");
+    const resetBtn = document.createElement("button");
+    resetBtn.className = "reset-btn";
+    resetBtn.textContent = "réinitialiser";
+    resetBtn.style.visibility = "hidden";
+    resetBtn.addEventListener("click", () => {
+      delete overrides[track.id];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+      render();
+      updateCounter();
+    });
+    tdActions.appendChild(resetBtn);
+
+    tr.append(tdTrack, tdTags, tdActions);
+    tbody.appendChild(tr);
+    render();
+
+    rowIndex.push({ tr, track });
+  });
+
+  updateCounter();
+
+  // -- filtres --
+  function applyFilters() {
+    const term = normalize(document.getElementById("search").value.trim());
+    const onlyModified = document.getElementById("only-modified").checked;
+    const onlyHints = document.getElementById("only-hints").checked;
+    rowIndex.forEach(({ tr, track }) => {
+      let visible = !term || tr.dataset.search.includes(term);
+      if (visible && onlyModified) visible = isModified(track);
+      if (visible && onlyHints) visible = !!HINTS[track.id];
+      tr.hidden = !visible;
+    });
+  }
+  document.getElementById("search").addEventListener("input", applyFilters);
+  document.getElementById("only-modified").addEventListener("change", applyFilters);
+  document.getElementById("only-hints").addEventListener("change", applyFilters);
+
+  // -- reset global --
+  document.getElementById("reset-all").addEventListener("click", () => {
+    if (!confirm("Effacer toutes les modifications non exportées ?")) return;
+    overrides = {};
+    localStorage.removeItem(STORAGE_KEY);
+    rowIndex.forEach(({ track }) => {});
+    location.reload();
+  });
+
+  // -- export CSV --
+  function csvEscape(v) {
+    v = String(v ?? "");
+    return /[",;\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+
+  document.getElementById("export-csv").addEventListener("click", () => {
+    const header = ["id", "title", "artist", "year", "genres", "tags"];
+    const lines = [header.join(",")];
+    TRACKS.forEach(track => {
+      const tags = currentTags(track);
+      const ordered = [track.decade, ...tags.filter(t => t !== track.decade)].filter(Boolean);
+      lines.push([
+        track.id, track.title, track.artist, track.year,
+        track.genres.join("; "), ordered.join("; "),
+      ].map(csvEscape).join(","));
+    });
+    const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    a.href = url;
+    a.download = "tags_edites_" + stamp + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("CSV exporté");
+  });
+</script>
