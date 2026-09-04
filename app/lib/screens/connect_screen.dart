@@ -23,7 +23,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
   void initState() {
     super.initState();
     _urlController = TextEditingController(
-      text: context.read<GameConnection>().serverUrl ?? '',
+      text: context.read<GameConnection>().serverUrl ?? defaultServerUrl,
     );
   }
 
@@ -69,7 +69,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                   controller: _urlController,
                   decoration: const InputDecoration(
                     labelText: 'Adresse du serveur',
-                    hintText: 'http://192.168.1.42:5000',
+                    hintText: defaultServerUrl,
                   ),
                   keyboardType: TextInputType.url,
                   onSubmitted: (_) => context.read<GameConnection>().connect(

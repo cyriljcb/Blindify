@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
+import 'mdns_resolver.dart';
+
 import '../models/bonus_question_started.dart';
 import '../models/bonus_result.dart';
 import '../models/bonus_stake_options.dart';
@@ -30,6 +32,12 @@ const _prefsPlayerId = 'blindify_player_id';
 const _prefsServerUrl = 'blindify_server_url';
 const _prefsNom = 'blindify_nom';
 
+/// Pré-remplissage du champ adresse serveur tant qu'aucune connexion n'a encore été
+/// enregistrée (voir docs/architecture.md "Nom local au lieu de l'IP" — hostname `pi`
+/// configuré sur le Pi via raspi-config) — évite de laisser une IP de poste de dev comme
+/// première suggestion vue par un joueur.
+const defaultServerUrl = 'http://pi.local:5000';
+
 /// État central de l'app — un seul HubConnection, mirroring volontaire du pattern
 /// déjà validé côté host (`host/app.js`) : état global simple, écran courant piloté
 /// par les événements reçus du serveur plutôt qu'un Navigator.
@@ -48,6 +56,12 @@ class GameConnection extends ChangeNotifier {
   String? nom;
   String? gameCode;
 
+  /// Adresse effectivement joignable pour les requêtes réseau (hub SignalR, images) —
+  /// identique à [serverUrl] sauf quand celui-ci est un hostname `.local` résolu en IP via
+  /// mDNS (voir [resolveMdnsHost]) : [serverUrl] garde alors la forme lisible saisie/persistée,
+  /// celle-ci la forme réellement utilisable sur Android.
+  String? _resolvedUrl;
+
   /// Code de partie extrait d'un QR scanné (voir QrScanScreen), en attente d'être consommé par
   /// JoinScreen pour pré-remplir son champ — remis à null après lecture pour ne pas re-préremplir
   /// un futur passage sur cet écran (ex. après une partie terminée, code manuel suivant).
@@ -55,7 +69,8 @@ class GameConnection extends ChangeNotifier {
 
   /// URL complète d'une pochette (servie sous /files, comme l'audio côté host — voir
   /// Program.cs). null si le morceau n'a pas de coverPath.
-  String? coverUrl(String? coverPath) => coverPath == null ? null : '$serverUrl/files/$coverPath';
+  String? coverUrl(String? coverPath) =>
+      coverPath == null ? null : '${_resolvedUrl ?? serverUrl}/files/$coverPath';
 
   AppScreen screen = AppScreen.loading;
   bool connected = false;
@@ -149,13 +164,17 @@ class GameConnection extends ChangeNotifier {
     notifyListeners();
 
     final cleanUrl = url.trim().replaceAll(RegExp(r'/+$'), '');
+    // Sur Android, un hostname .local (mDNS) n'est pas résolu au niveau socket — remplacé ici par
+    // son IP concrète avant toute requête ; inchangé pour un autre hôte ou si la résolution échoue
+    // (voir resolveMdnsHost, docs/architecture.md "Nom local au lieu de l'IP").
+    final resolvedUrl = await resolveMdnsHost(cleanUrl);
 
     // Referme une éventuelle connexion précédente avant d'en ouvrir une nouvelle (ex. scan d'un QR
     // depuis JoinScreen alors qu'on était déjà connecté) — sinon l'ancien HubConnection reste actif
     // en arrière-plan, écoutant toujours ses handlers, sans jamais être arrêté.
     await _hub?.stop();
 
-    _hub = HubConnectionBuilder().withUrl('$cleanUrl/hubs/game').withAutomaticReconnect().build();
+    _hub = HubConnectionBuilder().withUrl('$resolvedUrl/hubs/game').withAutomaticReconnect().build();
 
     _registerHandlers();
 
@@ -165,6 +184,7 @@ class GameConnection extends ChangeNotifier {
       connected = true;
       connecting = false;
       serverUrl = cleanUrl;
+      _resolvedUrl = resolvedUrl;
       await _prefs?.setString(_prefsServerUrl, cleanUrl);
       screen = AppScreen.join;
       notifyListeners();

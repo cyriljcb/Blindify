@@ -1,4 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Requis pour toute communication réseau avec le backend (SignalR, images) — jusque-là
+         absent du manifeste "release" (seuls debug/profile l'ont par défaut, injecté par Flutter
+         pour ses propres besoins de dev), ajouté explicitement en même temps que les permissions
+         mDNS ci-dessous plutôt que de compter sur son inclusion indirecte via un plugin. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- Résolution des adresses .local (mDNS) via multicast_dns — voir GameConnection.connect
+         et services/mdns_resolver.dart. Android ne résout pas .local nativement au niveau socket
+         (contrairement à iOS/macOS/Windows), certains appareils filtrent aussi les paquets
+         multicast par défaut sans CHANGE_WIFI_MULTICAST_STATE. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
     <!-- Scan du QR code de connexion (adresse serveur + code de partie) -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>

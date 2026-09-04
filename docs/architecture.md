@@ -101,8 +101,8 @@ Le backend reste toujours actif sur le Raspberry Pi (déjà utilisé comme homel
 
 Retour utilisateur (2026-08-25) : taper l'IP du Pi depuis un iPhone est pénible. Pas besoin d'un vrai serveur DNS local (overkill pour un usage familial) — le mDNS (Bonjour) suffit et est nativement supporté par iOS/Safari et macOS, sans rien installer côté client.
 
-- Sur le Pi : `sudo raspi-config` → *System Options* → *Hostname*, renommer en `blindify` (avahi-daemon, qui fait tourner le mDNS, est généralement déjà présent et actif par défaut sur Raspberry Pi OS — vérifier avec `systemctl status avahi-daemon`, sinon `sudo apt install avahi-daemon`).
-- L'app devient joignable en `http://blindify.local:5000` (panneau de contrôle) et `http://blindify.local:5000/display.html` (écran public), à la place de l'IP.
+- Sur le Pi : `sudo raspi-config` → *System Options* → *Hostname*, renommer en `pi` (avahi-daemon, qui fait tourner le mDNS, est généralement déjà présent et actif par défaut sur Raspberry Pi OS — vérifier avec `systemctl status avahi-daemon`, sinon `sudo apt install avahi-daemon`).
+- L'app devient joignable en `http://pi.local:5000` (panneau de contrôle) et `http://pi.local:5000/display.html` (écran public), à la place de l'IP.
 - Config système sur le Pi, **aucun changement côté backend/Docker** : avahi tourne sur l'hôte, pas dans le conteneur, et n'a besoin de rien savoir du port publié.
 - Limite : dépend du support mDNS du réseau Wi-Fi — impeccable sur une box/routeur familial classique, plus capricieux si le réseau isole les clients entre eux (peu probable en usage domestique).
 
@@ -115,7 +115,7 @@ cd app && flutter build apk --release
 cp build/app/outputs/flutter-apk/app-release.apk ../host/blindify.apk
 ```
 
-Chaque téléphone Android visite `http://<ip-du-poste>:5000/blindify.apk` (ou `http://blindify.local:5000/blindify.apk` une fois le mDNS en place) depuis son navigateur et installe (autoriser "sources inconnues" une fois par téléphone). `host/blindify.apk` n'est jamais commité (voir `.gitignore` — trop volumineux et vite obsolète), à régénérer à chaque mise à jour. `Program.cs` mappe explicitement `.apk` → `application/vnd.android.package-archive` pour ce dossier, sans quoi le middleware de fichiers statiques renvoie 404 (extension absente du `FileExtensionContentTypeProvider` par défaut). Signé avec la clé debug du poste (`build.gradle`, stable d'un build à l'autre sur cette machine) : les mises à jour s'installent par-dessus sans désinstallation préalable.
+Chaque téléphone Android visite `http://<ip-du-poste>:5000/blindify.apk` (ou `http://pi.local:5000/blindify.apk` une fois le mDNS en place) depuis son navigateur et installe (autoriser "sources inconnues" une fois par téléphone). `host/blindify.apk` n'est jamais commité (voir `.gitignore` — trop volumineux et vite obsolète), à régénérer à chaque mise à jour. `Program.cs` mappe explicitement `.apk` → `application/vnd.android.package-archive` pour ce dossier, sans quoi le middleware de fichiers statiques renvoie 404 (extension absente du `FileExtensionContentTypeProvider` par défaut). Signé avec la clé debug du poste (`build.gradle`, stable d'un build à l'autre sur cette machine) : les mises à jour s'installent par-dessus sans désinstallation préalable.
 
 Pas de solution équivalente pour iPhone sans compte Apple Developer/Xcode — voir point 9 du retour playtest 2026-08-24 (mémoire) pour la piste web (`flutter build web`, PWA via Safari).
 

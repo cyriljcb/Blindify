@@ -33,6 +33,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  carp_multicast_lock:
+    dependency: "direct main"
+    description:
+      name: carp_multicast_lock
+      sha256: adbf43779b34a6ef2be38eeb241ac498e5fd0ef5a7013cf44cb91e455f8cb4a5
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.4"
   characters:
     dependency: transitive
     description:
@@ -312,6 +320,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.4.0"
+  multicast_dns:
+    dependency: "direct main"
+    description:
+      name: multicast_dns
+      sha256: "134668a9605c747322d8c3eb0e89a4c0cbdedb29f8d2d5ae29d14daef724987b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.3+1"
   nested:
     dependency: transitive
     description:

@@ -32,7 +32,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
   @override
   void initState() {
     super.initState();
-    _urlController = TextEditingController(text: context.read<GameConnection>().serverUrl ?? '');
+    _urlController = TextEditingController(text: context.read<GameConnection>().serverUrl ?? defaultServerUrl);
   }
 
   @override
@@ -72,7 +72,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               controller: _urlController,
               decoration: const InputDecoration(
                 labelText: 'Adresse du serveur',
-                hintText: 'http://192.168.1.42:5000',
+                hintText: defaultServerUrl,
               ),
               keyboardType: TextInputType.url,
             ),
