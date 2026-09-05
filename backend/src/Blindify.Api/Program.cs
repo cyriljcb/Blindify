@@ -72,6 +72,24 @@ if (!string.IsNullOrWhiteSpace(hostStaticPath))
     }
 }
 
+// Sert le build web de l'app joueur (flutter build web --base-href /play/) sous /play — pour les
+// joueurs iPhone sans app native installée (pas de sideload .ipa sans Mac/Xcode, contrairement à
+// l'.apk Android distribué via host/). Même pattern optionnel que Host:StaticPath ci-dessus : clé
+// absente ou dossier introuvable = ignoré silencieusement. Le build n'est pas versionné avec Git
+// (app/build/ est gitignored comme tout artefact de build) — déployé séparément sur le Pi, à
+// reconstruire après chaque changement de app/lib.
+var playStaticPath = app.Configuration["Play:StaticPath"];
+if (!string.IsNullOrWhiteSpace(playStaticPath))
+{
+    var resolvedPlayStaticPath = Path.GetFullPath(playStaticPath, app.Environment.ContentRootPath);
+    if (Directory.Exists(resolvedPlayStaticPath))
+    {
+        var playFileProvider = new PhysicalFileProvider(resolvedPlayStaticPath);
+        app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = playFileProvider, RequestPath = "/play" });
+        app.UseStaticFiles(new StaticFileOptions { FileProvider = playFileProvider, RequestPath = "/play" });
+    }
+}
+
 // Alimente le sélecteur de thèmes du panneau de contrôle (cases à cocher, voir host/app.js) —
 // tags manuels/semi-automatiques de tracks.json (architecture.md section 4), pas les genres
 // Spotify (trop nombreux/bruités pour un choix de thème joueur).

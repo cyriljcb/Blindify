@@ -35,6 +35,10 @@ services:
       # Relatif à ce fichier (racine du repo) : host/ est versionné avec Git, pas un point de montage
       # séparé comme le HDD de données ci-dessus.
       - ./host:/host:ro
+      # app/build/web n'est PAS versionné avec Git (build/ gitignored, comme tout artefact Flutter) —
+      # à déployer séparément sur le Pi après chaque `flutter build web --base-href /play/` (voir
+      # commentaire Play:StaticPath dans Program.cs). Absent = simplement ignoré par le backend.
+      - ./app/build/web:/play:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - Data__TracksPath=/data/tracks.json
@@ -43,4 +47,5 @@ services:
       - Data__CoversPath=/data/covers
       - Data__RootPath=/data
       - Host__StaticPath=/host
+      - Play__StaticPath=/play
       - Admin__RestartPassword=${BLINDIFY_RESTART_PASSWORD:-}
