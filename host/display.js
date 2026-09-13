@@ -137,6 +137,11 @@ function renderAnswerSpeedPanel() {
 let shakeTimeout = null;
 let flashTimeout = null;
 
+// Marge sous laquelle une réponse est considérée "auto-soumise à l'expiration du minuteur" plutôt
+// que réellement tapée — un peu plus large que _margeAutoSubmitMs côté Flutter (1000ms) pour
+// couvrir la latence réseau avant que le serveur n'horodate la réponse.
+const MARGE_FIN_ROUND_MS = 1500;
+
 // Secousse de tout l'écran + flash plein écran (voir @keyframes screen-shake/flash-overlay-pulse,
 // display.css) — retour utilisateur : rendre visible depuis le fond de la salle qu'un joueur vient
 // de répondre, sans rien révéler. Le flash double la secousse : une télé qui lisse le mouvement
@@ -382,7 +387,12 @@ window.addEventListener("message", (event) => {
       state.playersAnswered.push({ playerId: msg.playerId, tempsEcouleMs: msg.tempsEcouleMs });
       renderAnswerSpeedPanel();
     }
-    triggerScreenShake();
+    // Retour utilisateur : une réponse auto-soumise à l'expiration du minuteur (mode "tape la
+    // réponse", voir AnswerPhaseScreen._autoSubmitSiSaisie côté Flutter) ne mérite pas de secousse
+    // — le round se termine de toute façon dans la même seconde, ça n'apporte plus rien. Le
+    // classement de rapidité, lui, reste à jour dans tous les cas (juste ci-dessus).
+    const tempsRestantMs = state.timerDurationMs - msg.tempsEcouleMs;
+    if (tempsRestantMs > MARGE_FIN_ROUND_MS) triggerScreenShake();
   } else if (msg.type === "player-answered-reset") {
     state.playersAnswered = [];
     renderAnswerSpeedPanel();
