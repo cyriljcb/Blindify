@@ -124,6 +124,32 @@ public class QcmGeneratorTests
     }
 
     [Fact]
+    public void GenererOptions_ArtisteEnFeaturingSousPlusieursCredits_NestPasChoisiDeuxFois()
+    {
+        // Retour utilisateur (playtest 2026-09-06) : 3 options "Angèle" dans le même QCM, chacune
+        // créditée différemment ("Angèle", "Angèle, Roméo Elvis", "Dua Lipa, Angèle") — comparer
+        // Track.Artist tel quel ne détecte pas qu'il s'agit de la même personne. Ici "correct" est
+        // crédité "Angèle" seule ; aucun distracteur crédité avec Angèle en featuring ne doit sortir
+        // tant que d'autres candidats existent.
+        var correct = new Track { Id = "a", Title = "Bruxelles je t'aime", Artist = "Angèle", FilePath = "audio/a.mp3", Genres = ["pop"] };
+        var pool = new List<Track>
+        {
+            correct,
+            new() { Id = "feat1", Title = "Tout oublier", Artist = "Angèle, Roméo Elvis", FilePath = "audio/feat1.mp3", Genres = ["pop"] },
+            new() { Id = "feat2", Title = "Fever", Artist = "Dua Lipa, Angèle", FilePath = "audio/feat2.mp3", Genres = ["pop"] },
+            NouveauTrack("b", genres: ["pop"]),
+            NouveauTrack("c", genres: ["pop"]),
+            NouveauTrack("d", genres: ["pop"])
+        };
+        var config = new GameConfig { ProbabiliteQcmPiege = 0 };
+
+        var result = _generator.GenererOptions(correct, pool, config, new Random(9));
+
+        Assert.DoesNotContain("feat1", result.OptionsTrackIds);
+        Assert.DoesNotContain("feat2", result.OptionsTrackIds);
+    }
+
+    [Fact]
     public void GenererOptions_PoolGenreTagInsuffisant_PrivilegieLesAnneesLesPlusProches()
     {
         var correct = new Track { Id = "a", Title = "Titre a", Artist = "Artiste a", FilePath = "audio/a.mp3", Genres = ["niche"], Year = 2000 };

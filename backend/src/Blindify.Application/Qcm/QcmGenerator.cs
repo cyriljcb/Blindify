@@ -1,3 +1,4 @@
+using Blindify.Application.Rounds;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
 
@@ -11,7 +12,12 @@ public class QcmGenerator : IQcmGenerator
     {
         var distracteurs = new List<Track>();
         var idsChoisis = new HashSet<string> { correct.Id };
-        var artistesChoisis = new HashSet<string> { correct.Artist };
+        // Un track peut être crédité "Angèle, Roméo Elvis" ou "Dua Lipa, Angèle" — comparer la
+        // chaîne Artist telle quelle ne détecte pas qu'Angèle est déjà présente sous un autre
+        // featuring (retour utilisateur : 3 options "Angèle" dans le même QCM, chacune via un
+        // crédit différent). AuteurVariantes.Acceptables éclate le champ par personne créditée,
+        // partagé avec la validation de réponse (RoundService) pour la même raison.
+        var artistesChoisis = new HashSet<string>(AuteurVariantes.Acceptables(correct.Artist), StringComparer.OrdinalIgnoreCase);
 
         if (correct.TrapWith.Count > 0 && random.NextDouble() < config.ProbabiliteQcmPiege)
         {
@@ -24,7 +30,7 @@ public class QcmGenerator : IQcmGenerator
                 .Select(id => pool.FirstOrDefault(t => t.Id == id))
                 .Where(t => t is not null)
                 .Cast<Track>()
-                .Where(t => !idsChoisis.Contains(t.Id) && !artistesChoisis.Contains(t.Artist))
+                .Where(t => !idsChoisis.Contains(t.Id) && !PartageArtiste(t, artistesChoisis))
                 .ToList();
 
             if (pieges.Count > 0)
@@ -156,7 +162,7 @@ public class QcmGenerator : IQcmGenerator
         var ancresCandidates = AncresSignificatives(correct, frequenceGenres, frequenceTags, pool.Count).ToList();
         if (ancresCandidates.Count == 0) return null;
 
-        bool EstEligible(Track t) => !idsChoisis.Contains(t.Id) && !artistesChoisis.Contains(t.Artist) && MemeStatutFrancophone(t, correct);
+        bool EstEligible(Track t) => !idsChoisis.Contains(t.Id) && !PartageArtiste(t, artistesChoisis) && MemeStatutFrancophone(t, correct);
 
         var meilleurCompte = 0;
         var meilleures = new List<string>();
@@ -185,7 +191,7 @@ public class QcmGenerator : IQcmGenerator
     private static void CompleterDepuisPool(List<Track> distracteurs, IReadOnlyList<Track> pool, int cible,
         HashSet<string> idsChoisis, HashSet<string> artistesChoisis, Random random, Func<Track, bool> filtre)
     {
-        bool EstEligible(Track t) => !idsChoisis.Contains(t.Id) && !artistesChoisis.Contains(t.Artist) && filtre(t);
+        bool EstEligible(Track t) => !idsChoisis.Contains(t.Id) && !PartageArtiste(t, artistesChoisis) && filtre(t);
 
         var disponibles = pool.Where(EstEligible).ToList();
         while (distracteurs.Count < cible && disponibles.Count > 0)
@@ -194,7 +200,7 @@ public class QcmGenerator : IQcmGenerator
             var track = disponibles[index];
             distracteurs.Add(track);
             idsChoisis.Add(track.Id);
-            artistesChoisis.Add(track.Artist);
+            AjouterArtistes(track, artistesChoisis);
             disponibles.RemoveAt(index);
             disponibles = disponibles.Where(EstEligible).ToList();
         }
@@ -209,7 +215,7 @@ public class QcmGenerator : IQcmGenerator
         HashSet<string> idsChoisis, HashSet<string> artistesChoisis, Random random, Track correct)
     {
         var anneeCorrecte = correct.Year!.Value;
-        bool EstEligible(Track t) => !idsChoisis.Contains(t.Id) && !artistesChoisis.Contains(t.Artist)
+        bool EstEligible(Track t) => !idsChoisis.Contains(t.Id) && !PartageArtiste(t, artistesChoisis)
             && t.Year is not null && MemeStatutFrancophone(t, correct);
 
         while (distracteurs.Count < cible)
@@ -223,7 +229,7 @@ public class QcmGenerator : IQcmGenerator
 
             distracteurs.Add(choisi);
             idsChoisis.Add(choisi.Id);
-            artistesChoisis.Add(choisi.Artist);
+            AjouterArtistes(choisi, artistesChoisis);
         }
     }
 
@@ -232,7 +238,16 @@ public class QcmGenerator : IQcmGenerator
         var track = candidats[random.Next(candidats.Count)];
         distracteurs.Add(track);
         idsChoisis.Add(track.Id);
-        artistesChoisis.Add(track.Artist);
+        AjouterArtistes(track, artistesChoisis);
+    }
+
+    private static bool PartageArtiste(Track t, HashSet<string> artistesChoisis) =>
+        AuteurVariantes.Acceptables(t.Artist).Any(artistesChoisis.Contains);
+
+    private static void AjouterArtistes(Track t, HashSet<string> artistesChoisis)
+    {
+        foreach (var artiste in AuteurVariantes.Acceptables(t.Artist))
+            artistesChoisis.Add(artiste);
     }
 
     private static void Melanger<T>(List<T> liste, Random random)
