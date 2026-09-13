@@ -67,7 +67,16 @@ if (!string.IsNullOrWhiteSpace(hostStaticPath))
         {
             FileProvider = hostFileProvider,
             RequestPath = "",
-            ContentTypeProvider = hostContentTypeProvider
+            ContentTypeProvider = hostContentTypeProvider,
+            // Retour utilisateur : un git pull met host/ à jour sur le Pi, mais sans en-tête
+            // Cache-Control explicite, le navigateur applique un cache heuristique (RFC 7234) sur ces
+            // fichiers non versionnés dans l'URL — même fermer/rouvrir l'onglet ne suffit pas à voir
+            // la nouvelle version, seul un rechargement forcé (Ctrl+Maj+R) contournait le cache.
+            // no-cache (pas no-store) : le navigateur revalide toujours via ETag/Last-Modified — un
+            // fichier inchangé reste servi en 304 (pas de re-téléchargement), un fichier modifié est
+            // renvoyé immédiatement, sans que quiconque ait besoin de connaître l'astuce du rechargement forcé.
+            OnPrepareResponse = ctx =>
+                ctx.Context.Response.Headers.CacheControl = "no-cache, must-revalidate"
         });
     }
 }
