@@ -12,6 +12,7 @@ class RoundStarted {
     required this.dureeFenetreReponseMs,
     required this.serieIndex,
     this.qcmOptions,
+    this.tempsEcouleMs = 0,
   });
 
   final RoundMode mode;
@@ -24,6 +25,11 @@ class RoundStarted {
 
   final List<QcmOption>? qcmOptions;
 
+  /// 0 au démarrage normal du round ; temps déjà écoulé quand ce round est renvoyé via
+  /// EtatCourantJoueur (reconnexion en pleine partie) — permet à AnswerPhaseScreen d'initialiser
+  /// sa barre de temps sur le temps réellement restant plutôt que de repartir de la durée totale.
+  final int tempsEcouleMs;
+
   factory RoundStarted.fromJson(Map<String, dynamic> json) => RoundStarted(
         mode: RoundModeJson.fromJson(json['mode'] as String),
         cible: RoundCibleJson.fromJson(json['cible'] as String),
@@ -32,5 +38,6 @@ class RoundStarted {
         qcmOptions: (json['qcmOptions'] as List<dynamic>?)
             ?.map((e) => QcmOption.fromJson(e as Map<String, dynamic>))
             .toList(),
+        tempsEcouleMs: json['tempsEcouleMs'] as int? ?? 0,
       );
 }

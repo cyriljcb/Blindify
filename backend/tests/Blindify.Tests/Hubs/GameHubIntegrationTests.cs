@@ -38,7 +38,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     // section 1 — le serveur (SeriesPlanner) calcule désormais la répartition des thèmes, les paliers
     // de mise et le mode de chaque round, qui n'est donc plus imposable directement par le test.
     private static async Task<CreateGameResultDto> CreerEtConfigurerPartie(
-        HubConnection host, bool modeEquipe, int nombreRoundsClassiques, List<string> themesVivier, GameConfig? config, List<string>? nomsEquipes = null)
+        HubConnection host, bool modeEquipe, int nombreRoundsClassiques, List<string> themesVivier, GameConfig? config,
+        List<string>? nomsEquipes = null, int dureePhaseMiseMs = 5000, int dureePhaseQuestionMs = 5000)
     {
         var creation = await host.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(modeEquipe, nomsEquipes));
         await host.InvokeAsync("ConfigurerPartie", new ConfigurerPartieRequestDto(
@@ -47,8 +48,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             DureeFenetreReponseMs: 800,
             ThemesVivier: themesVivier,
             Config: config,
-            DureePhaseMiseMs: 5000,
-            DureePhaseQuestionMs: 5000));
+            DureePhaseMiseMs: dureePhaseMiseMs,
+            DureePhaseQuestionMs: dureePhaseQuestionMs));
         return creation;
     }
 
@@ -423,6 +424,129 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         Assert.False(join.Success);
         Assert.NotNull(join.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task JoinGame_ReconnexionPendantUnRoundClassiqueEnCours_RenvoieLetatCourantPourRejoindreLeRoundActif()
+    {
+        // Retour utilisateur (playtest 2026-09-06) : un joueur qui rejoignait en pleine partie
+        // atterrissait au lobby en attendant le round suivant, sans pouvoir répondre à celui déjà
+        // en cours. Simule un redémarrage de l'appli (nouvelle connexion SignalR, même playerId
+        // stable persisté côté client) pendant qu'un round tourne encore.
+        RoundStartedForPlayersDto? roundStartedPlayer = null;
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
+
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-reco-1");
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedPlayer is not null);
+
+        await using var reconnexion = _factory.CreateHubConnection();
+        await reconnexion.StartAsync();
+        var rejoin = await reconnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-reco-1");
+
+        Assert.True(rejoin.Success);
+        Assert.NotNull(rejoin.EtatCourant);
+        Assert.Equal(PhaseJoueur.RoundClassique, rejoin.EtatCourant!.Phase);
+        Assert.False(rejoin.EtatCourant.DejaRepondu);
+        Assert.False(rejoin.EtatCourant.EnPause);
+        Assert.NotNull(rejoin.EtatCourant.Round);
+        Assert.Equal(roundStartedPlayer!.Mode, rejoin.EtatCourant.Round!.Mode);
+        Assert.Equal(roundStartedPlayer.Cible, rejoin.EtatCourant.Round.Cible);
+        Assert.Null(rejoin.EtatCourant.BonusMise);
+        Assert.Null(rejoin.EtatCourant.BonusQuestion);
+    }
+
+    [Fact]
+    public async Task JoinGame_ReconnexionApresAvoirDejaRepondu_IndiqueDejaReponduPourNePasRouvrirLaSaisie()
+    {
+        RoundStartedForPlayersDto? roundStartedPlayer = null;
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
+
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-reco-2");
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedPlayer is not null);
+
+        // Peu importe le mode ou la justesse de la réponse ici : un seul essai est déjà consommé
+        // dès la première soumission (RoundService.SoumettreReponse), correcte ou non.
+        await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto("peu importe"));
+
+        await using var reconnexion = _factory.CreateHubConnection();
+        await reconnexion.StartAsync();
+        var rejoin = await reconnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-reco-2");
+
+        Assert.NotNull(rejoin.EtatCourant);
+        Assert.Equal(PhaseJoueur.RoundClassique, rejoin.EtatCourant!.Phase);
+        Assert.True(rejoin.EtatCourant.DejaRepondu);
+    }
+
+    [Fact]
+    public async Task JoinGame_AvantLeDemarrageDeLaPartie_EtatCourantEstNull()
+    {
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-lobby");
+
+        Assert.Null(join.EtatCourant);
+    }
+
+    [Fact]
+    public async Task JoinGame_ReconnexionPendantLaMiseBonusEnCours_RenvoieLetatCourantPourRejoindreLaMise()
+    {
+        // StartBonusRound n'exige pas que les rounds classiques de la série soient épuisés, mais
+        // session.Etat ne passe à EnCours que via StartRound (voir ConstruireEtatCourantJoueur) —
+        // en jeu réel toujours vrai (au moins un round classique précède la question bonus).
+        BonusStakeOptionsDto? stakeOptions = null;
+        _playerConnection.On<BonusStakeOptionsDto>("BonusStakeOptions", payload => stakeOptions = payload);
+
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-bonus-mise-1");
+        await _hostConnection.InvokeAsync("StartRound");
+        await _hostConnection.InvokeAsync("StartBonusRound");
+        await AttendreAsync(() => stakeOptions is not null);
+
+        await using var reconnexion = _factory.CreateHubConnection();
+        await reconnexion.StartAsync();
+        var rejoin = await reconnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-bonus-mise-1");
+
+        Assert.NotNull(rejoin.EtatCourant);
+        Assert.Equal(PhaseJoueur.BonusMise, rejoin.EtatCourant!.Phase);
+        Assert.False(rejoin.EtatCourant.DejaRepondu);
+        Assert.NotNull(rejoin.EtatCourant.BonusMise);
+        Assert.Equal(stakeOptions!.Paliers, rejoin.EtatCourant.BonusMise!.Paliers);
+        Assert.Null(rejoin.EtatCourant.Round);
+        Assert.Null(rejoin.EtatCourant.BonusQuestion);
+    }
+
+    [Fact]
+    public async Task JoinGame_ReconnexionPendantLaQuestionBonusEnCours_RenvoieLetatCourantPourRejoindreLaQuestion()
+    {
+        BonusStakeOptionsDto? stakeOptions = null;
+        BonusQuestionStartedForPlayersDto? questionStarted = null;
+        _playerConnection.On<BonusStakeOptionsDto>("BonusStakeOptions", payload => stakeOptions = payload);
+        _playerConnection.On<BonusQuestionStartedForPlayersDto>("BonusQuestionStarted", payload => questionStarted = payload);
+
+        // Mise raccourcie pour ne pas attendre 5s en pure perte : personne ne mise explicitement,
+        // le palier par défaut ("safe") est appliqué automatiquement à l'échéance
+        // (BonusTimerCoordinator.AppliquerPaliersParDefaut) puis la phase question démarre.
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null, dureePhaseMiseMs: 200, dureePhaseQuestionMs: 5000);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-bonus-q-1");
+        await _hostConnection.InvokeAsync("StartRound");
+        await _hostConnection.InvokeAsync("StartBonusRound");
+        await AttendreAsync(() => stakeOptions is not null);
+        await AttendreAsync(() => questionStarted is not null, timeoutMs: 3000);
+
+        await using var reconnexion = _factory.CreateHubConnection();
+        await reconnexion.StartAsync();
+        var rejoin = await reconnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-bonus-q-1");
+
+        Assert.NotNull(rejoin.EtatCourant);
+        Assert.Equal(PhaseJoueur.BonusQuestion, rejoin.EtatCourant!.Phase);
+        Assert.False(rejoin.EtatCourant.DejaRepondu);
+        Assert.NotNull(rejoin.EtatCourant.BonusQuestion);
+        Assert.Equal(questionStarted!.Mode, rejoin.EtatCourant.BonusQuestion!.Mode);
+        Assert.Null(rejoin.EtatCourant.Round);
+        Assert.Null(rejoin.EtatCourant.BonusMise);
     }
 
     [Fact]

@@ -3,8 +3,9 @@ using Blindify.Domain.Enums;
 namespace Blindify.Api.Contracts;
 
 /// <summary>SerieIndex (0-based) : voir RoundStartedForPlayersDto — même besoin de libellage par
-/// lettre côté joueur sur l'écran de mise à l'aveugle.</summary>
-public record BonusStakeOptionsDto(int[] Paliers, int DureePhaseMiseMs, int SerieIndex);
+/// lettre côté joueur sur l'écran de mise à l'aveugle. TempsEcouleMs : voir
+/// RoundStartedForPlayersDto.</summary>
+public record BonusStakeOptionsDto(int[] Paliers, int DureePhaseMiseMs, int SerieIndex, int TempsEcouleMs);
 
 public record SelectStakeRequestDto(int PalierIndex);
 
@@ -18,8 +19,8 @@ public record BonusQuestionStartedForHostDto(string TrackId, string FilePath, in
 /// <summary>Envoyé aux joueurs — pas d'audio. Cible (Titre/Film) indique ce qui est demandé, comme
 /// pour RoundStartedForPlayersDto — toujours Titre sauf morceau "disney" (Film). SerieIndex :
 /// voir RoundStartedForPlayersDto. Mode/QcmOptions : voir RoundStartedForPlayersDto. EstCourse :
-/// voir BonusQuestionStartedForHostDto.</summary>
-public record BonusQuestionStartedForPlayersDto(int DureePhaseQuestionMs, RoundCible Cible, int SerieIndex, RoundMode Mode, List<QcmOptionDto>? QcmOptions, bool EstCourse);
+/// voir BonusQuestionStartedForHostDto. TempsEcouleMs : voir RoundStartedForPlayersDto.</summary>
+public record BonusQuestionStartedForPlayersDto(int DureePhaseQuestionMs, RoundCible Cible, int SerieIndex, RoundMode Mode, List<QcmOptionDto>? QcmOptions, bool EstCourse, int TempsEcouleMs);
 
 public record SubmitBonusAnswerRequestDto(string Reponse);
 

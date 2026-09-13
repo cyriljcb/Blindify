@@ -2,7 +2,12 @@
 /// annoncés avant que la question ne soit révélée (mise à l'aveugle, voir
 /// docs/architecture.md section 7).
 class BonusStakeOptions {
-  BonusStakeOptions({required this.paliers, required this.dureePhaseMiseMs, required this.serieIndex});
+  BonusStakeOptions({
+    required this.paliers,
+    required this.dureePhaseMiseMs,
+    required this.serieIndex,
+    this.tempsEcouleMs = 0,
+  });
 
   final List<int> paliers;
   final int dureePhaseMiseMs;
@@ -10,9 +15,14 @@ class BonusStakeOptions {
   /// 0-based — voir RoundStarted.serieIndex.
   final int serieIndex;
 
+  /// 0 au démarrage normal de la phase ; temps déjà écoulé à la reconnexion — voir
+  /// RoundStarted.tempsEcouleMs.
+  final int tempsEcouleMs;
+
   factory BonusStakeOptions.fromJson(Map<String, dynamic> json) => BonusStakeOptions(
         paliers: (json['paliers'] as List<dynamic>).map((e) => e as int).toList(),
         dureePhaseMiseMs: json['dureePhaseMiseMs'] as int,
         serieIndex: json['serieIndex'] as int,
+        tempsEcouleMs: json['tempsEcouleMs'] as int? ?? 0,
       );
 }

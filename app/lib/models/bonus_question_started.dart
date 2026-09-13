@@ -12,6 +12,7 @@ class BonusQuestionStarted {
     required this.mode,
     this.qcmOptions,
     this.estCourse = false,
+    this.tempsEcouleMs = 0,
   });
 
   final int dureePhaseQuestionMs;
@@ -31,6 +32,10 @@ class BonusQuestionStarted {
   /// décide seul du sort de sa mise — voir BonusRound.EstCourse côté serveur.
   final bool estCourse;
 
+  /// 0 au démarrage normal de la phase ; temps déjà écoulé à la reconnexion — voir
+  /// RoundStarted.tempsEcouleMs.
+  final int tempsEcouleMs;
+
   factory BonusQuestionStarted.fromJson(Map<String, dynamic> json) => BonusQuestionStarted(
         dureePhaseQuestionMs: json['dureePhaseQuestionMs'] as int,
         cible: RoundCibleJson.fromJson(json['cible'] as String),
@@ -40,5 +45,6 @@ class BonusQuestionStarted {
             ?.map((e) => QcmOption.fromJson(e as Map<String, dynamic>))
             .toList(),
         estCourse: json['estCourse'] as bool? ?? false,
+        tempsEcouleMs: json['tempsEcouleMs'] as int? ?? 0,
       );
 }

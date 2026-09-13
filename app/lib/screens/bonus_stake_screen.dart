@@ -26,7 +26,10 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
   void initState() {
     super.initState();
     final game = context.read<GameConnection>();
-    _remainingMs = game.bonusStakeOptions?.dureePhaseMiseMs ?? 0;
+    // tempsEcouleMs > 0 après une reconnexion en pleine phase de mise — voir
+    // AnswerPhaseScreen.initState pour la même logique côté round/question bonus.
+    final options = game.bonusStakeOptions;
+    _remainingMs = options == null ? 0 : (options.dureePhaseMiseMs - options.tempsEcouleMs).clamp(0, options.dureePhaseMiseMs);
     if (!game.paused) _startTicker();
   }
 

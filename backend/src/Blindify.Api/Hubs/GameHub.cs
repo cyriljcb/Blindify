@@ -135,7 +135,7 @@ public class GameHub(
                 return new HostStateSnapshotDto(session.EnPause, null, null, null, null, null, null, null);
 
             track = tracksRepository.GetById(round.TrackId);
-            positionMs = Math.Max(0, CalculerTempsEcouleMs(session, round));
+            positionMs = Math.Max(0, CalculerTempsEcouleMs(session, round.DebutRound.Value, round.DureeEnPauseMs));
         }
 
         return new HostStateSnapshotDto(
@@ -175,17 +175,7 @@ public class GameHub(
             session.Etat = GameState.EnCours;
             statsRepository.IncrementPlayCount(track.Id);
 
-            qcmOptions = round.QcmOptionTrackIds?
-                .Select(id => tracksRepository.GetById(id))
-                .Where(t => t is not null)
-                .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist, FilmNameResolver.Resoudre(t)))
-                .ToList();
-
-            if (qcmOptions is not null)
-            {
-                AppliquerFeinteEventuelle(qcmOptions, track, round.Cible, session.Config);
-                AppliquerFeinteTexteEventuelle(qcmOptions, track, round.Cible, session.Config);
-            }
+            qcmOptions = ConstruireQcmOptions(round.QcmOptionTrackIds, track, round.Cible, session.Config, tracksRepository);
         }
 
         if (session.HostConnectionId is not null)
@@ -196,7 +186,7 @@ public class GameHub(
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
         await Clients.Clients(joueursConnectes)
-            .SendAsync("RoundStarted", new RoundStartedForPlayersDto(round.Mode, round.Cible, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions));
+            .SendAsync("RoundStarted", new RoundStartedForPlayersDto(round.Mode, round.Cible, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions, TempsEcouleMs: 0));
 
         timerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
     }
@@ -231,7 +221,7 @@ public class GameHub(
             statsRepository.IncrementPlayCount(morceaux[0].Id);
         }
 
-        await Clients.Group(session.Id).SendAsync("BonusStakeOptions", new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.Config.DureePhaseMiseMs, serie.Index));
+        await Clients.Group(session.Id).SendAsync("BonusStakeOptions", new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.Config.DureePhaseMiseMs, serie.Index, TempsEcouleMs: 0));
 
         bonusTimerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
     }
@@ -400,12 +390,13 @@ public class GameHub(
     public async Task<JoinGameResultDto> JoinGame(string code, string nom, string playerId)
     {
         var session = sessionStore.Get(code);
-        if (session is null) return new JoinGameResultDto(false, "Partie introuvable.", 0, null, [], []);
+        if (session is null) return new JoinGameResultDto(false, "Partie introuvable.", 0, null, [], [], null);
 
         Player joueur;
         bool estReconnexion;
         List<TeamDto> teams;
         List<PlayerSummaryDto> joueurs;
+        EtatCourantJoueurDto? etatCourant;
 
         lock (session.Lock)
         {
@@ -426,6 +417,10 @@ public class GameHub(
 
             teams = session.Teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList();
             joueurs = session.Players.Select(p => new PlayerSummaryDto(p.PlayerId, p.Nom, p.EstConnecte, p.TeamId)).ToList();
+            // Retour utilisateur (playtest 2026-09-06) : un joueur qui rejoint en pleine partie
+            // (reconnexion) atterrissait au lobby en attendant le prochain round, sans pouvoir
+            // participer à celui déjà en cours — voir ConstruireEtatCourantJoueur.
+            etatCourant = ConstruireEtatCourantJoueur(session, playerId);
         }
 
         sessionStore.AssocierConnexion(Context.ConnectionId, code);
@@ -436,7 +431,7 @@ public class GameHub(
         else
             await Clients.OthersInGroup(code).SendAsync("PlayerJoined", new PlayerJoinedDto(joueur.PlayerId, joueur.Nom));
 
-        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs);
+        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs, etatCourant);
     }
 
     /// <summary>Rejoint (ou change) d'équipe — autorisé à tout moment, pas seulement au lobby, pour
@@ -613,12 +608,104 @@ public class GameHub(
         options[index] = optionChoisie with { Artist = correct.TrapTextArtist };
     }
 
-    private static long CalculerTempsEcouleMs(GameSession session, Round round)
+    /// <summary>Factorisé depuis StartRound (round classique) et réutilisé par BonusTimerCoordinator
+    /// (question bonus) ET ConstruireEtatCourantJoueur (resynchronisation à la reconnexion) — les
+    /// trois doivent produire exactement les mêmes options pour un même round, seules les feintes
+    /// (probabilistes, non persistées) peuvent varier d'un appel à l'autre si celui-ci est refait
+    /// plus tard pour le même round ; sans conséquence, voir ConstruireEtatCourantJoueur.</summary>
+    internal static List<QcmOptionDto>? ConstruireQcmOptions(List<string>? qcmOptionTrackIds, Track correct, RoundCible cible, GameConfig config, ITracksRepository tracksRepository)
+    {
+        var qcmOptions = qcmOptionTrackIds?
+            .Select(id => tracksRepository.GetById(id))
+            .Where(t => t is not null)
+            .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist, FilmNameResolver.Resoudre(t)))
+            .ToList();
+
+        if (qcmOptions is not null)
+        {
+            AppliquerFeinteEventuelle(qcmOptions, correct, cible, config);
+            AppliquerFeinteTexteEventuelle(qcmOptions, correct, cible, config);
+        }
+
+        return qcmOptions;
+    }
+
+    /// <summary>Reconstruit, pour un joueur qui (re)rejoint, la phase actuellement active (round
+    /// classique ou question bonus) afin qu'il puisse répondre immédiatement plutôt que d'attendre
+    /// le prochain événement serveur — voir EtatCourantJoueurDto. Appelé sous session.Lock (aucun
+    /// accès concurrent aux entités mutables Round/BonusRound). Null si rien n'est activement en
+    /// cours (lobby, partie terminée, ou phase déjà expirée mais pas encore clôturée par le timer
+    /// coordinator correspondant — fenêtre de quelques centaines de ms, sans conséquence : le
+    /// prochain événement (RoundEnded/BonusResult puis la suite) rattrape le client normalement).
+    ///
+    /// Les feintes QCM (AppliquerFeinteEventuelle/AppliquerFeinteTexteEventuelle) sont probabilistes
+    /// et non persistées sur le Round/BonusRound — reconstruire les options ici peut donc tirer une
+    /// feinte différente de celle vue par les autres joueurs pour le même round. Sans conséquence :
+    /// la validation de réponse compare du texte, jamais un TrackId (voir SubmitAnswerRequestDto),
+    /// et personne ne compare les QCM entre téléphones — persister les options déjà construites sur
+    /// l'entité serait plus rigoureux mais alourdirait le schéma pour un bénéfice invisible en jeu.</summary>
+    private EtatCourantJoueurDto? ConstruireEtatCourantJoueur(GameSession session, string playerId)
+    {
+        if (session.Etat != GameState.EnCours) return null;
+
+        var serie = session.SerieCourante();
+        var bonusRound = serie.BonusRound;
+
+        if (bonusRound is not null && bonusRound.DebutPhaseQuestion is not null)
+        {
+            var finAnticipee = bonusRound.EstCourse && bonusRound.Reponses.Count > 0;
+            var ecouleMs = CalculerTempsEcouleMs(session, bonusRound.DebutPhaseQuestion.Value, bonusRound.DureeEnPauseMs);
+            if (!finAnticipee && ecouleMs < serie.Config.DureePhaseQuestionMs)
+            {
+                var track = tracksRepository.GetById(bonusRound.TrackId);
+                if (track is not null)
+                {
+                    var qcmOptions = ConstruireQcmOptions(bonusRound.QcmOptionTrackIds, track, bonusRound.Cible, session.Config, tracksRepository);
+                    var dejaRepondu = bonusRound.Reponses.Any(r => r.PlayerId == playerId);
+                    var dto = new BonusQuestionStartedForPlayersDto(serie.Config.DureePhaseQuestionMs, bonusRound.Cible, serie.Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, (int)Math.Max(0, ecouleMs));
+                    return new EtatCourantJoueurDto(PhaseJoueur.BonusQuestion, session.EnPause, dejaRepondu, null, null, dto);
+                }
+            }
+        }
+        else if (bonusRound is not null && bonusRound.DebutPhaseMise is not null)
+        {
+            var ecouleMs = CalculerTempsEcouleMs(session, bonusRound.DebutPhaseMise.Value, bonusRound.DureeEnPauseMs);
+            if (ecouleMs < serie.Config.DureePhaseMiseMs)
+            {
+                var dejaMise = bonusRound.Mises.Any(m => m.PlayerId == playerId);
+                var dto = new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.Config.DureePhaseMiseMs, serie.Index, (int)Math.Max(0, ecouleMs));
+                return new EtatCourantJoueurDto(PhaseJoueur.BonusMise, session.EnPause, dejaMise, null, dto, null);
+            }
+        }
+
+        var round = session.RoundCourant();
+        if (round?.DebutRound is not null)
+        {
+            var ecouleMs = CalculerTempsEcouleMs(session, round.DebutRound.Value, round.DureeEnPauseMs);
+            if (ecouleMs < serie.Config.DureeFenetreReponseMs)
+            {
+                var track = tracksRepository.GetById(round.TrackId);
+                if (track is not null)
+                {
+                    var qcmOptions = ConstruireQcmOptions(round.QcmOptionTrackIds, track, round.Cible, session.Config, tracksRepository);
+                    var dejaRepondu = round.Reponses.Any(r => r.PlayerId == playerId);
+                    var dto = new RoundStartedForPlayersDto(round.Mode, round.Cible, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions, (int)Math.Max(0, ecouleMs));
+                    return new EtatCourantJoueurDto(PhaseJoueur.RoundClassique, session.EnPause, dejaRepondu, dto, null, null);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Généralisé sur (debut, dureeEnPauseMs) plutôt que spécifique à Round — réutilisé pour
+    /// un BonusRound (DebutPhaseMise/DebutPhaseQuestion) par ConstruireEtatCourantJoueur.</summary>
+    private static long CalculerTempsEcouleMs(GameSession session, DateTimeOffset debut, long dureeEnPauseMs)
     {
         var pauseEnCoursMs = session.EnPause && session.PauseDemarreeA is not null
             ? (DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds
             : 0;
 
-        return (long)((DateTimeOffset.UtcNow - round.DebutRound!.Value).TotalMilliseconds - (round.DureeEnPauseMs + pauseEnCoursMs));
+        return (long)((DateTimeOffset.UtcNow - debut).TotalMilliseconds - (dureeEnPauseMs + pauseEnCoursMs));
     }
 }

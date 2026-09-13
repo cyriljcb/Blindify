@@ -45,9 +45,18 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
   void initState() {
     super.initState();
     final game = context.read<GameConnection>();
+    // tempsEcouleMs > 0 quand cet écran est réaffiché après une reconnexion en pleine phase
+    // (voir EtatCourantJoueur) — sans le soustraire, la barre de temps repartirait de la durée
+    // totale au lieu du temps réellement restant.
     _remainingMs = _bonus
-        ? (game.bonusQuestion?.dureePhaseQuestionMs ?? 0)
-        : (game.currentRound?.dureeFenetreReponseMs ?? 0);
+        ? (game.bonusQuestion == null
+            ? 0
+            : (game.bonusQuestion!.dureePhaseQuestionMs - game.bonusQuestion!.tempsEcouleMs)
+                .clamp(0, game.bonusQuestion!.dureePhaseQuestionMs))
+        : (game.currentRound == null
+            ? 0
+            : (game.currentRound!.dureeFenetreReponseMs - game.currentRound!.tempsEcouleMs)
+                .clamp(0, game.currentRound!.dureeFenetreReponseMs));
     if (!game.paused) _startTicker();
   }
 

@@ -93,10 +93,43 @@ public class ContractsSerializationTests
     {
         var dto = new JoinGameResultDto(true, null, 120, "team-1",
             [new TeamDto("team-1", "Rouge")],
-            [new PlayerSummaryDto("player-1", "Alice", true, "team-1")]);
+            [new PlayerSummaryDto("player-1", "Alice", true, "team-1")],
+            null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1"}]}""",
+            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1"}],"etatCourant":null}""",
+            json);
+    }
+
+    [Fact]
+    public void EtatCourantJoueurDto_Golden_RoundClassique()
+    {
+        var round = new RoundStartedForPlayersDto(RoundMode.TapeReponse, RoundCible.Auteur, 20000, 2, null, TempsEcouleMs: 4200);
+        var dto = new EtatCourantJoueurDto(PhaseJoueur.RoundClassique, false, true, round, null, null);
+        var json = Serialize(dto);
+        Assert.Equal(
+            """{"phase":"RoundClassique","enPause":false,"dejaRepondu":true,"round":{"mode":"TapeReponse","cible":"Auteur","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":4200},"bonusMise":null,"bonusQuestion":null}""",
+            json);
+    }
+
+    [Fact]
+    public void EtatCourantJoueurDto_Golden_BonusMise()
+    {
+        var bonusMise = new BonusStakeOptionsDto([10, 20, 30, 50], 15000, 0, TempsEcouleMs: 3000);
+        var dto = new EtatCourantJoueurDto(PhaseJoueur.BonusMise, true, false, null, bonusMise, null);
+        var json = Serialize(dto);
+        Assert.Equal(
+            """{"phase":"BonusMise","enPause":true,"dejaRepondu":false,"round":null,"bonusMise":{"paliers":[10,20,30,50],"dureePhaseMiseMs":15000,"serieIndex":0,"tempsEcouleMs":3000},"bonusQuestion":null}""",
+            json);
+    }
+
+    [Fact]
+    public void EtatCourantJoueurDto_Golden_Aucune()
+    {
+        var dto = new EtatCourantJoueurDto(PhaseJoueur.Aucune, false, false, null, null, null);
+        var json = Serialize(dto);
+        Assert.Equal(
+            """{"phase":"Aucune","enPause":false,"dejaRepondu":false,"round":null,"bonusMise":null,"bonusQuestion":null}""",
             json);
     }
 
@@ -145,9 +178,9 @@ public class ContractsSerializationTests
     [Fact]
     public void RoundStartedForPlayersDto_Golden()
     {
-        var dto = new RoundStartedForPlayersDto(RoundMode.TapeReponse, RoundCible.Auteur, 20000, 2, null);
+        var dto = new RoundStartedForPlayersDto(RoundMode.TapeReponse, RoundCible.Auteur, 20000, 2, null, TempsEcouleMs: 0);
         var json = Serialize(dto);
-        Assert.Equal("""{"mode":"TapeReponse","cible":"Auteur","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null}""", json);
+        Assert.Equal("""{"mode":"TapeReponse","cible":"Auteur","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":0}""", json);
     }
 
     [Fact]
@@ -232,8 +265,8 @@ public class ContractsSerializationTests
     [Fact]
     public void BonusStakeOptionsDto_Golden()
     {
-        var json = Serialize(new BonusStakeOptionsDto([10, 20, 30, 50], 15000, 0));
-        Assert.Equal("""{"paliers":[10,20,30,50],"dureePhaseMiseMs":15000,"serieIndex":0}""", json);
+        var json = Serialize(new BonusStakeOptionsDto([10, 20, 30, 50], 15000, 0, TempsEcouleMs: 0));
+        Assert.Equal("""{"paliers":[10,20,30,50],"dureePhaseMiseMs":15000,"serieIndex":0,"tempsEcouleMs":0}""", json);
     }
 
     [Fact]
@@ -257,9 +290,9 @@ public class ContractsSerializationTests
     [Fact]
     public void BonusQuestionStartedForPlayersDto_Golden()
     {
-        var dto = new BonusQuestionStartedForPlayersDto(20000, RoundCible.Film, 0, RoundMode.PremiereLettre, null, true);
+        var dto = new BonusQuestionStartedForPlayersDto(20000, RoundCible.Film, 0, RoundMode.PremiereLettre, null, true, TempsEcouleMs: 0);
         var json = Serialize(dto);
-        Assert.Equal("""{"dureePhaseQuestionMs":20000,"cible":"Film","serieIndex":0,"mode":"PremiereLettre","qcmOptions":null,"estCourse":true}""", json);
+        Assert.Equal("""{"dureePhaseQuestionMs":20000,"cible":"Film","serieIndex":0,"mode":"PremiereLettre","qcmOptions":null,"estCourse":true,"tempsEcouleMs":0}""", json);
     }
 
     [Fact]

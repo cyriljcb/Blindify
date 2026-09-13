@@ -16,8 +16,11 @@ public record RoundStartedForHostDto(RoundMode Mode, RoundCible Cible, string Tr
 /// <summary>Envoyé aux joueurs — pas d'audio, options QCM si applicable. Cible indique ce qui est
 /// demandé (titre ou auteur) — à afficher pour lever l'ambiguïté sur les morceaux à plusieurs auteurs.
 /// SerieIndex (0-based) : permet d'afficher "Série A/B/C..." côté joueur, cohérent avec le
-/// libellage par lettre du panneau host et de l'écran public (retour utilisateur).</summary>
-public record RoundStartedForPlayersDto(RoundMode Mode, RoundCible Cible, int DureeFenetreReponseMs, int SerieIndex, List<QcmOptionDto>? QcmOptions);
+/// libellage par lettre du panneau host et de l'écran public (retour utilisateur).
+/// TempsEcouleMs : 0 au démarrage normal du round ; temps déjà écoulé quand ce DTO est réutilisé
+/// pour resynchroniser un joueur qui (re)rejoint en pleine partie (voir EtatCourantJoueurDto) —
+/// sans ça, la barre de temps du client redémarrait à la durée totale au lieu du temps restant.</summary>
+public record RoundStartedForPlayersDto(RoundMode Mode, RoundCible Cible, int DureeFenetreReponseMs, int SerieIndex, List<QcmOptionDto>? QcmOptions, int TempsEcouleMs);
 
 public record SubmitAnswerRequestDto(string Reponse);
 

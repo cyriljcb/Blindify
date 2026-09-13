@@ -10,6 +10,7 @@ import 'mdns_resolver.dart';
 import '../models/bonus_question_started.dart';
 import '../models/bonus_result.dart';
 import '../models/bonus_stake_options.dart';
+import '../models/etat_courant_joueur.dart';
 import '../models/join_result.dart';
 import '../models/round_ended.dart';
 import '../models/round_started.dart';
@@ -31,6 +32,7 @@ class PlayerInfo {
 const _prefsPlayerId = 'blindify_player_id';
 const _prefsServerUrl = 'blindify_server_url';
 const _prefsNom = 'blindify_nom';
+const _prefsGameCode = 'blindify_game_code';
 
 /// Pré-remplissage du champ adresse serveur tant qu'aucune connexion n'a encore été
 /// enregistrée (voir docs/architecture.md "Nom local au lieu de l'IP" — hostname `pi`
@@ -50,6 +52,8 @@ class GameConnection extends ChangeNotifier {
   HubConnection? _hub;
   SharedPreferences? _prefs;
   Timer? _introCourseTimer;
+  Timer? _reconnectTimer;
+  Timer? _rejoinRetryTimer;
 
   String? playerId;
   String? serverUrl;
@@ -108,6 +112,11 @@ class GameConnection extends ChangeNotifier {
   /// chargement tourner indéfiniment (serveur éteint, Pi pas encore démarré, mauvais réseau...).
   static const _delaiReconnexionAuto = Duration(seconds: 4);
 
+  /// Intervalle de nouvelle tentative une fois que le reconnect auto de SignalR
+  /// (withAutomaticReconnect, fenêtre de retry bornée) a abandonné et fermé la connexion — voir
+  /// [_planifierReconnexion].
+  static const _delaiRetryReconnexion = Duration(seconds: 6);
+
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
 
@@ -119,6 +128,12 @@ class GameConnection extends ChangeNotifier {
 
     serverUrl = _prefs!.getString(_prefsServerUrl);
     nom = _prefs!.getString(_prefsNom);
+    // Code de la partie en cours, persisté par joinGame — retour utilisateur (playtest
+    // 2026-09-06) : un joueur déconnecté (freeze/coupure réseau) n'avait aucun moyen de retrouver
+    // le code pour se reconnecter, seulement affiché au lobby avant le début de la partie. Avec
+    // ce code + le playerId stable déjà persisté, [connect] retente automatiquement de rejoindre
+    // la même partie ci-dessous, sans ressaisie.
+    gameCode = _prefs!.getString(_prefsGameCode);
 
     // Tentative silencieuse avec la dernière adresse connue pendant l'écran de chargement — si
     // elle échoue ou traîne trop longtemps, on retombe sur l'écran de connexion manuelle avec
@@ -186,13 +201,36 @@ class GameConnection extends ChangeNotifier {
       serverUrl = cleanUrl;
       _resolvedUrl = resolvedUrl;
       await _prefs?.setString(_prefsServerUrl, cleanUrl);
-      screen = AppScreen.join;
-      notifyListeners();
+
+      // Rejoindre automatiquement la partie en cours si on en connaît une (redémarrage de l'appli
+      // après un freeze, reconnexion réseau) — sauf si un code vient d'être scanné via QR
+      // (pendingJoinCode) : dans ce cas l'utilisateur vise explicitement une AUTRE partie, ne pas
+      // écraser son intention avec l'ancien gameCode. Le serveur réassocie via playerId
+      // (GameHub.JoinGame), donc aucune perte de score.
+      if (pendingJoinCode == null && gameCode != null && nom != null) {
+        final rejoint = await joinGame(gameCode!, nom!);
+        if (!rejoint) {
+          // Code stocké devenu invalide (partie terminée entre-temps, etc.) — ne pas rester
+          // bloqué : repli sur l'écran de connexion manuelle plutôt que de retenter en boucle.
+          await _prefs?.remove(_prefsGameCode);
+          gameCode = null;
+          errorMessage = null;
+          screen = AppScreen.join;
+          notifyListeners();
+        }
+      } else {
+        screen = AppScreen.join;
+        notifyListeners();
+      }
       return true;
     } catch (e) {
       connecting = false;
       connected = false;
-      screen = AppScreen.connect;
+      // Ne yank pas vers l'écran de connexion manuelle si une partie est en cours (gameCode connu)
+      // : ça arriverait à chaque tentative silencieuse ratée de [_planifierReconnexion] pendant une
+      // coupure réseau prolongée, alors que l'écran courant (round, lobby...) doit rester visible
+      // en attendant que la connexion revienne.
+      if (gameCode == null) screen = AppScreen.connect;
       if (!silent) {
         errorMessage = "Connexion impossible : vérifiez l'adresse et que le serveur tourne.";
       }
@@ -207,6 +245,7 @@ class GameConnection extends ChangeNotifier {
     hub.onclose(({error}) {
       connected = false;
       notifyListeners();
+      _planifierReconnexion();
     });
 
     hub.onreconnecting(({error}) {
@@ -216,17 +255,19 @@ class GameConnection extends ChangeNotifier {
 
     hub.onreconnected(({connectionId}) async {
       connected = true;
-      // Un nouveau connectionId a été émis par le serveur au reconnect : il faut
-      // rejouer JoinGame avec le playerId stable pour que le serveur réassocie ce
-      // joueur existant plutôt que d'en créer un nouveau (voir GameHub.JoinGame).
-      if (gameCode != null && nom != null) {
-        try {
-          await hub.invoke('JoinGame', args: [gameCode!, nom!, playerId!]);
-        } catch (_) {
-          // best effort — le joueur reste visible côté UI, il pourra retenter manuellement.
-        }
-      }
       notifyListeners();
+      // Un nouveau connectionId a été émis par le serveur au reconnect : il faut rejouer JoinGame
+      // avec le playerId stable pour que le serveur réassocie ce joueur existant (score, équipe)
+      // ET le rajoute au groupe SignalR de la partie (voir GameHub.JoinGame, Groups.AddToGroupAsync)
+      // — sans ça, il reste connecté au hub mais ne recevrait plus aucune diffusion (RoundStarted
+      // compris) jusqu'à la fin de la partie. Retour utilisateur (playtest 2026-09-06) : l'ancien
+      // code traitait cet appel en "best effort" et abandonnait silencieusement en cas d'échec —
+      // ici on retente jusqu'à ce que ça marche, pour garantir que le joueur peut au moins
+      // participer au prochain round plutôt que de rester orphelin du groupe sans le savoir.
+      if (gameCode != null && nom != null) {
+        final rejoint = await joinGame(gameCode!, nom!, actualiserEcran: false);
+        if (!rejoint) _planifierRejoinApresReconnexionCourte();
+      }
     });
 
     hub.on('PlayerJoined', (args) {
@@ -314,6 +355,10 @@ class GameConnection extends ChangeNotifier {
       final data = args![0] as Map<String, dynamic>;
       finalScores = ScoreUpdate.fromJson(data);
       screen = AppScreen.ended;
+      // Partie terminée : plus rien à rejoindre, ne pas laisser un prochain démarrage de l'appli
+      // retenter un rejoin automatique sur ce code.
+      gameCode = null;
+      _prefs?.remove(_prefsGameCode);
       notifyListeners();
     });
 
@@ -383,6 +428,47 @@ class GameConnection extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Le reconnect auto de SignalR (withAutomaticReconnect) a une fenêtre de retry bornée ; une fois
+  /// épuisée, il déclenche onclose et n'insiste plus. Sans repli ici, une coupure réseau prolongée
+  /// laissait le joueur bloqué sur "déconnecté" sans aucune action possible (retour utilisateur,
+  /// playtest 2026-09-06). On retente nous-mêmes à intervalle régulier, indéfiniment, jusqu'à
+  /// reconnexion ou fermeture de l'appli.
+  void _planifierReconnexion() {
+    if (_reconnectTimer != null || serverUrl == null) return;
+    _reconnectTimer = Timer.periodic(_delaiRetryReconnexion, (_) async {
+      if (connected) {
+        _reconnectTimer?.cancel();
+        _reconnectTimer = null;
+        return;
+      }
+      final ok = await connect(serverUrl!, timeout: _delaiReconnexionAuto, silent: true);
+      if (ok) {
+        _reconnectTimer?.cancel();
+        _reconnectTimer = null;
+      }
+    });
+  }
+
+  /// Retente l'appel JoinGame après une reconnexion transport réussie (onreconnected) dont
+  /// l'invoke a échoué — le hub est bien vivant (sinon onclose se serait déclenché à la place et
+  /// [_planifierReconnexion] aurait pris le relais), seul le rattachement au groupe de la partie a
+  /// échoué. Retente à intervalle court tant que la connexion transport tient.
+  void _planifierRejoinApresReconnexionCourte() {
+    if (_rejoinRetryTimer != null) return;
+    _rejoinRetryTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      if (!connected || gameCode == null || nom == null) {
+        timer.cancel();
+        _rejoinRetryTimer = null;
+        return;
+      }
+      final ok = await joinGame(gameCode!, nom!, actualiserEcran: false);
+      if (ok) {
+        timer.cancel();
+        _rejoinRetryTimer = null;
+      }
+    });
+  }
+
   void _updatePlayerConnection(String id, bool estConnecte) {
     for (final p in players) {
       if (p.playerId == id) {
@@ -406,17 +492,30 @@ class GameConnection extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> joinGame(String code, String pseudo) async {
+  /// [actualiserEcran] ne contrôle QUE le repli sur le lobby quand rien n'est activement en cours
+  /// (etatCourant == null côté serveur) et l'affichage de [errorMessage] en cas d'échec — vrai pour
+  /// un join explicite (JoinScreen) ou un rejoin après redémarrage de l'appli/coupure prolongée
+  /// (aucun écran de jeu valide localement dans ces cas). Faux pour une simple réassociation en
+  /// arrière-plan après une reconnexion transport courte (onreconnected,
+  /// [_planifierRejoinApresReconnexionCourte]) : pas la peine d'écraser silencieusement l'écran du
+  /// joueur pour un aléa réseau de quelques secondes s'il n'y a rien de plus récent à afficher.
+  /// Quand le serveur renvoie un etatCourant (round classique ou question bonus actif), il est
+  /// toujours appliqué, y compris avec actualiserEcran=false : la phase réelle a pu changer pendant
+  /// la coupure (round suivant démarré entre-temps) — voir [appliquerEtatCourant], retour
+  /// utilisateur (playtest 2026-09-06, "pouvoir rejoindre au moins le prochain round").
+  Future<bool> joinGame(String code, String pseudo, {bool actualiserEcran = true}) async {
     errorMessage = null;
-    notifyListeners();
+    if (actualiserEcran) notifyListeners();
 
     try {
       final result = await _hub!.invoke('JoinGame', args: [code, pseudo, playerId!]);
       final joinResult = JoinResult.fromJson(result as Map<String, dynamic>);
 
       if (!joinResult.success) {
-        errorMessage = joinResult.errorMessage ?? 'Impossible de rejoindre la partie.';
-        notifyListeners();
+        if (actualiserEcran) {
+          errorMessage = joinResult.errorMessage ?? 'Impossible de rejoindre la partie.';
+          notifyListeners();
+        }
         return false;
       }
 
@@ -426,6 +525,7 @@ class GameConnection extends ChangeNotifier {
       teamId = joinResult.teamId;
       teams = joinResult.teams;
       await _prefs?.setString(_prefsNom, pseudo);
+      await _prefs?.setString(_prefsGameCode, code);
 
       // Le serveur ne diffuse PlayerJoined qu'aux AUTRES joueurs déjà présents (GameHub.JoinGame)
       // — sans le roster complet renvoyé ici, un joueur ne voyait ni lui-même (retour
@@ -435,13 +535,50 @@ class GameConnection extends ChangeNotifier {
         ..addAll(joinResult.joueurs.map(
           (j) => PlayerInfo(playerId: j.playerId, nom: j.nom, estConnecte: j.estConnecte, teamId: j.teamId),
         ));
-      screen = AppScreen.lobby;
+      appliquerEtatCourant(joinResult.etatCourant, actualiserEcran: actualiserEcran);
       notifyListeners();
       return true;
     } catch (e) {
-      errorMessage = 'Erreur : ${e.toString()}';
-      notifyListeners();
+      if (actualiserEcran) {
+        errorMessage = 'Erreur : ${e.toString()}';
+        notifyListeners();
+      }
       return false;
+    }
+  }
+
+  /// Rebranche l'état local sur la phase renvoyée par le serveur (round classique ou question
+  /// bonus activement en cours) — appliqué dès que [etat] est non null, y compris avec
+  /// actualiserEcran=false (réassociation en arrière-plan) : la phase réelle a pu changer pendant
+  /// la coupure (round suivant démarré entre-temps), autant se resynchroniser tout de suite plutôt
+  /// que d'attendre le prochain événement serveur. [actualiserEcran] ne contrôle que le repli sur
+  /// le lobby quand rien n'est actif (voir [joinGame]).
+  void appliquerEtatCourant(EtatCourantJoueur? etat, {required bool actualiserEcran}) {
+    if (etat == null) {
+      if (actualiserEcran) screen = AppScreen.lobby;
+      return;
+    }
+
+    paused = etat.enPause;
+
+    switch (etat.phase) {
+      case PhaseJoueur.roundClassique:
+        currentRound = etat.round;
+        roundAnswered = etat.dejaRepondu;
+        lastRoundResult = null;
+        screen = AppScreen.round;
+      case PhaseJoueur.bonusMise:
+        bonusStakeOptions = etat.bonusMise;
+        bonusStakeEnvoyee = etat.dejaRepondu;
+        screen = AppScreen.bonusStake;
+      case PhaseJoueur.bonusQuestion:
+        bonusQuestion = etat.bonusQuestion;
+        bonusAnswered = etat.dejaRepondu;
+        screen = AppScreen.bonusQuestion;
+      case PhaseJoueur.aucune:
+        // Jamais renvoyé par le serveur en pratique (GameHub.ConstruireEtatCourantJoueur renvoie
+        // null plutôt qu'un DTO à Phase.Aucune) — présent pour l'exhaustivité du switch.
+        if (actualiserEcran) screen = AppScreen.lobby;
     }
   }
 
@@ -514,6 +651,8 @@ class GameConnection extends ChangeNotifier {
   @override
   void dispose() {
     _introCourseTimer?.cancel();
+    _reconnectTimer?.cancel();
+    _rejoinRetryTimer?.cancel();
     _hub?.stop();
     super.dispose();
   }

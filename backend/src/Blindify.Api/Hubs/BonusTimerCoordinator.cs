@@ -109,17 +109,7 @@ public class BonusTimerCoordinator(
         // Même construction que GameHub.StartRound pour les rounds classiques — Mode Qcm tiré au
         // hasard côté BonusRoundService.CreerBonusRound, feintes appliquées ici au moment de la
         // diffusion (retour utilisateur 2026-08-27 : QCM/Première lettre aussi en question bonus).
-        var qcmOptions = bonusRound.QcmOptionTrackIds?
-            .Select(id => tracksRepository.GetById(id))
-            .Where(t => t is not null)
-            .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist, FilmNameResolver.Resoudre(t)))
-            .ToList();
-
-        if (qcmOptions is not null)
-        {
-            GameHub.AppliquerFeinteEventuelle(qcmOptions, track, bonusRound.Cible, session.Config);
-            GameHub.AppliquerFeinteTexteEventuelle(qcmOptions, track, bonusRound.Cible, session.Config);
-        }
+        var qcmOptions = GameHub.ConstruireQcmOptions(bonusRound.QcmOptionTrackIds, track, bonusRound.Cible, session.Config, tracksRepository);
 
         if (session.HostConnectionId is not null)
         {
@@ -129,7 +119,7 @@ public class BonusTimerCoordinator(
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
         await hubContext.Clients.Clients(joueursConnectes).SendAsync("BonusQuestionStarted",
-            new BonusQuestionStartedForPlayersDto(config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse));
+            new BonusQuestionStartedForPlayersDto(config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, TempsEcouleMs: 0));
     }
 
     private async Task DiffuserResultatAsync(GameSession session, BonusRound bonusRound)

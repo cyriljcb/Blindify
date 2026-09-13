@@ -8,9 +8,87 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:app/models/bonus_question_started.dart';
+import 'package:app/models/bonus_stake_options.dart';
+import 'package:app/models/etat_courant_joueur.dart';
+import 'package:app/models/round_cible.dart';
+import 'package:app/models/round_mode.dart';
+import 'package:app/models/round_started.dart';
 import 'package:app/services/game_connection.dart';
 
 void main() {
+  group('appliquerEtatCourant — resynchronisation à la reconnexion (playtest 2026-09-06)', () {
+    final round = RoundStarted(mode: RoundMode.tapeReponse, cible: RoundCible.auteur, dureeFenetreReponseMs: 20000, serieIndex: 1);
+    final bonusMise = BonusStakeOptions(paliers: [10, 20, 30, 50], dureePhaseMiseMs: 15000, serieIndex: 1);
+    final bonusQuestion = BonusQuestionStarted(dureePhaseQuestionMs: 20000, cible: RoundCible.titre, serieIndex: 1, mode: RoundMode.qcm);
+
+    test('etat null et actualiserEcran=true : repli sur le lobby', () {
+      final game = GameConnection()..screen = AppScreen.loading;
+      game.appliquerEtatCourant(null, actualiserEcran: true);
+      expect(game.screen, AppScreen.lobby);
+    });
+
+    test('etat null et actualiserEcran=false : écran courant inchangé (réassociation en arrière-plan)', () {
+      final game = GameConnection()..screen = AppScreen.round;
+      game.appliquerEtatCourant(null, actualiserEcran: false);
+      expect(game.screen, AppScreen.round);
+    });
+
+    test('round classique en cours, pas encore répondu : rebranche sur l\'écran de round', () {
+      final game = GameConnection();
+      final etat = EtatCourantJoueur(phase: PhaseJoueur.roundClassique, enPause: false, dejaRepondu: false, round: round);
+
+      game.appliquerEtatCourant(etat, actualiserEcran: true);
+
+      expect(game.screen, AppScreen.round);
+      expect(game.currentRound, round);
+      expect(game.roundAnswered, isFalse);
+      expect(game.paused, isFalse);
+    });
+
+    test('round classique déjà répondu avant la coupure : roundAnswered=true, pas de nouvelle saisie', () {
+      final game = GameConnection();
+      final etat = EtatCourantJoueur(phase: PhaseJoueur.roundClassique, enPause: false, dejaRepondu: true, round: round);
+
+      game.appliquerEtatCourant(etat, actualiserEcran: true);
+
+      expect(game.roundAnswered, isTrue);
+    });
+
+    test('appliqué même avec actualiserEcran=false : la phase réelle a pu changer pendant la coupure', () {
+      final game = GameConnection()..screen = AppScreen.lobby;
+      final etat = EtatCourantJoueur(phase: PhaseJoueur.roundClassique, enPause: false, dejaRepondu: false, round: round);
+
+      game.appliquerEtatCourant(etat, actualiserEcran: false);
+
+      expect(game.screen, AppScreen.round);
+    });
+
+    test('mise bonus en cours : rebranche sur l\'écran de mise avec les paliers reçus', () {
+      final game = GameConnection();
+      final etat = EtatCourantJoueur(phase: PhaseJoueur.bonusMise, enPause: false, dejaRepondu: false, bonusMise: bonusMise);
+
+      game.appliquerEtatCourant(etat, actualiserEcran: true);
+
+      expect(game.screen, AppScreen.bonusStake);
+      expect(game.bonusStakeOptions, bonusMise);
+      expect(game.bonusStakeEnvoyee, isFalse);
+    });
+
+    test('question bonus en cours, mise déjà envoyée : bonusStakeEnvoyee reflète dejaRepondu', () {
+      final game = GameConnection();
+      final etat = EtatCourantJoueur(phase: PhaseJoueur.bonusQuestion, enPause: true, dejaRepondu: true, bonusQuestion: bonusQuestion);
+
+      game.appliquerEtatCourant(etat, actualiserEcran: true);
+
+      expect(game.screen, AppScreen.bonusQuestion);
+      expect(game.bonusQuestion, bonusQuestion);
+      expect(game.bonusAnswered, isTrue);
+      expect(game.paused, isTrue);
+    });
+  });
+
+
   group('Garde anti-race du mode course (BonusQuestionStarted/BonusResult)', () {
     Map<String, dynamic> payloadBonusQuestionStarted({required bool estCourse}) => {
           'dureePhaseQuestionMs': 20000,
