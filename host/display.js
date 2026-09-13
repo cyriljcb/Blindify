@@ -32,6 +32,10 @@ const state = {
   scores: null,
   serieIntro: {},
   scoreHistory: [],
+  // {playerId, tempsEcouleMs}[], dans l'ordre d'arrivée — jamais l'exactitude de la réponse (voir
+  // note en tête de fichier). Vidé à chaque nouveau round/question bonus, voir
+  // "player-answered-reset" ci-dessous.
+  playersAnswered: [],
 };
 
 function roster() {
@@ -106,6 +110,43 @@ function renderResultBadges(container, resultats, joueurs) {
     li.innerHTML = `${avatarHtml(r.playerId, nom, undefined, roster())}<span>${escapeHtml(nom)}</span><span class="result-icon">${r.estCorrecte ? "✓" : "✗"}</span>`;
     container.appendChild(li);
   }
+}
+
+// Panneau flottant (voir answer-speed-panel dans display.html) — rang d'arrivée + temps, jamais
+// si la réponse était correcte (uniquement connu du backend via ScoreUpdate, jamais transmis ici).
+function renderAnswerSpeedPanel() {
+  const panel = el("answer-speed-panel");
+  const list = el("answer-speed-list");
+  if (state.playersAnswered.length === 0) {
+    panel.classList.add("hidden");
+    list.innerHTML = "";
+    return;
+  }
+
+  panel.classList.remove("hidden");
+  list.innerHTML = state.playersAnswered
+    .map(({ playerId, tempsEcouleMs }, index) => {
+      const joueur = state.players.find((p) => p.playerId === playerId);
+      const nom = joueur ? joueur.nom : "?";
+      const secondes = (tempsEcouleMs / 1000).toFixed(1);
+      return `<li><span class="answer-speed-rank">${index + 1}</span><span class="answer-speed-name">${escapeHtml(nom)}</span><span class="answer-speed-time">${secondes}s</span></li>`;
+    })
+    .join("");
+}
+
+let shakeTimeout = null;
+
+// Secousse de tout l'écran (voir @keyframes screen-shake, display.css) — retour utilisateur :
+// rendre visible depuis le fond de la salle qu'un joueur vient de répondre, sans rien révéler.
+function triggerScreenShake() {
+  const main = document.querySelector("main");
+  main.classList.remove("screen-shake");
+  // Force un reflow pour pouvoir rejouer l'animation même si un joueur répond deux fois de suite
+  // très vite (retirer puis ré-ajouter la classe sans reflow entre les deux ne relance rien).
+  void main.offsetWidth;
+  main.classList.add("screen-shake");
+  clearTimeout(shakeTimeout);
+  shakeTimeout = setTimeout(() => main.classList.remove("screen-shake"), 400);
 }
 
 const screens = [
@@ -321,6 +362,18 @@ window.addEventListener("message", (event) => {
     el("leaderboard-overlay").classList.remove("hidden");
   } else if (msg.type === "leaderboard-hide") {
     el("leaderboard-overlay").classList.add("hidden");
+  } else if (msg.type === "player-answered") {
+    // Ignore un doublon (playerId déjà présent) plutôt que de le pousser deux fois — un seul
+    // essai par joueur et par round côté serveur, mais un message dupliqué/retardé ne doit pas
+    // fausser le classement affiché.
+    if (!state.playersAnswered.some((p) => p.playerId === msg.playerId)) {
+      state.playersAnswered.push({ playerId: msg.playerId, tempsEcouleMs: msg.tempsEcouleMs });
+      renderAnswerSpeedPanel();
+    }
+    triggerScreenShake();
+  } else if (msg.type === "player-answered-reset") {
+    state.playersAnswered = [];
+    renderAnswerSpeedPanel();
   }
 });
 

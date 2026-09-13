@@ -16,6 +16,14 @@
 <body class="display-body">
   <div id="paused-banner" class="paused-banner hidden">⏸ Partie en pause</div>
 
+  <!-- Retour utilisateur : réaction visuelle + classement de rapidité dès qu'un joueur répond
+       (voir display.js:"player-answered") — HUD flottant plutôt que dupliqué dans chaque écran de
+       question, visible uniquement pendant "round"/"bonus-question" (voir display.js:render). -->
+  <div id="answer-speed-panel" class="answer-speed-panel hidden">
+    <h3>Rapidité</h3>
+    <ol id="answer-speed-list"></ol>
+  </div>
+
   <main>
     <!-- Écran d'attente : avant que le panneau de contrôle n'ait diffusé un état -->
     <section id="screen-idle" class="screen">

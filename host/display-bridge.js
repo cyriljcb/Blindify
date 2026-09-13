@@ -71,6 +71,19 @@ export function sendLeaderboardHide() {
   sendToDisplay({ type: "leaderboard-hide" });
 }
 
+// Retour utilisateur : réaction visuelle + classement de rapidité sur l'écran public dès qu'un
+// joueur répond — jamais l'exactitude de la réponse (voir PlayerAnsweredDto côté backend), jamais
+// relayé au téléphone des joueurs (uniquement l'écran public, voir main.js).
+export function sendPlayerAnswered({ playerId, tempsEcouleMs }) {
+  sendToDisplay({ type: "player-answered", playerId, tempsEcouleMs });
+}
+
+// Vide le classement de rapidité affiché — appelé à chaque nouveau round/question bonus (et à la
+// fin) pour ne jamais laisser le classement d'un round précédent déborder sur le suivant.
+export function resetPlayerAnswered() {
+  sendToDisplay({ type: "player-answered-reset" });
+}
+
 // onStartRoundRequested : relaie le clic du bouton "Lancer" de l'écran public (retour utilisateur :
 // éviter le switch de fenêtre) vers l'orchestration de main.js.
 export function initDisplayBridge(state, { onStartRoundRequested }) {

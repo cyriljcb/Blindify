@@ -22,6 +22,14 @@ public record RoundStartedForHostDto(RoundMode Mode, RoundCible Cible, string Tr
 /// sans ça, la barre de temps du client redémarrait à la durée totale au lieu du temps restant.</summary>
 public record RoundStartedForPlayersDto(RoundMode Mode, RoundCible Cible, int DureeFenetreReponseMs, int SerieIndex, List<QcmOptionDto>? QcmOptions, int TempsEcouleMs);
 
+/// <summary>Diffusé à tout le groupe (host, écran public, autres joueurs) dès qu'une réponse est
+/// enregistrée — voir GameHub.SubmitAnswer/SubmitBonusAnswer. Volontairement minimal : ni la
+/// réponse ni son exactitude n'y figurent (l'écran public ne montre jamais d'information à deviner,
+/// voir CLAUDE.md) — seulement de quoi réagir visuellement et afficher un classement de rapidité.
+/// TempsEcouleMs mesuré exactement comme pour le calcul des points (voir IScoringService),
+/// hors durée de pause.</summary>
+public record PlayerAnsweredDto(string PlayerId, int TempsEcouleMs);
+
 public record SubmitAnswerRequestDto(string Reponse);
 
 public record RoundAnswerResultDto(bool EstCorrecte, int Points, int NouveauScore);

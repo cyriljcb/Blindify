@@ -75,10 +75,19 @@ function handleEvent(name, payload) {
     case "RoundStarted":
       audio.playAudio(state.serverBaseUrl, payload.filePath); // toujours depuis le début — le refrain n'est joué qu'au reveal
       timers.startTimer(payload.dureeFenetreReponseMs, el("timer-fill"));
+      displayBridge.resetPlayerAnswered();
+      break;
+
+    case "PlayerAnswered":
+      // Réaction visuelle + classement de rapidité sur l'écran public uniquement (retour
+      // utilisateur) — jamais sur le téléphone des joueurs, jamais l'exactitude de la réponse
+      // (voir PlayerAnsweredDto côté backend).
+      displayBridge.sendPlayerAnswered(payload);
       break;
 
     case "RoundEnded":
       timers.stopTimer();
+      displayBridge.resetPlayerAnswered();
       // Au reveal (tout le monde a répondu) : on saute au refrain si on en connaît un pour ce
       // morceau, sinon on retombe sur le comportement "musique continue" habituel.
       if (state.refrainCourantMs !== null) {
@@ -117,6 +126,7 @@ function handleEvent(name, payload) {
       timers.annulerMinuteur("auto-intro-serie");
       timers.annulerMinuteur("bonus-course-intro");
       audio.remettreVitesseNormale();
+      displayBridge.resetPlayerAnswered();
       break;
 
     case "BonusStakeOptions":
@@ -124,6 +134,7 @@ function handleEvent(name, payload) {
       break;
 
     case "BonusQuestionStarted": {
+      displayBridge.resetPlayerAnswered();
       const demarrerAudioEtMinuteur = () => {
         const rate = payload.ralentissementActive ? payload.facteurRalentissement : 1;
         audio.playAudio(state.serverBaseUrl, payload.filePath, rate); // depuis le début — c'est la devinette elle-même
@@ -146,6 +157,7 @@ function handleEvent(name, payload) {
     case "BonusResult":
       timers.annulerMinuteur("bonus-course-intro");
       timers.stopTimer();
+      displayBridge.resetPlayerAnswered();
       audio.remettreVitesseNormale(); // remis à la vitesse normale pour la suite (fin de partie, replay...)
       if (state.refrainCourantMs !== null) {
         audio.jouerRefrain(state.refrainCourantMs);

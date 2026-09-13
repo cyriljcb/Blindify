@@ -291,6 +291,28 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     }
 
     [Fact]
+    public async Task SubmitAnswer_DiffusePlayerAnswered_SansRevelerLaReponse()
+    {
+        RoundStartedForPlayersDto? roundStartedPlayer = null;
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
+        var playerAnsweredTcs = new TaskCompletionSource<PlayerAnsweredDto>();
+        _hostConnection.On<PlayerAnsweredDto>("PlayerAnswered", payload => playerAnsweredTcs.TrySetResult(payload));
+
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStartedPlayer is not null);
+
+        // N'importe quelle réponse (juste ou fausse) déclenche l'évènement — seule l'absence de
+        // réponse (reponse is null côté RoundService) ne le déclenche pas.
+        await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto("n'importe quoi"));
+
+        var playerAnswered = await AvecTimeout(playerAnsweredTcs.Task, TimeSpan.FromSeconds(5));
+        Assert.Equal("player-1", playerAnswered.PlayerId);
+        Assert.True(playerAnswered.TempsEcouleMs >= 0);
+    }
+
+    [Fact]
     public async Task ModeEquipe_CreationEtJoinTeam_AgregeLeScoreParEquipe()
     {
         RoundStartedForPlayersDto? roundStartedPlayer = null;

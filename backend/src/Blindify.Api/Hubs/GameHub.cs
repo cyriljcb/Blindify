@@ -500,6 +500,7 @@ public class GameHub(
         var session = ResoudreSession();
         RoundAnswer? reponse;
         Player joueur;
+        int tempsEcouleMs;
 
         lock (session.Lock)
         {
@@ -513,8 +514,13 @@ public class GameHub(
             reponse = roundService.SoumettreReponse(session, round, serie.Config, track, joueur.PlayerId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
             if (reponse is null)
                 return new RoundAnswerResultDto(false, 0, joueur.Score);
+
+            tempsEcouleMs = round.DebutRound is null ? 0 : (int)Math.Max(0, CalculerTempsEcouleMs(session, round.DebutRound.Value, round.DureeEnPauseMs));
         }
 
+        // Retour utilisateur : réaction visuelle sur l'écran public dès qu'un joueur répond, avec un
+        // classement de rapidité — voir PlayerAnsweredDto pour ce qui est volontairement omis.
+        await Clients.Group(session.Id).SendAsync("PlayerAnswered", new PlayerAnsweredDto(joueur.PlayerId, tempsEcouleMs));
         await Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
 
         return new RoundAnswerResultDto(reponse.EstCorrecte, reponse.Points, joueur.Score);
@@ -539,6 +545,7 @@ public class GameHub(
         var session = ResoudreSession();
         BonusAnswer? reponse;
         Player joueur;
+        int tempsEcouleMs;
 
         lock (session.Lock)
         {
@@ -552,8 +559,13 @@ public class GameHub(
             reponse = bonusRoundService.SoumettreReponse(session, bonusRound, serie.Config, track, joueur.PlayerId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
             if (reponse is null)
                 return new BonusAnswerResultDto(false, 0, joueur.Score);
+
+            tempsEcouleMs = bonusRound.DebutPhaseQuestion is null
+                ? 0
+                : (int)Math.Max(0, CalculerTempsEcouleMs(session, bonusRound.DebutPhaseQuestion.Value, bonusRound.DureeEnPauseMs));
         }
 
+        await Clients.Group(session.Id).SendAsync("PlayerAnswered", new PlayerAnsweredDto(joueur.PlayerId, tempsEcouleMs));
         await Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
 
         return new BonusAnswerResultDto(reponse.EstCorrecte, reponse.Points, joueur.Score);
