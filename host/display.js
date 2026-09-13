@@ -99,15 +99,35 @@ function renderPlayerChips(container, joueurs) {
   }
 }
 
-// Résultats sans le détail des points — seulement correct/incorrect (voir note en tête de fichier).
+// Retour utilisateur : "faux" et "pas répondu" rendaient tous les deux en rouge, impossible à
+// distinguer sur l'écran public. Round classique (RoundResultEntryDto) : estCorrecte est déjà
+// nullable côté backend — null signifie explicitement "aucune réponse enregistrée" (voir
+// RoundTimerCoordinator.cs, reponse?.EstCorrecte). Question bonus (BonusResultEntryDto) :
+// estCorrecte n'est PAS nullable — un timeout y est délibérément traité comme une perte
+// (BonusRoundService.TerminerParTimeout, "les hésitants ne doivent pas être avantagés" — voir
+// architecture.md section 6) et synthétise une réponse vide ("") pour ce joueur. Une réponse vide
+// n'arrive jamais pour un vrai essai (les modes QCM/lettre soumettent toujours une valeur, et
+// l'auto-submit texte ignore un champ vide) — donc estCorrecte === false && reponse vide identifie
+// fiablement ce cas côté écran public, sans changer le contrat serveur.
+function statutReponse(r) {
+  if (r.estCorrecte === null || r.estCorrecte === undefined) return "sans-reponse";
+  if (r.estCorrecte === false && !r.reponse) return "sans-reponse";
+  return r.estCorrecte ? "correct" : "incorrect";
+}
+
+const ICONES_STATUT = { correct: "✓", incorrect: "✗", "sans-reponse": "–" };
+
+// Résultats sans le détail des points — seulement correct/incorrect/sans réponse (voir note en
+// tête de fichier).
 function renderResultBadges(container, resultats, joueurs) {
   container.innerHTML = "";
   for (const r of resultats) {
     const joueur = joueurs.find((j) => j.playerId === r.playerId);
     const nom = joueur ? joueur.nom : r.playerId;
+    const statut = statutReponse(r);
     const li = document.createElement("li");
-    li.className = "result-badge " + (r.estCorrecte ? "result-badge--correct" : "result-badge--incorrect");
-    li.innerHTML = `${avatarHtml(r.playerId, nom, undefined, roster())}<span>${escapeHtml(nom)}</span><span class="result-icon">${r.estCorrecte ? "✓" : "✗"}</span>`;
+    li.className = `result-badge result-badge--${statut}`;
+    li.innerHTML = `${avatarHtml(r.playerId, nom, undefined, roster())}<span>${escapeHtml(nom)}</span><span class="result-icon">${ICONES_STATUT[statut]}</span>`;
     container.appendChild(li);
   }
 }

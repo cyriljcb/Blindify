@@ -219,9 +219,13 @@ main {
 }
 .result-badge--correct { border-color: var(--good); box-shadow: 3px 3px 0 var(--good); }
 .result-badge--incorrect { border-color: var(--coral); opacity: 0.75; }
+/* Retour utilisateur : distinct de "faux" (coral) — gris neutre, pas de connotation positive/
+   négative, pour ne pas laisser penser qu'une absence de réponse est "moins grave" qu'une erreur. */
+.result-badge--sans-reponse { border-color: var(--ink-dim); opacity: 0.6; }
 .result-icon { font-family: var(--font-display); font-weight: 400; }
 .result-badge--correct .result-icon { color: var(--good); }
 .result-badge--incorrect .result-icon { color: var(--coral); }
+.result-badge--sans-reponse .result-icon { color: var(--ink-dim); }
 
 /* ----- Scores (tableau général / fin de partie uniquement — reveal volontaire) ----- */
 
