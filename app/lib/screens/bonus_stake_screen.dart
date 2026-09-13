@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
+import '../motion.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/answer_banner.dart';
@@ -109,28 +111,37 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(8),
                     onTap: disabled ? null : () => context.read<GameConnection>().selectStake(index),
-                    child: Container(
-                      width: double.infinity,
-                      alignment: Alignment.center,
-                      // Centré plutôt qu'un padding fixe (16) : la tuile a désormais une hauteur
-                      // calculée pour remplir l'espace disponible, parfois plus serrée qu'avant —
-                      // un padding fixe y déborderait, alors qu'un centrage s'adapte à toute hauteur.
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: BlindifyColors.ink, width: selectionne ? 3 : 2),
-                      ),
-                      child: Text(
-                        'Palier ${index + 1}${index == 0 ? " (safe)" : ""} — $valeur pts',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: selectionne ? BlindifyColors.onAccent : BlindifyColors.ink,
+                    child: AnimatedScale(
+                      // Petit "clac" au choix d'un palier — même principe que _AnswerTile côté QCM.
+                      scale: selectionne ? 1.05 : 1.0,
+                      duration: BlindifyMotion.fast,
+                      curve: BlindifyMotion.pop,
+                      child: Container(
+                        width: double.infinity,
+                        alignment: Alignment.center,
+                        // Centré plutôt qu'un padding fixe (16) : la tuile a désormais une hauteur
+                        // calculée pour remplir l'espace disponible, parfois plus serrée qu'avant —
+                        // un padding fixe y déborderait, alors qu'un centrage s'adapte à toute hauteur.
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: BlindifyColors.ink, width: selectionne ? 3 : 2),
+                        ),
+                        child: Text(
+                          'Palier ${index + 1}${index == 0 ? " (safe)" : ""} — $valeur pts',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: selectionne ? BlindifyColors.onAccent : BlindifyColors.ink,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                );
+                ).animate(delay: Duration(milliseconds: 60 * index)).fadeIn(duration: BlindifyMotion.normal).slideY(
+                      begin: 0.25,
+                      curve: BlindifyMotion.pop,
+                    );
               },
             ),
           ),

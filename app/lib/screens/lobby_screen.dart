@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../motion.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/game_card.dart';
@@ -42,7 +44,13 @@ class LobbyScreen extends StatelessWidget {
                     letterSpacing: 6,
                     color: BlindifyColors.ink,
                   ),
-                ),
+                  // Pulsation discrète en continu — invite à regarder ce bloc plutôt que de le
+                  // laisser complètement immobile pendant toute l'attente en salle.
+                ).animate(onPlay: (c) => c.repeat(reverse: true)).scaleXY(
+                      end: 1.04,
+                      duration: const Duration(milliseconds: 1100),
+                      curve: Curves.easeInOut,
+                    ),
               ],
             ),
           ),
@@ -113,7 +121,14 @@ class LobbyScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                      );
+                      )
+                          // Sans clé explicite : Flutter réutilise l'Element existant pour un joueur
+                          // déjà affiché (même index), donc l'entrée ne rejoue pas à chaque
+                          // PlayerJoined — seul un NOUVEL index (joueur qui vient de rejoindre)
+                          // obtient un Element frais et voit l'animation.
+                          .animate()
+                          .fadeIn(duration: BlindifyMotion.normal)
+                          .slideX(begin: 0.15, curve: BlindifyMotion.pop);
                     },
                   ),
           ),

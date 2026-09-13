@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
+import '../motion.dart';
 import '../services/game_connection.dart';
 import '../widgets/game_card.dart';
 import '../widgets/serie_badge.dart';
@@ -21,19 +23,21 @@ class SerieIntroScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text('Prochaine série', style: Theme.of(context).textTheme.bodyMedium),
+          Text('Prochaine série', style: Theme.of(context).textTheme.bodyMedium)
+              .animate()
+              .fadeIn(duration: BlindifyMotion.fast),
           const SizedBox(height: 12),
           Text(
             serieIntro != null ? 'Série ${lettreSerie(serieIntro.serieIndex)}' : '',
             style: Theme.of(context).textTheme.displaySmall,
             textAlign: TextAlign.center,
-          ),
+          ).animate().fadeIn(delay: 100.ms).scale(begin: const Offset(0.6, 0.6), curve: BlindifyMotion.bounce),
           const SizedBox(height: 8),
           Text(
             serieIntro != null ? libelleTheme(serieIntro.tags) : '',
             style: Theme.of(context).textTheme.titleMedium,
             textAlign: TextAlign.center,
-          ),
+          ).animate().fadeIn(delay: 300.ms, duration: BlindifyMotion.normal).slideY(begin: 0.3),
         ],
       ),
     );

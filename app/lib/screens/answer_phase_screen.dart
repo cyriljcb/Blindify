@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../models/qcm_option.dart';
 import '../models/round_cible.dart';
 import '../models/round_mode.dart';
+import '../motion.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/answer_banner.dart';
@@ -293,26 +295,44 @@ class _QcmAnswers extends StatelessWidget {
           RoundCible.auteur => option.artist.split(',').first.trim(),
           RoundCible.film => option.film,
         };
-        return _AnswerTile(label: label, onPressed: disabled ? null : () => onSubmit(option.trackId));
+        return _AnswerTile(label: label, index: index, onPressed: disabled ? null : () => onSubmit(option.trackId));
       },
     );
   }
 }
 
-class _AnswerTile extends StatelessWidget {
-  const _AnswerTile({required this.label, required this.onPressed});
+/// Écrasement au press (retour tactile façon appli de quiz "arcade") + entrée décalée par index à
+/// l'apparition — retour utilisateur : les tuiles se contentaient d'un ripple Material, jugé mou.
+class _AnswerTile extends StatefulWidget {
+  const _AnswerTile({required this.label, required this.index, required this.onPressed});
 
   final String label;
+  final int index;
   final VoidCallback? onPressed;
 
   @override
+  State<_AnswerTile> createState() => _AnswerTileState();
+}
+
+class _AnswerTileState extends State<_AnswerTile> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (widget.onPressed == null) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: BlindifyColors.surfaceAlt,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onPressed,
+    return GestureDetector(
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
+      onTap: widget.onPressed,
+      child: AnimatedScale(
+        scale: _pressed ? 0.94 : 1.0,
+        duration: BlindifyMotion.fast,
+        curve: Curves.easeOut,
         child: Container(
           width: double.infinity,
           alignment: Alignment.center,
@@ -321,17 +341,21 @@ class _AnswerTile extends StatelessWidget {
           // — un padding fixe y déborderait, alors qu'un centrage s'adapte à toute hauteur.
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
+            color: BlindifyColors.surfaceAlt,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: BlindifyColors.ink, width: 2),
           ),
           child: Text(
-            label,
+            widget.label,
             textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
           ),
         ),
       ),
-    );
+    )
+        .animate(delay: Duration(milliseconds: 60 * widget.index))
+        .fadeIn(duration: BlindifyMotion.normal)
+        .slideY(begin: 0.25, curve: BlindifyMotion.pop);
   }
 }
 
@@ -392,7 +416,13 @@ class _LetterAnswer extends StatelessWidget {
               ),
             );
           },
-        );
+        )
+            // Grille entière plutôt qu'une tuile à la fois (26 lettres, un décalage par tuile
+            // deviendrait trop lent à l'arrivée) — juste assez de mouvement pour éviter un simple
+            // "pop" statique.
+            .animate()
+            .fadeIn(duration: BlindifyMotion.normal)
+            .scale(begin: const Offset(0.97, 0.97), curve: BlindifyMotion.snappy);
       },
     );
   }

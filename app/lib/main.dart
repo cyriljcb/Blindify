@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import 'motion.dart';
 import 'screens/answer_phase_screen.dart';
 import 'screens/bonus_course_intro_screen.dart';
 import 'screens/bonus_result_screen.dart';
@@ -99,7 +101,10 @@ class _RootScreen extends StatelessWidget {
                         // Ombre dure décalée (pas de flou) — même motif que header h1 côté host.
                         shadows: const [Shadow(color: BlindifyColors.coral, offset: Offset(3, 3), blurRadius: 0)],
                       ),
-                    ),
+                    )
+                        .animate()
+                        .fadeIn(duration: BlindifyMotion.normal)
+                        .slideX(begin: -0.2, curve: BlindifyMotion.pop),
                     const Spacer(),
                     _ConnectionPill(connected: game.connected),
                     const SizedBox(width: 8),
@@ -116,12 +121,29 @@ class _RootScreen extends StatelessWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16),
+                      // Fade + léger zoom-in + glissement vertical (au lieu d'un simple fondu) — retour
+                      // utilisateur : l'app manquait de dynamisme, chaque écran doit "arriver" plutôt
+                      // que de simplement apparaître. Le nouvel écran survient toujours par-dessus
+                      // l'ancien (Stack, pas de croisement des deux transitions) pour éviter un flash
+                      // de contenu à moitié sorti derrière celui qui arrive.
                       child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 320),
-                        switchInCurve: Curves.easeOut,
+                        duration: BlindifyMotion.normal,
+                        switchInCurve: BlindifyMotion.pop,
                         switchOutCurve: Curves.easeIn,
-                        transitionBuilder: (child, animation) =>
-                            FadeTransition(opacity: animation, child: child),
+                        layoutBuilder: (currentChild, previousChildren) => Stack(
+                          alignment: Alignment.topCenter,
+                          children: [...previousChildren, ?currentChild],
+                        ),
+                        transitionBuilder: (child, animation) => FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: Tween(begin: 0.94, end: 1.0).animate(animation),
+                            child: SlideTransition(
+                              position: Tween(begin: const Offset(0, 0.04), end: Offset.zero).animate(animation),
+                              child: child,
+                            ),
+                          ),
+                        ),
                         child: KeyedSubtree(key: ValueKey(game.screen), child: body),
                       ),
                     ),

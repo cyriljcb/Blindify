@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
+import '../motion.dart';
 
 /// Bannière pause/réponse-envoyée/mode-course — dupliquée à l'identique dans round_screen.dart,
 /// bonus_question_screen.dart et bonus_stake_screen.dart avant la fusion (docs/refactor-decisions.md
@@ -21,6 +24,8 @@ class AnswerBanner extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
-    );
+      // Insérée/retirée conditionnellement par l'écran appelant (if game.paused / roundAnswered) —
+      // chaque apparition est donc un nouvel Element, l'entrée rejoue à chaque fois.
+    ).animate().fadeIn(duration: BlindifyMotion.fast).slideY(begin: -0.4, curve: BlindifyMotion.pop);
   }
 }

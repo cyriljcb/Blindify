@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../models/score_update.dart';
+import '../motion.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/player_avatar.dart';
@@ -49,7 +51,13 @@ class LeaderboardOverlay extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
+            )
+                // Une seule State par apparition (voir main.dart : ce widget n'est monté que quand
+                // showLeaderboard passe à true, démonté ensuite) — le pop ne rejoue donc jamais tant
+                // que le panneau reste ouvert (ScoreUpdate, etc. n'y touchent pas).
+                .animate()
+                .fadeIn(duration: BlindifyMotion.fast)
+                .scale(begin: const Offset(0.85, 0.85), curve: BlindifyMotion.bounce),
           ),
         ),
       ),
@@ -103,6 +111,6 @@ class _ScoreRow extends StatelessWidget {
           Text('$score', style: const TextStyle(fontWeight: FontWeight.w800)),
         ],
       ),
-    );
+    ).animate(delay: Duration(milliseconds: 40 * rang)).fadeIn(duration: BlindifyMotion.fast).slideX(begin: -0.15);
   }
 }

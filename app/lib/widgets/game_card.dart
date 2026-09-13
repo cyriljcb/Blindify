@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
+import '../motion.dart';
 import '../theme.dart';
 
 /// Carte "scène" utilisée comme conteneur principal de chaque écran — même esprit que les
@@ -27,6 +29,13 @@ class GameCard extends StatelessWidget {
         boxShadow: hardShadow(accentColor ?? BlindifyColors.cobalt, offset: 7),
       ),
       child: child,
-    );
+    )
+        // Léger dépassement à l'arrivée (échelle 0.96 -> 1) plutôt qu'un simple fade — la carte
+        // "atterrit" au lieu d'apparaître platement. main.dart gère déjà la transition ENTRE écrans
+        // (AnimatedSwitcher) ; ceci rejoue à chaque fois que GameCard est reconstruite avec un
+        // nouveau parent (nouvel écran), sans dépendre l'un de l'autre.
+        .animate()
+        .fadeIn(duration: BlindifyMotion.fast)
+        .scale(begin: const Offset(0.96, 0.96), curve: BlindifyMotion.pop, duration: BlindifyMotion.normal);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../theme.dart';
@@ -44,15 +45,29 @@ class TimerBar extends StatelessWidget {
             const SizedBox(width: 12),
             SizedBox(
               width: 52,
-              child: Text(
-                '${secondesRestantes}s',
-                textAlign: TextAlign.right,
-                style: GoogleFonts.spaceMono(fontSize: 24, fontWeight: FontWeight.w700, color: c),
-              ),
+              child: _buildCountdown(secondesRestantes, c, pct),
             ),
           ],
         );
       },
     );
+  }
+
+  /// Pulsation continue sous 15 % restants — retour utilisateur : le décompte se contentait de
+  /// changer de couleur, pas assez visible pour transmettre l'urgence des dernières secondes.
+  /// L'Animate garde son identité d'un tick à l'autre (même position dans l'arbre, pas de clé
+  /// changeante) tant que pct reste sous le seuil, donc le contrôleur boucle sans jamais être
+  /// recréé toutes les 100ms — il est simplement retiré (et l'anim arrêtée) dès que le seuil est
+  /// repassé au-dessus.
+  Widget _buildCountdown(int secondesRestantes, Color color, num pct) {
+    final text = Text(
+      '${secondesRestantes}s',
+      textAlign: TextAlign.right,
+      style: GoogleFonts.spaceMono(fontSize: 24, fontWeight: FontWeight.w700, color: color),
+    );
+    if (pct > 15) return text;
+    return text
+        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .scaleXY(end: 1.18, duration: const Duration(milliseconds: 420), curve: Curves.easeInOut);
   }
 }
