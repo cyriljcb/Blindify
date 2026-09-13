@@ -239,14 +239,34 @@ main {
    classement de rapidité, jamais l'exactitude de la réponse ni le contenu à deviner (voir
    display.js:"player-answered"/PlayerAnsweredDto côté backend). ----- */
 
+/* Retour utilisateur : l'amplitude d'origine (quelques px, pensée pour un écran de bureau) passait
+   totalement inaperçue sur un projecteur/TV vu depuis le fond de la salle. Secousse nettement plus
+   large + léger tangage (rotation) pour un vrai "coup de poing" visuel, doublée d'un flash plein
+   écran (voir #flash-overlay ci-dessous) qui reste visible même si la télé lisse le mouvement. */
 @keyframes screen-shake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
+  10%, 90% { transform: translate3d(-3px, -2px, 0) rotate(-0.4deg); }
+  20%, 80% { transform: translate3d(6px, 2px, 0) rotate(0.4deg); }
+  30%, 50%, 70% { transform: translate3d(-14px, 4px, 0) rotate(-0.9deg); }
+  40%, 60% { transform: translate3d(14px, -4px, 0) rotate(0.9deg); }
 }
 main.screen-shake {
-  animation: screen-shake 380ms cubic-bezier(.36,.07,.19,.97);
+  animation: screen-shake 420ms cubic-bezier(.36,.07,.19,.97);
+}
+
+#flash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  background: var(--mustard);
+  opacity: 0;
+}
+#flash-overlay.flash-overlay--active {
+  animation: flash-overlay-pulse 420ms ease-out;
+}
+@keyframes flash-overlay-pulse {
+  0% { opacity: 0.55; }
+  100% { opacity: 0; }
 }
 
 .answer-speed-panel {

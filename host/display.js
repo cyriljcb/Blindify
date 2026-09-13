@@ -135,18 +135,30 @@ function renderAnswerSpeedPanel() {
 }
 
 let shakeTimeout = null;
+let flashTimeout = null;
 
-// Secousse de tout l'écran (voir @keyframes screen-shake, display.css) — retour utilisateur :
-// rendre visible depuis le fond de la salle qu'un joueur vient de répondre, sans rien révéler.
+// Secousse de tout l'écran + flash plein écran (voir @keyframes screen-shake/flash-overlay-pulse,
+// display.css) — retour utilisateur : rendre visible depuis le fond de la salle qu'un joueur vient
+// de répondre, sans rien révéler. Le flash double la secousse : une télé qui lisse le mouvement
+// (traitement d'image) peut atténuer un simple déplacement de quelques pixels, un flash de couleur
+// reste perceptible dans tous les cas.
 function triggerScreenShake() {
   const main = document.querySelector("main");
+  const flash = el("flash-overlay");
+
   main.classList.remove("screen-shake");
+  flash.classList.remove("flash-overlay--active");
   // Force un reflow pour pouvoir rejouer l'animation même si un joueur répond deux fois de suite
   // très vite (retirer puis ré-ajouter la classe sans reflow entre les deux ne relance rien).
   void main.offsetWidth;
+  void flash.offsetWidth;
   main.classList.add("screen-shake");
+  flash.classList.add("flash-overlay--active");
+
   clearTimeout(shakeTimeout);
-  shakeTimeout = setTimeout(() => main.classList.remove("screen-shake"), 400);
+  shakeTimeout = setTimeout(() => main.classList.remove("screen-shake"), 420);
+  clearTimeout(flashTimeout);
+  flashTimeout = setTimeout(() => flash.classList.remove("flash-overlay--active"), 420);
 }
 
 const screens = [

@@ -14,6 +14,10 @@
   <link rel="stylesheet" href="display.css" />
 </head>
 <body class="display-body">
+  <!-- Flash plein écran bref (voir @keyframes flash-overlay-pulse, display.css) — accompagne la
+       secousse de <main> pour rester visible même sur une télé qui lisse le mouvement. -->
+  <div id="flash-overlay"></div>
+
   <div id="paused-banner" class="paused-banner hidden">⏸ Partie en pause</div>
 
   <!-- Retour utilisateur : réaction visuelle + classement de rapidité dès qu'un joueur répond
