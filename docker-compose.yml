@@ -19,6 +19,12 @@
 # BLINDIFY_RESTART_PASSWORD (optionnel) : active le bouton "Redémarrer le serveur" sur la page host
 # (POST /api/admin/restart) — laissé vide, la fonctionnalité reste désactivée (503). Exporte-la avant
 # `docker compose up -d`, ne la commite jamais en dur ici.
+#
+# BLINDIFY_ADMIN_PASSWORD (optionnel) : active le mode admin distant depuis l'app Flutter (pause/
+# reprise/tableau général/fin de partie, voir GameHub.AuthenticateAdmin) — laissé vide, la
+# fonctionnalité reste désactivée. Distinct de BLINDIFY_RESTART_PASSWORD (portée différente : celui-ci
+# ne permet jamais de redémarrer le process). Exporte-la avant `docker compose up -d`, ne la commite
+# jamais en dur ici.
 
 services:
   backend:
@@ -49,3 +55,4 @@ services:
       - Host__StaticPath=/host
       - Play__StaticPath=/play
       - Admin__RestartPassword=${BLINDIFY_RESTART_PASSWORD:-}
+      - Admin__RemoteControlPassword=${BLINDIFY_ADMIN_PASSWORD:-}

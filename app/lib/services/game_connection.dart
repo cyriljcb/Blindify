@@ -107,6 +107,14 @@ class GameConnection extends ChangeNotifier {
 
   BonusResult? lastBonusResult;
 
+  /// true une fois authentifié via [authenticateAdmin] — débloque les actions admin (pause/tableau
+  /// général/fin de partie) dans les réglages, EN PLUS du host web, sans jamais le déloger (voir
+  /// GameHub.AuthenticateAdmin/ResoudreSessionHostOuAdmin côté serveur). Redevient false à chaque
+  /// nouvelle connexion (pas persisté) : le mot de passe reste à ressaisir, comme le hostSecret côté
+  /// host web n'est jamais mémorisé en clair côté client.
+  bool isAdmin = false;
+  String? adminError;
+
   /// Durée maximale de la tentative de reconnexion automatique au démarrage — au-delà, on
   /// abandonne et on affiche l'écran de connexion manuelle plutôt que de laisser l'écran de
   /// chargement tourner indéfiniment (serveur éteint, Pi pas encore démarré, mauvais réseau...).
@@ -590,6 +598,71 @@ class GameConnection extends ChangeNotifier {
       await _hub!.invoke('JoinTeam', args: [teamId]);
     } catch (e) {
       errorMessage = 'Erreur : ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  /// Mot de passe distinct du hostSecret de la page web (voir GameHub.AuthenticateAdmin) — pensé
+  /// pour être saisi une fois dans les réglages plutôt que d'exiger un accès physique au host pour
+  /// pause/tableau général/fin de partie. Nécessite d'avoir déjà rejoint une partie (JoinGame) :
+  /// le serveur résout la session via la connexion courante, pas via un code fourni ici.
+  Future<bool> authenticateAdmin(String password) async {
+    adminError = null;
+    try {
+      final result = await _hub!.invoke('AuthenticateAdmin', args: [password]);
+      final data = result as Map<String, dynamic>;
+      final success = data['success'] as bool;
+      isAdmin = success;
+      if (!success) adminError = data['errorMessage'] as String?;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      adminError = 'Erreur : ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Les 4 méthodes ci-dessous ne mettent à jour aucun état local : le serveur diffuse
+  /// GamePaused/GameResumed/LeaderboardShown/GameEnded à tout le groupe (host web compris), déjà
+  /// géré par les handlers ci-dessus — y compris pour CE téléphone, qui les reçoit comme n'importe
+  /// quel autre client du groupe.
+  Future<void> adminPauseGame() async {
+    if (!isAdmin) return;
+    try {
+      await _hub?.invoke('PauseGame');
+    } catch (e) {
+      adminError = 'Erreur : ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  Future<void> adminResumeGame() async {
+    if (!isAdmin) return;
+    try {
+      await _hub?.invoke('ResumeGame');
+    } catch (e) {
+      adminError = 'Erreur : ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  Future<void> adminShowLeaderboard() async {
+    if (!isAdmin) return;
+    try {
+      await _hub?.invoke('ShowLeaderboard');
+    } catch (e) {
+      adminError = 'Erreur : ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  Future<void> adminEndGame() async {
+    if (!isAdmin) return;
+    try {
+      await _hub?.invoke('EndGame');
+    } catch (e) {
+      adminError = 'Erreur : ${e.toString()}';
       notifyListeners();
     }
   }

@@ -19,6 +19,14 @@ public class GameSession
     /// <summary>ConnectionId SignalR courant du client host (mutable, réassocié à chaque RejoinAsHost).</summary>
     public string? HostConnectionId { get; set; }
 
+    /// <summary>ConnectionIds authentifiés via GameHub.AuthenticateAdmin (mot de passe partagé,
+    /// Admin:RemoteControlPassword) — permet à un ou plusieurs clients Flutter (app joueur) de
+    /// déclencher pause/reprise/tableau général/fin de partie EN PLUS du host web, sans jamais lui
+    /// retirer la main (contrairement à HostConnectionId, réassocié en un seul exemplaire par
+    /// RejoinAsHost). Volontairement limité aux actions sans effet sur la lecture audio (qui reste
+    /// exclusive au host web, voir CLAUDE.md) — jamais StartRound/ConfigurerPartie/CreateGame.</summary>
+    public HashSet<string> AdminConnectionIds { get; set; } = [];
+
     /// <summary>Secret opaque généré à CreateGame, distinct du code de partie (public, connu des
     /// joueurs) — exigé par RejoinAsHost pour empêcher n'importe quel client du réseau local
     /// connaissant seulement le code de prendre le contrôle host (pause, override, fin de partie).</summary>

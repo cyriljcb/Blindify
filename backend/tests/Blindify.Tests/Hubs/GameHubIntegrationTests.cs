@@ -259,6 +259,38 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     }
 
     [Fact]
+    public async Task AuthenticateAdmin_MotDePasseCorrect_PermetPauseSansDelogerLeHost()
+    {
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+
+        var auth = await _playerConnection.InvokeAsync<AdminAuthResultDto>("AuthenticateAdmin", "test-admin-pw");
+        Assert.True(auth.Success);
+
+        var gamePausedTcs = new TaskCompletionSource();
+        _hostConnection.On("GamePaused", () => gamePausedTcs.TrySetResult());
+        await _playerConnection.InvokeAsync("PauseGame");
+        await AttendreAsync(() => gamePausedTcs.Task.IsCompleted);
+
+        // Le host garde la main malgré l'authentification admin d'une autre connexion (pas de
+        // HubException ici — HostConnectionId n'a jamais été réassocié, contrairement à RejoinAsHost).
+        await _hostConnection.InvokeAsync("ResumeGame");
+    }
+
+    [Fact]
+    public async Task AuthenticateAdmin_MotDePasseIncorrect_NAccordeAucunPrivilege()
+    {
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+
+        var auth = await _playerConnection.InvokeAsync<AdminAuthResultDto>("AuthenticateAdmin", "mauvais-mot-de-passe");
+        Assert.False(auth.Success);
+        Assert.NotNull(auth.ErrorMessage);
+
+        await Assert.ThrowsAsync<HubException>(() => _playerConnection.InvokeAsync("PauseGame"));
+    }
+
+    [Fact]
     public async Task ModeEquipe_CreationEtJoinTeam_AgregeLeScoreParEquipe()
     {
         RoundStartedForPlayersDto? roundStartedPlayer = null;

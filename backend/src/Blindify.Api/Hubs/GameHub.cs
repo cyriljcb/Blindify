@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Blindify.Api.Contracts;
 using Blindify.Application.Bonus;
 using Blindify.Application.Rounds;
@@ -8,6 +10,7 @@ using Blindify.Domain.Enums;
 using Blindify.Infrastructure.Stats;
 using Blindify.Infrastructure.Tracks;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
 
 namespace Blindify.Api.Hubs;
 
@@ -24,7 +27,8 @@ public class GameHub(
     ITracksRepository tracksRepository,
     IStatsRepository statsRepository,
     RoundTimerCoordinator timerCoordinator,
-    BonusTimerCoordinator bonusTimerCoordinator) : Hub
+    BonusTimerCoordinator bonusTimerCoordinator,
+    IConfiguration configuration) : Hub
 {
     // ----- Méthodes host -----
 
@@ -273,7 +277,7 @@ public class GameHub(
 
     public async Task ShowLeaderboard()
     {
-        var session = ResoudreSessionHost();
+        var session = ResoudreSessionHostOuAdmin();
         await Clients.Group(session.Id).SendAsync("LeaderboardShown", ScoreDtoBuilder.Construire(session));
     }
 
@@ -299,9 +303,32 @@ public class GameHub(
         return new RoundAnswerResultDto(resultat.EstCorrecte, resultat.Points, joueur.Score);
     }
 
+    /// <summary>Authentifie la connexion courante comme admin pour la partie à laquelle elle est déjà
+    /// associée (JoinGame préalable) — un mot de passe partagé (Admin:RemoteControlPassword, jamais
+    /// en dur, vide par défaut = désactivé), pensé pour être saisi une fois dans l'app Flutter
+    /// (réglages) plutôt que de exiger un accès physique au host web pour pause/tableau général/fin
+    /// de partie. Comparaison à temps constant — même principe que POST /api/admin/restart
+    /// (Program.cs). N'accorde JAMAIS les privilèges host complets (StartRound/ConfigurerPartie
+    /// restent exclusifs à ResoudreSessionHost) — voir GameSession.AdminConnectionIds.</summary>
+    public Task<AdminAuthResultDto> AuthenticateAdmin(string password)
+    {
+        var motDePasseConfigure = configuration["Admin:RemoteControlPassword"];
+        if (string.IsNullOrEmpty(motDePasseConfigure))
+            return Task.FromResult(new AdminAuthResultDto(false, "Contrôle admin désactivé — aucun mot de passe configuré côté serveur."));
+
+        var estValide = CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(motDePasseConfigure), Encoding.UTF8.GetBytes(password ?? ""));
+        if (!estValide)
+            return Task.FromResult(new AdminAuthResultDto(false, "Mot de passe incorrect."));
+
+        var session = ResoudreSession();
+        lock (session.Lock) { session.AdminConnectionIds.Add(Context.ConnectionId); }
+        return Task.FromResult(new AdminAuthResultDto(true, null));
+    }
+
     public async Task PauseGame()
     {
-        var session = ResoudreSessionHost();
+        var session = ResoudreSessionHostOuAdmin();
         lock (session.Lock)
         {
             if (session.EnPause) return;
@@ -315,7 +342,7 @@ public class GameHub(
 
     public async Task ResumeGame()
     {
-        var session = ResoudreSessionHost();
+        var session = ResoudreSessionHostOuAdmin();
         lock (session.Lock)
         {
             if (!session.EnPause || session.PauseDemarreeA is null) return;
@@ -338,7 +365,7 @@ public class GameHub(
 
     public async Task EndGame()
     {
-        var session = ResoudreSessionHost();
+        var session = ResoudreSessionHostOuAdmin();
         lock (session.Lock) { session.Etat = GameState.Termine; }
         timerCoordinator.Annuler(session.Id);
         bonusTimerCoordinator.Annuler(session.Id);
@@ -550,6 +577,8 @@ public class GameHub(
                     joueur.EstConnecte = false;
                     playerId = joueur.PlayerId;
                 }
+
+                session.AdminConnectionIds.Remove(Context.ConnectionId);
             }
 
             if (playerId is not null)
@@ -573,6 +602,18 @@ public class GameHub(
         var session = ResoudreSession();
         if (session.HostConnectionId != Context.ConnectionId)
             throw new HubException("Seul le host peut effectuer cette action.");
+        return session;
+    }
+
+    /// <summary>Version élargie de ResoudreSessionHost — accepte aussi un admin authentifié (voir
+    /// AuthenticateAdmin/GameSession.AdminConnectionIds). Réservée aux actions sans effet sur la
+    /// lecture audio (pause/reprise/tableau général/fin de partie) ; tout le reste du cycle de jeu
+    /// (StartRound, ConfigurerPartie, CreateGame...) reste exclusif au host via ResoudreSessionHost.</summary>
+    private GameSession ResoudreSessionHostOuAdmin()
+    {
+        var session = ResoudreSession();
+        if (session.HostConnectionId != Context.ConnectionId && !session.AdminConnectionIds.Contains(Context.ConnectionId))
+            throw new HubException("Seul le host ou un admin authentifié peut effectuer cette action.");
         return session;
     }
 

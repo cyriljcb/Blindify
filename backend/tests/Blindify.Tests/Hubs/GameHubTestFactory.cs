@@ -42,7 +42,10 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
                 // Vide explicitement : sinon hérite de la vraie valeur de appsettings.Development.json
                 // (environnement de test "Development" par défaut), qui pointe vers le vrai dossier
                 // host/ du repo — les tests qui en ont besoin le réactivent eux-mêmes (voir StaticFilesTests).
-                ["Host:StaticPath"] = ""
+                ["Host:StaticPath"] = "",
+                // Activé pour tester GameHub.AuthenticateAdmin — sans conséquence sur les autres
+                // tests, qui n'appellent jamais cette méthode.
+                ["Admin:RemoteControlPassword"] = "test-admin-pw"
             });
         });
     }
