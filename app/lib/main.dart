@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'motion.dart';
 import 'screens/answer_phase_screen.dart';
@@ -30,6 +31,14 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  // Retour utilisateur : le téléphone se verrouillait pendant les temps morts (lobby, attente
+  // entre rounds), obligeant à le déverrouiller pour répondre à temps. Best-effort (try/catch) :
+  // ne doit jamais bloquer le démarrage si la plateforme ne supporte pas le wakelock (ex. certains
+  // navigateurs desktop sans l'API Screen Wake Lock). Reste actif tant que l'app est au premier
+  // plan ; relâché automatiquement par l'OS quand elle passe en arrière-plan.
+  try {
+    await WakelockPlus.enable();
+  } catch (_) {}
   runApp(const BlindifyApp());
 }
 
