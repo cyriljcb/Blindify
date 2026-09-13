@@ -61,13 +61,7 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     public void DemarrerRound(Round round, Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config, DateTimeOffset maintenant)
     {
         round.DebutRound = maintenant;
-        // Cible forcée à Film pour les morceaux "disney" (retour utilisateur) : ni le titre réel de
-        // la chanson ni l'artiste crédité (souvent la voix/l'acteur, ex. "Jason Weaver, Rowan
-        // Atkinson, Laura Williams") ne sont devinables pour un joueur — le film dont est tiré le
-        // morceau (Track.Album nettoyé, voir FilmNameResolver) est la question naturelle ici.
-        round.Cible = track.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)
-            ? RoundCible.Film
-            : Random.Shared.Next(2) == 0 && TitreVariantes.EstEligibleCommeCible(track.Title) ? RoundCible.Titre : RoundCible.Auteur;
+        round.Cible = ChoisirCible(answerMatcher, round.Mode, track);
 
         if (round.Mode == RoundMode.Qcm)
         {
@@ -222,13 +216,50 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     }
 
     /// <summary>Textes acceptés comme bonne réponse pour la cible du round — plusieurs valeurs
-    /// possibles seulement pour Auteur (featurings, voir AuteurVariantes).</summary>
-    private static IEnumerable<string> ReponsesAcceptables(RoundCible cible, Track track) => cible switch
+    /// possibles seulement pour Auteur (featurings, voir AuteurVariantes). Interne plutôt que privé :
+    /// réutilisé par EstEligiblePremiereLettre ci-dessous.</summary>
+    internal static IEnumerable<string> ReponsesAcceptables(RoundCible cible, Track track) => cible switch
     {
         RoundCible.Auteur => AuteurVariantes.Acceptables(track.Artist),
         RoundCible.Film => [FilmNameResolver.Resoudre(track)],
         _ => TitreVariantes.Acceptables(track.Title)
     };
+
+    /// <summary>Cible du round/question bonus — partagée avec BonusRoundService.CreerBonusRound.
+    /// Film forcé pour les morceaux "disney" (ni le titre réel ni l'artiste crédité n'y sont
+    /// devinables, voir DemarrerRound ci-dessus), sinon 50/50 Titre/Auteur pondéré par
+    /// l'éligibilité de chacun — longueur du titre (TitreVariantes.EstEligibleCommeCible) et,
+    /// en Mode PremiereLettre, premier caractère effectivement une lettre (retour utilisateur :
+    /// un auteur comme "50 Cent" ne matche aucune tuile A-Z côté joueur, voir
+    /// EstEligiblePremiereLettre). Jamais totalement bloquant : si aucune des deux cibles n'est
+    /// éligible en PremiereLettre (rare — titre trop long ET auteur commençant par un chiffre en
+    /// même temps), retombe sur Auteur quand même plutôt que d'empêcher le round, même philosophie
+    /// que le filet de sécurité de QcmGenerator.</summary>
+    internal static RoundCible ChoisirCible(IAnswerMatcher answerMatcher, RoundMode mode, Track track)
+    {
+        if (track.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)) return RoundCible.Film;
+
+        var titreEligible = TitreVariantes.EstEligibleCommeCible(track.Title)
+            && (mode != RoundMode.PremiereLettre || EstEligiblePremiereLettre(answerMatcher, RoundCible.Titre, track));
+        var auteurEligible = mode != RoundMode.PremiereLettre || EstEligiblePremiereLettre(answerMatcher, RoundCible.Auteur, track);
+
+        if (titreEligible && auteurEligible) return Random.Shared.Next(2) == 0 ? RoundCible.Titre : RoundCible.Auteur;
+        return titreEligible ? RoundCible.Titre : RoundCible.Auteur;
+    }
+
+    /// <summary>Un texte candidat n'est éligible comme cible "Première lettre" que si son premier
+    /// caractère, une fois normalisé (AnswerMatcher.Normaliser : minuscule, sans accents), est une
+    /// lettre — jamais un chiffre (ex. "50 Cent"), qui ne matcherait aucune des tuiles A-Z proposées
+    /// côté joueur (voir _LetterAnswer, app/lib/screens/answer_phase_screen.dart). Les symboles de
+    /// tête sont déjà neutralisés par la normalisation elle-même (ex. "$uicideboy$" -> "uicideboy",
+    /// le premier caractère normalisé reste une lettre) — seuls les chiffres de tête posent
+    /// réellement problème.</summary>
+    internal static bool EstEligiblePremiereLettre(IAnswerMatcher answerMatcher, RoundCible cible, Track track) =>
+        ReponsesAcceptables(cible, track).Any(texte =>
+        {
+            var normalise = answerMatcher.Normaliser(texte);
+            return normalise.Length > 0 && char.IsLetter(normalise[0]);
+        });
 
     /// <summary>Une réponse Qcm est correcte si le TrackId cliqué correspond, OU — repli — si le
     /// libellé RÉELLEMENT affiché pour ce TrackId est identique à celui de la bonne réponse. Interne

@@ -10,22 +10,17 @@ namespace Blindify.Application.Bonus;
 
 public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher answerMatcher, IQcmGenerator qcmGenerator) : IBonusRoundService
 {
-    // Cible forcée à Film pour les morceaux "disney" (même raison que RoundService.DemarrerRound) :
-    // ni le titre réel de la chanson ni l'artiste crédité ne sont devinables pour ce type de contenu.
-    // Sinon, même tirage 50/50 Titre/Auteur que RoundService.DemarrerRound (retour utilisateur :
-    // la question bonus tombait toujours sur le titre, jamais l'artiste).
-    //
     // Mode tiré au hasard parmi les 3 (retour utilisateur 2026-08-27 : la question bonus se
-    // limitait à la réponse tapée, jamais QCM/Première lettre comme les rounds classiques) — même
-    // tirage uniforme, indépendant de Cible. Qcm : options générées ici via le même pool que
-    // RoundService.DemarrerRound (RoundService.PoolPourQcm), les feintes (GameHub) sont appliquées
-    // plus tard côté BonusTimerCoordinator au moment de la diffusion, pas ici.
+    // limitait à la réponse tapée, jamais QCM/Première lettre comme les rounds classiques) — tirage
+    // uniforme, AVANT la cible (RoundService.ChoisirCible en tient compte pour éviter une cible
+    // Auteur/Titre inéligible en Mode PremiereLettre — retour utilisateur : un auteur comme
+    // "50 Cent" ne matche aucune tuile A-Z côté joueur). Qcm : options générées ici via le même pool
+    // que RoundService.DemarrerRound (RoundService.PoolPourQcm), les feintes (GameHub) sont
+    // appliquées plus tard côté BonusTimerCoordinator au moment de la diffusion, pas ici.
     public BonusRound CreerBonusRound(Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config)
     {
-        var cible = track.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)
-            ? RoundCible.Film
-            : Random.Shared.Next(2) == 0 && TitreVariantes.EstEligibleCommeCible(track.Title) ? RoundCible.Titre : RoundCible.Auteur;
         var mode = (RoundMode)Random.Shared.Next(3);
+        var cible = RoundService.ChoisirCible(answerMatcher, mode, track);
         // "Course" (retour utilisateur) : réservée au Qcm — répondre à voix haute ou par écrit n'a
         // pas de sens pour trancher qui a "buzzé" en premier, alors que les options Qcm restent le
         // même clic qu'un round normal, seul l'ORDRE d'arrivée compte côté serveur.

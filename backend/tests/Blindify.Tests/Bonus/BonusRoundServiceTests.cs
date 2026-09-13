@@ -194,6 +194,23 @@ public class BonusRoundServiceTests
         Assert.Equal(RoundCible.Film, bonusRound.Cible);
     }
 
+    // Retour utilisateur (même correctif que RoundService.DemarrerRound) : un auteur comme
+    // "50 Cent" ne matche aucune tuile A-Z côté joueur en Mode PremiereLettre — jamais tiré comme
+    // cible dans ce cas, quel que soit le nombre d'essais.
+    [Fact]
+    public void CreerBonusRound_ModePremiereLettre_AuteurCommenceParUnChiffre_CibleNestJamaisAuteur()
+    {
+        var track = new Track { Id = "a", Title = "Titre Court", Artist = "50 Cent", FilePath = "audio/a.mp3" };
+        var config = new GameConfig { ProbabiliteBonusCourse = 0 };
+
+        for (var i = 0; i < 30; i++)
+        {
+            var bonusRound = _service.CreerBonusRound(track, [track], [], config);
+            if (bonusRound.Mode != RoundMode.PremiereLettre) continue;
+            Assert.Equal(RoundCible.Titre, bonusRound.Cible);
+        }
+    }
+
     [Fact]
     public void CreerBonusRound_MorceauNonDisney_CibleTitreOuAuteur()
     {

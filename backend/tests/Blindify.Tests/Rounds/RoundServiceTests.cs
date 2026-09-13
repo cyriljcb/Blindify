@@ -359,6 +359,58 @@ public class RoundServiceTests
         }
     }
 
+    // Retour utilisateur : un auteur comme "50 Cent" (premier caractère normalisé = chiffre) ne
+    // matche aucune des tuiles A-Z proposées côté joueur en Mode PremiereLettre — round injouable
+    // pour ce joueur si Auteur était quand même tiré comme cible.
+    [Fact]
+    public void DemarrerRound_ModePremiereLettre_AuteurCommenceParUnChiffre_CibleNestJamaisAuteur()
+    {
+        var correct = new Track { Id = "a", Title = "Titre Court", Artist = "50 Cent", FilePath = "audio/a.mp3", Genres = [], Tags = [] };
+
+        for (var i = 0; i < 20; i++)
+        {
+            var round = new Round { TrackId = correct.Id, Mode = RoundMode.PremiereLettre };
+            _service.DemarrerRound(round, correct, [correct], tags: [], new GameConfig(), DateTimeOffset.UtcNow);
+            Assert.Equal(RoundCible.Titre, round.Cible);
+        }
+    }
+
+    // La restriction ci-dessus est spécifique à PremiereLettre — un auteur commençant par un
+    // chiffre reste une cible valide dans les autres modes (rien à corriger côté QCM/tape la
+    // réponse, qui n'exigent pas de faire correspondre un unique caractère à une tuile A-Z).
+    [Fact]
+    public void DemarrerRound_ModeTapeReponse_AuteurCommenceParUnChiffre_CibleAuteurResteTiree()
+    {
+        var correct = new Track { Id = "a", Title = "Titre Court", Artist = "50 Cent", FilePath = "audio/a.mp3", Genres = [], Tags = [] };
+        var cibles = new HashSet<RoundCible>();
+
+        for (var i = 0; i < 50; i++)
+        {
+            var round = new Round { TrackId = correct.Id, Mode = RoundMode.TapeReponse };
+            _service.DemarrerRound(round, correct, [correct], tags: [], new GameConfig(), DateTimeOffset.UtcNow);
+            cibles.Add(round.Cible);
+        }
+
+        Assert.Contains(RoundCible.Auteur, cibles);
+    }
+
+    // Filet de sécurité : si NI le titre (trop long) NI l'auteur (commence par un chiffre) ne sont
+    // éligibles en PremiereLettre, le round doit quand même démarrer (repli sur Auteur) plutôt que
+    // de bloquer la partie faute d'alternative — même philosophie que le filet de QcmGenerator.
+    [Fact]
+    public void DemarrerRound_ModePremiereLettre_NiTitreNiAuteurEligibles_RetombeSurAuteurSansBloquer()
+    {
+        var correct = new Track
+        {
+            Id = "a", Title = new string('x', 50), Artist = "50 Cent", FilePath = "audio/a.mp3", Genres = [], Tags = []
+        };
+
+        var round = new Round { TrackId = correct.Id, Mode = RoundMode.PremiereLettre };
+        _service.DemarrerRound(round, correct, [correct], tags: [], new GameConfig(), DateTimeOffset.UtcNow);
+
+        Assert.Equal(RoundCible.Auteur, round.Cible);
+    }
+
     [Fact]
     public void DemarrerRound_CibleFilm_OptionsQcmUniquementDesMorceauxDisney()
     {
