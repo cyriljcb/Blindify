@@ -488,22 +488,49 @@ class GameConnection extends ChangeNotifier {
     });
   }
 
+  /// Nombre de tentatives avant d'abandonner (~15s à 3s d'intervalle) — au-delà, le salon n'existe
+  /// probablement plus (JoinGame répond "Partie introuvable" en boucle) plutôt qu'un simple aléa
+  /// réseau ponctuel, qui se résorberait en 1-2 tentatives.
+  static const _maxTentativesRejoinCourt = 5;
+
   /// Retente l'appel JoinGame après une reconnexion transport réussie (onreconnected) dont
   /// l'invoke a échoué — le hub est bien vivant (sinon onclose se serait déclenché à la place et
   /// [_planifierReconnexion] aurait pris le relais), seul le rattachement au groupe de la partie a
   /// échoué. Retente à intervalle court tant que la connexion transport tient.
+  ///
+  /// Retour utilisateur : borné plutôt qu'indéfini — si le salon a disparu pendant la coupure (host
+  /// qui a redémarré le backend, partie terminée entre-temps : l'état est 100% en mémoire, jamais
+  /// persisté), l'ancien code retentait pour toujours en silence (actualiserEcran=false) sans
+  /// jamais prévenir le joueur ni le laisser agir — bloqué indéfiniment sur un écran de jeu périmé
+  /// alors que le transport SignalR restait, lui, bien connecté. Une fois la limite atteinte, le
+  /// joueur est déconnecté du salon par défaut (gameCode oublié, repli sur l'écran de connexion à
+  /// une partie) plutôt que de laisser croire que tout va bien.
   void _planifierRejoinApresReconnexionCourte() {
     if (_rejoinRetryTimer != null) return;
+    var tentatives = 0;
     _rejoinRetryTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       if (!connected || gameCode == null || nom == null) {
         timer.cancel();
         _rejoinRetryTimer = null;
         return;
       }
+
+      tentatives++;
       final ok = await joinGame(gameCode!, nom!, actualiserEcran: false);
       if (ok) {
         timer.cancel();
         _rejoinRetryTimer = null;
+        return;
+      }
+
+      if (tentatives >= _maxTentativesRejoinCourt) {
+        timer.cancel();
+        _rejoinRetryTimer = null;
+        await _prefs?.remove(_prefsGameCode);
+        gameCode = null;
+        errorMessage = "Impossible de retrouver la partie — le salon n'existe peut-être plus.";
+        screen = AppScreen.join;
+        notifyListeners();
       }
     });
   }
