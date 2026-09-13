@@ -115,6 +115,7 @@ function handleEvent(name, payload) {
 
     case "GameRestarted":
       timers.annulerMinuteur("auto-intro-serie");
+      timers.annulerMinuteur("bonus-course-intro");
       audio.remettreVitesseNormale();
       break;
 
@@ -123,13 +124,27 @@ function handleEvent(name, payload) {
       break;
 
     case "BonusQuestionStarted": {
-      const rate = payload.ralentissementActive ? payload.facteurRalentissement : 1;
-      audio.playAudio(state.serverBaseUrl, payload.filePath, rate); // depuis le début — c'est la devinette elle-même
-      timers.startTimer(payload.dureePhaseQuestionMs, el("bonus-question-timer-fill"));
+      const demarrerAudioEtMinuteur = () => {
+        const rate = payload.ralentissementActive ? payload.facteurRalentissement : 1;
+        audio.playAudio(state.serverBaseUrl, payload.filePath, rate); // depuis le début — c'est la devinette elle-même
+        timers.startTimer(payload.dureePhaseQuestionMs, el("bonus-question-timer-fill"));
+      };
+      // Retour utilisateur : en mode course, l'audio démarrait ici immédiatement alors que l'app
+      // joueur force un écran d'intro "Mode course" pendant DUREE_INTRO_COURSE_MS avant de laisser
+      // répondre (voir app/lib/services/game_connection.dart:_dureeIntroCourse) — ~2,5s de musique
+      // audibles sur l'enceinte du host sans qu'aucun joueur ne puisse encore réagir. Les deux
+      // délais doivent rester identiques ; DemarrerAudioEtMinuteur est annulable via
+      // annulerMinuteur("bonus-course-intro") si un BonusResult arrive avant l'échéance.
+      if (payload.estCourse) {
+        timers.minuteurAnnulable("bonus-course-intro", DUREE_INTRO_COURSE_MS, demarrerAudioEtMinuteur);
+      } else {
+        demarrerAudioEtMinuteur();
+      }
       break;
     }
 
     case "BonusResult":
+      timers.annulerMinuteur("bonus-course-intro");
       timers.stopTimer();
       audio.remettreVitesseNormale(); // remis à la vitesse normale pour la suite (fin de partie, replay...)
       if (state.refrainCourantMs !== null) {
@@ -216,6 +231,10 @@ async function avancerSerieSuivante() {
 }
 
 const DUREE_INTRO_SERIE_MS = 5000;
+
+// Doit rester identique à app/lib/services/game_connection.dart:_dureeIntroCourse — voir le
+// commentaire sur le case "BonusQuestionStarted" ci-dessus.
+const DUREE_INTRO_COURSE_MS = 2500;
 
 // Affiché avant le premier round de la série courante — panneau host, écran public ET l'app joueur
 // (AnnoncerSerieCourante diffuse la même annonce aux téléphones, voir GameHub.cs). Le rendu de
