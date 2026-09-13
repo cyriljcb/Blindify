@@ -37,12 +37,15 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         return resultat;
     }
 
-    /// <summary>Tirage pondéré favorisant les morceaux les moins joués. Poids = 1/(playCount+1),
-    /// jamais nul : un morceau souvent joué reste tirable, juste moins probable — pondération
-    /// "douce" plutôt qu'une exclusion stricte (retour utilisateur du 2026-08-25).</summary>
+    /// <summary>Tirage pondéré favorisant les morceaux les moins joués. Poids = 1/(playCount+1)²,
+    /// jamais nul : un morceau souvent joué reste tirable, juste beaucoup moins probable —
+    /// pondération quadratique plutôt qu'une exclusion stricte (retour utilisateur du 2026-08-25,
+    /// renforcée le 2026-09-13 : le poids linéaire d'origine ne dissuadait presque pas la
+    /// réapparition d'un morceau qui vient d'être joué une seule fois, ex. juste après "Rejouer la
+    /// partie" — écart de poids 1 vs 0.5 seulement, contre 1 vs 0.25 ici).</summary>
     private static Track TirerPondere(IReadOnlyList<Track> disponibles, Func<string, int> playCount)
     {
-        var poids = disponibles.Select(t => 1.0 / (playCount(t.Id) + 1)).ToList();
+        var poids = disponibles.Select(t => 1.0 / Math.Pow(playCount(t.Id) + 1, 2)).ToList();
         var cible = Random.Shared.NextDouble() * poids.Sum();
 
         var cumul = 0.0;

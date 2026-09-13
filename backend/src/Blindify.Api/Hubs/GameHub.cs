@@ -357,19 +357,29 @@ public class GameHub(
             if (session.Etat != GameState.Termine)
                 throw new HubException("La partie doit être terminée avant de pouvoir être relancée.");
 
+            // Retour utilisateur : rejouer avec le même groupe reproduisait les séries EXACTEMENT
+            // dans le même ordre (même thème par position) — seuls les morceaux changeaient. On
+            // reconstruit le vivier d'origine (thèmes distincts toutes séries confondues, [] si
+            // "aléatoire" partout) et on le retire au sort à nouveau via SeriesPlanner, comme au tout
+            // premier ConfigurerPartie, plutôt que de réutiliser l'assignation figée précédente.
+            var vivierOriginal = session.SeriesList.SelectMany(s => s.Tags).Distinct().ToList();
+            var tagsParSerieRebattus = SeriesPlanner.AssignerThemesAuxSeries(vivierOriginal, session.SeriesList.Count);
+
             var catalogue = tracksRepository.GetAll();
             var dejaUtilises = new HashSet<string>();
             var nouvellesSeries = new List<Series>();
 
-            foreach (var serie in session.SeriesList)
+            for (var index = 0; index < session.SeriesList.Count; index++)
             {
+                var serie = session.SeriesList[index];
+                var tags = tagsParSerieRebattus[index];
                 var modes = serie.Rounds.Select(r => r.Mode).ToList();
-                var morceaux = roundService.SelectionnerMorceaux(catalogue, serie.Tags, modes.Count, dejaUtilises, statsRepository.GetPlayCount);
+                var morceaux = roundService.SelectionnerMorceaux(catalogue, tags, modes.Count, dejaUtilises, statsRepository.GetPlayCount);
                 if (morceaux.Count < modes.Count)
-                    throw new HubException("Pas assez de morceaux disponibles dans le catalogue pour relancer cette série.");
+                    throw new HubException($"Pas assez de morceaux disponibles dans le catalogue pour relancer la série {index + 1}.");
 
                 var rounds = morceaux.Select((track, i) => new Round { TrackId = track.Id, Mode = modes[i] }).ToList();
-                nouvellesSeries.Add(new Series { Index = nouvellesSeries.Count, Config = serie.Config, Tags = serie.Tags, Rounds = rounds });
+                nouvellesSeries.Add(new Series { Index = index, Config = serie.Config, Tags = tags, Rounds = rounds });
             }
 
             session.SeriesList = nouvellesSeries;

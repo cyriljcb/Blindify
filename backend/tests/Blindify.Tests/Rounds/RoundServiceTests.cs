@@ -112,7 +112,10 @@ public class RoundServiceTests
         var jamaisJoue = NouveauTrack("jamais");
         var souventJoue = NouveauTrack("souvent");
         var pool = new List<Track> { jamaisJoue, souventJoue };
-        var playCounts = new Dictionary<string, int> { ["jamais"] = 0, ["souvent"] = 20 };
+        // Écart modéré (0 vs 5) plutôt qu'extrême : avec la pondération quadratique, un écart de 20
+        // rendrait le morceau "souvent" quasi jamais tiré sur 500 essais, au risque de faire échouer
+        // par pur hasard l'assertion "jamais totalement exclu" ci-dessous (test flaky).
+        var playCounts = new Dictionary<string, int> { ["jamais"] = 0, ["souvent"] = 5 };
 
         const int nombreTirages = 500;
         var tiragesJamaisJoue = 0;
