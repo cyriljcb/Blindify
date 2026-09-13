@@ -121,6 +121,16 @@ cp build/app/outputs/flutter-apk/app-release.apk ../host/blindify.apk
 
 Chaque téléphone Android visite `http://<ip-du-poste>:5000/blindify.apk` (ou `http://pi.local:5000/blindify.apk` une fois le mDNS en place) depuis son navigateur et installe (autoriser "sources inconnues" une fois par téléphone). `host/blindify.apk` n'est jamais commité (voir `.gitignore` — trop volumineux et vite obsolète), à régénérer à chaque mise à jour. `Program.cs` mappe explicitement `.apk` → `application/vnd.android.package-archive` pour ce dossier, sans quoi le middleware de fichiers statiques renvoie 404 (extension absente du `FileExtensionContentTypeProvider` par défaut). Signé avec la clé debug du poste (`build.gradle`, stable d'un build à l'autre sur cette machine) : les mises à jour s'installent par-dessus sans désinstallation préalable.
 
+**Détection automatique d'une mise à jour disponible** (retour utilisateur) : l'app compare son propre build (`PackageInfo`, reflète `pubspec.yaml` au moment du build) à `host/apk_version.json` — un bandeau apparaît dès le lancement si le serveur a un build plus récent (voir `services/update_checker.dart`). Ce fichier n'est PAS régénéré automatiquement : **à chaque nouvelle APK déployée**, incrémenter le build number dans `pubspec.yaml` (`version: X.Y.Z+N`) ET réécrire `host/apk_version.json` avec le même `N`, sinon la détection ne voit jamais la nouvelle version :
+
+```
+cd app && flutter build apk --release
+cp build/app/outputs/flutter-apk/app-release.apk ../host/blindify.apk
+echo '{"versionName": "X.Y.Z", "buildNumber": N}' > ../host/apk_version.json
+```
+
+`host/apk_version.json` n'est pas non plus commité (même raison que l'APK — état de déploiement, pas du code).
+
 Pas de solution équivalente pour iPhone sans compte Apple Developer/Xcode — voir point 9 du retour playtest 2026-08-24 (mémoire) pour la piste web (`flutter build web`, PWA via Safari).
 
 ## 3. Pipeline de préparation des données

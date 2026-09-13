@@ -21,6 +21,7 @@ import 'screens/serie_intro_screen.dart';
 import 'services/game_connection.dart';
 import 'theme.dart';
 import 'widgets/settings_sheet.dart';
+import 'widgets/update_banner.dart';
 
 void main() async {
   // Buzzer tenu à deux mains en mode portrait — un paysage accidentel casserait la mise en page
@@ -125,6 +126,7 @@ class _RootScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              const UpdateBanner(),
               Expanded(
                 child: Stack(
                   children: [

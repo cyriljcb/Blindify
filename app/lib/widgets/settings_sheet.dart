@@ -104,8 +104,22 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: () => ouvrirMiseAJourApk(_urlController.text),
-                icon: const Icon(Icons.system_update_alt_rounded, size: 18),
-                label: const Text("Mettre à jour l'app"),
+                icon: Icon(
+                  Icons.system_update_alt_rounded,
+                  size: 18,
+                  color: game.updateDisponible ? BlindifyColors.mustard : null,
+                ),
+                label: Text(
+                  game.updateDisponible
+                      ? "Mettre à jour l'app — nouvelle version disponible"
+                      : "Mettre à jour l'app",
+                ),
+                style: game.updateDisponible
+                    ? OutlinedButton.styleFrom(
+                        foregroundColor: BlindifyColors.mustard,
+                        side: const BorderSide(color: BlindifyColors.mustard, width: 2),
+                      )
+                    : null,
               ),
             ],
             const SizedBox(height: 8),

@@ -17,6 +17,7 @@ import '../models/round_started.dart';
 import '../models/score_update.dart';
 import '../models/serie_annoncee.dart';
 import '../models/team.dart';
+import 'update_checker.dart';
 
 enum AppScreen { loading, connect, join, lobby, serieIntro, round, roundEnded, bonusStake, bonusCourseIntro, bonusQuestion, bonusResult, ended }
 
@@ -115,6 +116,35 @@ class GameConnection extends ChangeNotifier {
   bool isAdmin = false;
   String? adminError;
 
+  /// Mise à jour APK détectée sur le serveur (voir services/update_checker.dart) — Android natif
+  /// uniquement (web/iOS n'ont pas cette notion d'APK installé, voir apk_update.dart). Bannière
+  /// visible dès le lancement (retour utilisateur), fermable pour la session courante uniquement :
+  /// [updateBannerFermee] repart à false à chaque nouvelle connexion, pour ne jamais laisser un
+  /// joueur passer une session entière sans savoir qu'une mise à jour existe.
+  bool updateDisponible = false;
+  String? updateVersionDistante;
+  bool updateBannerFermee = false;
+
+  void fermerBanniereMiseAJour() {
+    updateBannerFermee = true;
+    notifyListeners();
+  }
+
+  /// Volontairement non-bloquant (pas de await côté appelant) : ne doit jamais retarder la
+  /// connexion ni la rejointe automatique de partie pour une vérification annexe. Android natif
+  /// uniquement (web/iOS n'ont pas cette notion d'APK installé, voir apk_update.dart). Best-effort
+  /// côté update_checker.dart (jamais d'exception propagée jusqu'ici).
+  void _verifierMiseAJourEnArrierePlan(String resolvedUrl) {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    unawaited(() async {
+      final resultat = await verifierMiseAJourDisponible(resolvedUrl);
+      updateDisponible = resultat.disponible;
+      updateVersionDistante = resultat.versionDistante;
+      if (resultat.disponible) updateBannerFermee = false;
+      notifyListeners();
+    }());
+  }
+
   /// Durée maximale de la tentative de reconnexion automatique au démarrage — au-delà, on
   /// abandonne et on affiche l'écran de connexion manuelle plutôt que de laisser l'écran de
   /// chargement tourner indéfiniment (serveur éteint, Pi pas encore démarré, mauvais réseau...).
@@ -207,6 +237,7 @@ class GameConnection extends ChangeNotifier {
       connected = true;
       connecting = false;
       serverUrl = cleanUrl;
+      _verifierMiseAJourEnArrierePlan(resolvedUrl);
       _resolvedUrl = resolvedUrl;
       await _prefs?.setString(_prefsServerUrl, cleanUrl);
 
