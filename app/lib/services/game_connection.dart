@@ -394,9 +394,12 @@ class GameConnection extends ChangeNotifier {
       final data = args![0] as Map<String, dynamic>;
       finalScores = ScoreUpdate.fromJson(data);
       screen = AppScreen.ended;
-      // Partie terminée : plus rien à rejoindre, ne pas laisser un prochain démarrage de l'appli
-      // retenter un rejoin automatique sur ce code.
-      gameCode = null;
+      // On ne vide QUE le pref persisté (lu au prochain démarrage froid de l'appli, cf. connect())
+      // pour ne pas retenter un rejoin auto sur une partie terminée — gameCode en mémoire, lui,
+      // reste renseigné : le host peut relancer la même partie (RejouerPartie, même code, voir
+      // handler GameRestarted juste en dessous), et l'écran de salon en a besoin pour réafficher
+      // le code. Bug retour utilisateur (2026-09-13) : gameCode remis à null ici faisait
+      // apparaître le code vide sur l'écran de salon après un "rejouer" côté host.
       _prefs?.remove(_prefsGameCode);
       notifyListeners();
     });
