@@ -1,5 +1,6 @@
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
+using Blindify.Domain.Jokers;
 
 namespace Blindify.Application.Rounds;
 
@@ -58,4 +59,8 @@ public interface IRoundService
     /// joueur n'a pas de réponse enregistrée pour ce round.
     /// </summary>
     RoundAnswer? ValiderManuellement(GameSession session, Round round, SeriesConfig config, string playerId, bool estCorrecte);
+
+    /// <summary>V2, section 12.7 — voir RoundService.UtiliserJoker pour les conditions de refus (retourne
+    /// null dans tous les cas invalides, jamais d'exception).</summary>
+    JokerIndice? UtiliserJoker(GameSession session, Round round, Guid roundId, Track track, string playerId);
 }

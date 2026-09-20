@@ -5,6 +5,14 @@
     <ProjectReference Include="..\Blindify.Infrastructure\Blindify.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Pochette floutée du joker (V2, section 12.7), Program.cs "/api/joker/cover/{jeton}". Six Labors
+         Split License : gratuit sous Apache 2.0 pour un usage non commercial/individuel <1M$ de revenu
+         annuel (voir LICENSE du paquet) — Blindify qualifie, le warning de build à la restauration est
+         un simple rappel, pas un blocage. -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="4.1.2" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>

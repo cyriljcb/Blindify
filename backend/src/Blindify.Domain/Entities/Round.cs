@@ -1,4 +1,5 @@
 using Blindify.Domain.Enums;
+using Blindify.Domain.Jokers;
 
 namespace Blindify.Domain.Entities;
 
@@ -35,4 +36,10 @@ public class Round
     /// générées au démarrage du round — voir AnneeQcmGenerator. Distinct de Options : ce ne sont pas
     /// des morceaux (pas de TrackId/feinte/piège), juste des années.</summary>
     public List<int>? AnneeOptions { get; set; }
+
+    /// <summary>Indice déjà obtenu par joueur ayant utilisé son joker SUR CE ROUND (V2, section 12.7) —
+    /// borné à la durée de vie de cet objet Round (un nouveau round = un nouvel objet, jamais besoin de
+    /// nettoyer explicitement). Permet à ConstruireEtatCourantJoueur de rejouer le même indice (pas un
+    /// nouveau tirage) si le joueur se reconnecte pendant ce round.</summary>
+    public Dictionary<string, JokerIndice> JokerIndicesParJoueur { get; set; } = [];
 }

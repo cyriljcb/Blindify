@@ -333,6 +333,71 @@ public class TitresServiceTests
         Assert.Equal(["p1"], panneau.PlayerIds);
     }
 
+    // ----- JOKER_GACHE -----
+
+    [Fact]
+    public void JokerGache_AttribueAuPlusTotDansLaPartie()
+    {
+        var p1 = CreerJoueur("p1");
+        var p2 = CreerJoueur("p2");
+        var session = CreerSession(p1, p2);
+        var serie = NouvelleSerie(0);
+
+        serie.Rounds.Add(new Round { TrackId = "t0", Reponses = [] });
+        serie.Rounds.Add(new Round
+        {
+            TrackId = "t1",
+            Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = false, AvecJoker = true }],
+        });
+        serie.Rounds.Add(new Round
+        {
+            TrackId = "t2",
+            Reponses = [new RoundAnswer { PlayerId = "p2", Reponse = "x", EstCorrecte = false, AvecJoker = true }],
+        });
+        session.SeriesList.Add(serie);
+
+        var resultat = TitresService.CalculerTitres(session, ResolveurVide);
+
+        var jokerGache = resultat.Single(t => t.Code == "JOKER_GACHE");
+        Assert.Equal(["p1"], jokerGache.PlayerIds);
+    }
+
+    [Fact]
+    public void JokerGache_JokerUtiliseMaisReponseCorrecte_NeCompePas()
+    {
+        var p1 = CreerJoueur("p1");
+        var session = CreerSession(p1);
+        var serie = NouvelleSerie(0);
+        serie.Rounds.Add(new Round
+        {
+            TrackId = "t0",
+            Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = true, AvecJoker = true }],
+        });
+        session.SeriesList.Add(serie);
+
+        var resultat = TitresService.CalculerTitres(session, ResolveurVide);
+
+        Assert.DoesNotContain(resultat, t => t.Code == "JOKER_GACHE");
+    }
+
+    [Fact]
+    public void JokerGache_PersonneNAUtiliseSonJoker_NeDecerneRien()
+    {
+        var p1 = CreerJoueur("p1");
+        var session = CreerSession(p1);
+        var serie = NouvelleSerie(0);
+        serie.Rounds.Add(new Round
+        {
+            TrackId = "t0",
+            Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = false }],
+        });
+        session.SeriesList.Add(serie);
+
+        var resultat = TitresService.CalculerTitres(session, ResolveurVide);
+
+        Assert.DoesNotContain(resultat, t => t.Code == "JOKER_GACHE");
+    }
+
     // ----- CHAT_NOIR -----
 
     [Fact]

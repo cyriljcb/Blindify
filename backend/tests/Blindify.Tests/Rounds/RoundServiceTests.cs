@@ -1,4 +1,5 @@
 using Blindify.Application.Answers;
+using Blindify.Application.Jokers;
 using Blindify.Application.Qcm;
 using Blindify.Application.Rounds;
 using Blindify.Application.Scoring;
@@ -10,7 +11,7 @@ namespace Blindify.Tests.Rounds;
 
 public class RoundServiceTests
 {
-    private readonly RoundService _service = new(new ScoringService(), new QcmGenerator(), new AnswerMatcher(), new AnneeQcmGenerator());
+    private readonly RoundService _service = new(new ScoringService(), new QcmGenerator(), new AnswerMatcher(), new AnneeQcmGenerator(), new JokerService(new AnswerMatcher()));
 
     private static Track NouveauTrack(string id, List<string>? genres = null, List<string>? tags = null) => new()
     {
@@ -584,6 +585,108 @@ public class RoundServiceTests
         var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "a", round.DebutRound!.Value);
 
         Assert.Null(reponse);
+    }
+
+    [Fact]
+    public void UtiliserJoker_PremierAppel_RetourneUnIndiceEtMarqueLeJoueur()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
+
+        var indice = _service.UtiliserJoker(session, round, round.Id, track, "p1");
+
+        Assert.NotNull(indice);
+        Assert.True(joueur.JokerUtilise);
+        Assert.Same(indice, round.JokerIndicesParJoueur["p1"]);
+    }
+
+    [Fact]
+    public void UtiliserJoker_DeuxiemeAppelDuMemeJoueur_EstRefuse()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round1 = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
+        var round2 = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
+
+        _service.UtiliserJoker(session, round1, round1.Id, track, "p1");
+        var deuxieme = _service.UtiliserJoker(session, round2, round2.Id, track, "p1");
+
+        Assert.Null(deuxieme);
+        Assert.Empty(round2.JokerIndicesParJoueur);
+    }
+
+    [Fact]
+    public void UtiliserJoker_JoueurADejaRepondu_EstRefuse()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
+        _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "a", round.DebutRound!.Value);
+
+        var indice = _service.UtiliserJoker(session, round, round.Id, track, "p1");
+
+        Assert.Null(indice);
+        Assert.False(joueur.JokerUtilise);
+    }
+
+    [Fact]
+    public void UtiliserJoker_PartieEnPause_EstRefuse()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        session.EnPause = true;
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
+
+        var indice = _service.UtiliserJoker(session, round, round.Id, track, "p1");
+
+        Assert.Null(indice);
+    }
+
+    [Fact]
+    public void UtiliserJoker_RoundIdPerime_EstRefuse()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
+
+        var indice = _service.UtiliserJoker(session, round, Guid.NewGuid(), track, "p1");
+
+        Assert.Null(indice);
+    }
+
+    [Fact]
+    public void SoumettreReponse_ApresUtiliserJoker_MarqueLaReponseAvecJoker()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
+        _service.UtiliserJoker(session, round, round.Id, track, "p1");
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "n'importe quoi", round.DebutRound!.Value);
+
+        Assert.NotNull(reponse);
+        Assert.True(reponse!.AvecJoker);
+    }
+
+    [Fact]
+    public void SoumettreReponse_SansUtiliserJoker_AvecJokerResteFaux()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "a", round.DebutRound!.Value);
+
+        Assert.NotNull(reponse);
+        Assert.False(reponse!.AvecJoker);
     }
 
     [Fact]

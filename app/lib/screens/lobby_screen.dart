@@ -54,6 +54,17 @@ class LobbyScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded, size: 16, color: BlindifyColors.mustard),
+              const SizedBox(width: 6),
+              Text(
+                '1 joker pour la partie',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: BlindifyColors.inkDim),
+              ),
+            ],
+          ),
           if (game.teams.isNotEmpty) ...[
             const SizedBox(height: 20),
             Text('TON ÉQUIPE', style: Theme.of(context).textTheme.titleSmall),

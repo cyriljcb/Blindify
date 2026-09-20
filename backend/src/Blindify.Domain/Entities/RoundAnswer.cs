@@ -37,4 +37,9 @@ public class RoundAnswer
     /// <summary>Écart (en années) entre la réponse et l'année réelle — cible Année uniquement (V2,
     /// section 12.5). Null pour toute autre cible, ou si la réponse n'était pas un nombre valide.</summary>
     public int? EcartAnnee { get; set; }
+
+    /// <summary>Vrai si ce joueur avait utilisé son joker sur ce round avant de répondre (V2, section
+    /// 12.7) — positionné par RoundService.SoumettreReponse. Exclut cette réponse des statistiques de
+    /// difficulté/confusions (StatsRepository), pour ne pas fausser la mesure avec une réponse aidée.</summary>
+    public bool AvecJoker { get; set; }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
+import '../models/joker_indice.dart';
 import '../models/qcm_option.dart';
 import '../models/round_cible.dart';
 import '../models/round_mode.dart';
@@ -14,6 +15,7 @@ import '../widgets/answer_banner.dart';
 import '../widgets/cover_art.dart';
 import '../widgets/fill_height_list.dart';
 import '../widgets/game_card.dart';
+import '../widgets/joker_button.dart';
 import '../widgets/serie_badge.dart';
 import '../widgets/timer_bar.dart';
 
@@ -155,7 +157,18 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          TimerBar(progress: progress, secondesRestantes: (_remainingMs / 1000).ceil()),
+          Row(
+            children: [
+              Expanded(child: TimerBar(progress: progress, secondesRestantes: (_remainingMs / 1000).ceil())),
+              // Joker (V2, section 12.7) : jamais en bonus (cette méthode ne construit que l'écran
+              // classique), masqué dès que le joueur a répondu — mais reste visible (grisé/barré)
+              // une fois utilisé, ce n'est pas la même chose que masqué.
+              if (!game.roundAnswered && !game.paused) ...[
+                const SizedBox(width: 10),
+                JokerButton(disponible: game.jokerDisponible, onActiver: game.utiliserJoker),
+              ],
+            ],
+          ),
           const SizedBox(height: 16),
           if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.roundAnswered && !game.paused)
@@ -169,6 +182,7 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
               anneeOptions: round.anneeOptions,
               disabled: disabled,
               onSubmit: game.submitAnswer,
+              jokerIndice: game.jokerIndiceActuel,
             ),
           ),
         ],
@@ -243,6 +257,7 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
   // Cible Année (V2, section 12.5) traitée à part de préférence au switch sur mode ci-dessous :
   // en Qcm les options sont des années (anneeOptions), pas des morceaux (qcmOptions) — jamais en
   // PremiereLettre (le serveur bascule alors en TapeReponse, voir RoundService.DemarrerRound).
+  // jokerIndice (V2, section 12.7) : toujours null côté bonus (_buildBonus ne le passe pas).
   Widget _buildAnswerArea({
     required RoundMode mode,
     required RoundCible cible,
@@ -250,18 +265,25 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
     required List<String>? anneeOptions,
     required bool disabled,
     required Future<void> Function(String) onSubmit,
+    JokerIndice? jokerIndice,
   }) {
     if (cible == RoundCible.annee) {
       return mode == RoundMode.qcm
-          ? _AnneeQcmAnswers(anneeOptions: anneeOptions ?? [], disabled: disabled, onSubmit: onSubmit)
-          : _AnneeInput(controller: _reponseController, disabled: disabled, onSubmit: onSubmit);
+          ? _AnneeQcmAnswers(anneeOptions: anneeOptions ?? [], disabled: disabled, onSubmit: onSubmit, optionsRetirees: jokerIndice?.optionsRetirees)
+          : _AnneeInput(controller: _reponseController, disabled: disabled, onSubmit: onSubmit, decennie: jokerIndice?.decennie);
     }
 
     return switch (mode) {
-      RoundMode.qcm => _QcmAnswers(qcmOptions: qcmOptions ?? [], cible: cible, disabled: disabled, onSubmit: onSubmit),
-      RoundMode.premiereLettre => _LetterAnswer(disabled: disabled, onSubmit: onSubmit),
-      RoundMode.tapeReponse =>
-        _TextAnswer(controller: _reponseController, disabled: disabled, cible: cible, onSubmit: onSubmit),
+      RoundMode.qcm => _QcmAnswers(qcmOptions: qcmOptions ?? [], cible: cible, disabled: disabled, onSubmit: onSubmit, optionsRetirees: jokerIndice?.optionsRetirees),
+      RoundMode.premiereLettre => _LetterAnswer(disabled: disabled, onSubmit: onSubmit, tuilesRestantes: jokerIndice?.tuilesRestantes),
+      RoundMode.tapeReponse => _TextAnswer(
+          controller: _reponseController,
+          disabled: disabled,
+          cible: cible,
+          onSubmit: onSubmit,
+          structure: jokerIndice?.structure,
+          coverUrl: context.read<GameConnection>().resolveServerUrl(jokerIndice?.coverUrl),
+        ),
     };
   }
 }
@@ -289,19 +311,26 @@ class _CourseBadge extends StatelessWidget {
 }
 
 class _QcmAnswers extends StatelessWidget {
-  const _QcmAnswers({required this.qcmOptions, required this.cible, required this.disabled, required this.onSubmit});
+  const _QcmAnswers({required this.qcmOptions, required this.cible, required this.disabled, required this.onSubmit, this.optionsRetirees});
 
   final List<QcmOption> qcmOptions;
   final RoundCible cible;
   final bool disabled;
   final Future<void> Function(String) onSubmit;
 
+  /// V2, section 12.7 — TrackId des options retirées par le joker (50/50), jamais la bonne réponse.
+  final List<String>? optionsRetirees;
+
   @override
   Widget build(BuildContext context) {
+    final optionsAffichees = optionsRetirees == null
+        ? qcmOptions
+        : qcmOptions.where((o) => !optionsRetirees!.contains(o.trackId)).toList();
+
     return FillHeightList(
-      itemCount: qcmOptions.length,
+      itemCount: optionsAffichees.length,
       itemBuilder: (context, index) {
-        final option = qcmOptions[index];
+        final option = optionsAffichees[index];
         // Un seul champ affiché par option (titre, premier auteur, ou film), pas plusieurs — un
         // morceau à plusieurs auteurs listés en entier rend le QCM illisible.
         final label = switch (cible) {
@@ -377,12 +406,16 @@ class _AnswerTileState extends State<_AnswerTile> {
 }
 
 class _LetterAnswer extends StatelessWidget {
-  const _LetterAnswer({required this.disabled, required this.onSubmit});
+  const _LetterAnswer({required this.disabled, required this.onSubmit, this.tuilesRestantes});
 
   final bool disabled;
   final Future<void> Function(String) onSubmit;
 
-  static const _letters = [
+  /// V2, section 12.7 — si renseigné (joker utilisé), seules ces lettres restent affichées/
+  /// sélectionnables (dont la bonne) à la place de l'alphabet complet.
+  final List<String>? tuilesRestantes;
+
+  static const _lettresCompletes = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
   ];
@@ -399,10 +432,12 @@ class _LetterAnswer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lettres = tuilesRestantes ?? _lettresCompletes;
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = _bestColumnCount(constraints.maxWidth, constraints.maxHeight);
-        final rows = (_letters.length / crossAxisCount).ceil();
+        final crossAxisCount = _bestColumnCount(lettres.length, constraints.maxWidth, constraints.maxHeight);
+        final rows = (lettres.length / crossAxisCount).ceil();
         final tileWidth = (constraints.maxWidth - _spacing * (crossAxisCount - 1)) / crossAxisCount;
         final tileHeight = (constraints.maxHeight - _spacing * (rows - 1)) / rows;
 
@@ -413,9 +448,9 @@ class _LetterAnswer extends StatelessWidget {
             crossAxisSpacing: _spacing,
             childAspectRatio: tileWidth / tileHeight,
           ),
-          itemCount: _letters.length,
+          itemCount: lettres.length,
           itemBuilder: (context, index) {
-            final letter = _letters[index];
+            final letter = lettres[index];
             return Material(
               color: BlindifyColors.surfaceAlt,
               borderRadius: BorderRadius.circular(8),
@@ -446,11 +481,11 @@ class _LetterAnswer extends StatelessWidget {
 
   // Teste chaque nombre de colonnes de la plage et garde celui qui donne le ratio largeur/hauteur
   // de tuile le plus proche de 1 (carré), pour l'espace effectivement disponible.
-  static int _bestColumnCount(double maxWidth, double maxHeight) {
+  static int _bestColumnCount(int letterCount, double maxWidth, double maxHeight) {
     var best = _minColumns;
     var bestDeviation = double.infinity;
     for (var columns = _minColumns; columns <= _maxColumns; columns++) {
-      final rows = (_letters.length / columns).ceil();
+      final rows = (letterCount / columns).ceil();
       final tileWidth = (maxWidth - _spacing * (columns - 1)) / columns;
       final tileHeight = (maxHeight - _spacing * (rows - 1)) / rows;
       if (tileWidth <= 0 || tileHeight <= 0) continue;
@@ -468,18 +503,23 @@ class _LetterAnswer extends StatelessWidget {
 /// de simples années en texte (anneeOptions), pas des morceaux : pas de champ à choisir selon la
 /// cible, la valeur affichée EST la réponse à soumettre.
 class _AnneeQcmAnswers extends StatelessWidget {
-  const _AnneeQcmAnswers({required this.anneeOptions, required this.disabled, required this.onSubmit});
+  const _AnneeQcmAnswers({required this.anneeOptions, required this.disabled, required this.onSubmit, this.optionsRetirees});
 
   final List<String> anneeOptions;
   final bool disabled;
   final Future<void> Function(String) onSubmit;
 
+  /// V2, section 12.7 — années retirées par le joker (50/50), jamais la bonne réponse.
+  final List<String>? optionsRetirees;
+
   @override
   Widget build(BuildContext context) {
+    final anneesAffichees =
+        optionsRetirees == null ? anneeOptions : anneeOptions.where((a) => !optionsRetirees!.contains(a)).toList();
     return FillHeightList(
-      itemCount: anneeOptions.length,
+      itemCount: anneesAffichees.length,
       itemBuilder: (context, index) {
-        final annee = anneeOptions[index];
+        final annee = anneesAffichees[index];
         return _AnswerTile(label: annee, index: index, onPressed: disabled ? null : () => onSubmit(annee));
       },
     );
@@ -489,11 +529,14 @@ class _AnneeQcmAnswers extends StatelessWidget {
 /// Cible Année en mode saisie (V2, section 12.5) — clavier numérique plutôt que le clavier texte
 /// complet de _TextAnswer, pour une réponse qui n'est jamais qu'un nombre à 4 chiffres.
 class _AnneeInput extends StatelessWidget {
-  const _AnneeInput({required this.controller, required this.disabled, required this.onSubmit});
+  const _AnneeInput({required this.controller, required this.disabled, required this.onSubmit, this.decennie});
 
   final TextEditingController controller;
   final bool disabled;
   final Future<void> Function(String) onSubmit;
+
+  /// V2, section 12.7 — décennie révélée par le joker (ex. 1980), null tant qu'il n'a pas été utilisé.
+  final int? decennie;
 
   @override
   Widget build(BuildContext context) {
@@ -501,6 +544,14 @@ class _AnneeInput extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        if (decennie != null) ...[
+          Text(
+            'Indice joker : années $decennie',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w700, color: BlindifyColors.mustard),
+          ),
+          const SizedBox(height: 12),
+        ],
         TextField(
           controller: controller,
           enabled: !disabled,
@@ -522,12 +573,25 @@ class _AnneeInput extends StatelessWidget {
 }
 
 class _TextAnswer extends StatelessWidget {
-  const _TextAnswer({required this.controller, required this.disabled, required this.cible, required this.onSubmit});
+  const _TextAnswer({
+    required this.controller,
+    required this.disabled,
+    required this.cible,
+    required this.onSubmit,
+    this.structure,
+    this.coverUrl,
+  });
 
   final TextEditingController controller;
   final bool disabled;
   final RoundCible cible;
   final Future<void> Function(String) onSubmit;
+
+  /// V2, section 12.7 — texte masqué (lettres remplacées par `_`, espaces/ponctuation préservés).
+  final String? structure;
+
+  /// V2, section 12.7 — pochette floutée déjà résolue en URL complète (Titre/Auteur uniquement).
+  final String? coverUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -542,6 +606,18 @@ class _TextAnswer extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (coverUrl != null) ...[
+          Center(child: CoverArt(imageUrl: coverUrl, size: 96)),
+          const SizedBox(height: 12),
+        ],
+        if (structure != null) ...[
+          Text(
+            structure!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontFamily: 'monospace', letterSpacing: 2, color: BlindifyColors.mustard),
+          ),
+          const SizedBox(height: 12),
+        ],
         TextField(
           controller: controller,
           enabled: !disabled,

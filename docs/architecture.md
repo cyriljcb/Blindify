@@ -327,6 +327,46 @@ Pas de morceaux à deviner (contrairement aux autres cibles) : le joueur doit tr
 - **Reveal** : `RoundEndedDto`/`BonusResultDto` gagnent un champ `Annee` (nullable, `Track.Year` tel quel) — sans lui, le host/l'écran public n'auraient aucun moyen de savoir quelle était la bonne année (jamais transmise avant le reveal).
 - Pré-requis catalogue : les années de réédition faussent la cible Année — lancer `audit_reissue_years.py`/`apply_reissue_years.py` (section 3bis) sur le catalogue avant de l'activer en partie réelle.
 
+### Joker (V2, section 12.7)
+
+Un joker par joueur et par partie complète (rendu par `RejouerPartie`, un joker par joueur même en mode
+équipes). Utilisable uniquement pendant la phase de réponse d'un round classique, tant que le joueur n'a pas
+répondu et que la partie n'est pas en pause — jamais en question bonus. Aucune pénalité en points, le chrono
+continue. Réduit le champ des possibles, ne donne jamais directement la réponse.
+
+Effet selon le mode/la cible du round (`JokerService.CalculerIndice`, `Blindify.Application`) :
+
+| Mode | Cible | Effet |
+|---|---|---|
+| Qcm | toutes (dont Année) | 50/50 : deux des trois mauvaises options retirées au hasard, jamais la bonne |
+| PremiereLettre | Titre / Auteur | Il ne reste que 4 tuiles (dont la bonne) sur les 26 |
+| TapeReponse | Titre / Auteur | Pochette floutée côté serveur + structure du texte (lettres masquées, espaces/ponctuation/chiffres préservés) |
+| TapeReponse | Film | Structure du texte seule |
+| TapeReponse | Annee | La décennie de sortie est révélée |
+
+Contrat (`GameHub.UtiliserJoker(roundId)`, joueurs uniquement) : vérifie round classique courant, pas de
+réponse déjà donnée, joker disponible, partie non en pause (toute la validation vit dans
+`RoundService.UtiliserJoker`, qui retourne `null` sur toute condition invalide — `GameHub` traduit `null` en
+`HubException`, même philosophie que `SoumettreReponse`). Renvoie à l'appelant seul un `JokerIndiceDto
+{ OptionsRetirees?, TuilesRestantes?, Structure?, Decennie?, CoverUrl? }`. Diffuse à tout le groupe
+l'événement `JokerUtilise{ PlayerId }`, qui ne révèle rien (ni l'effet ni la cible). L'indice calculé est
+persisté sur `Round.JokerIndicesParJoueur` (borné à la durée de vie du round) : une reconnexion pendant ce
+round rejoue exactement le même indice plutôt qu'un nouveau tirage — `JoinGameResultDto`/
+`EtatCourantConnexionDto` portent `JokerDisponible` (bool, par partie), et `RoundStartedForPlayersDto` porte
+l'indice déjà obtenu pour le round en cours.
+
+Pochette floutée : `GET /api/joker/cover/{jeton}` (`SixLabors.ImageSharp`, flou gaussien serveur, rayon 40),
+jeton à usage unique émis par `IJokerCoverTokenStore` et lié au morceau du round — `/files` reste réservé au
+host, l'audio et les pochettes en clair ne transitent jamais vers les joueurs avant le reveal.
+
+Domaine et stats : `Player.JokerUtilise` (remis à `false` par `RejouerPartie`), `RoundAnswer.AvecJoker` — les
+réponses avec joker sont exclues de `Reponses`/`Confusions` dans `stats.json` (section 4), pour ne pas fausser
+la mesure de difficulté réelle du morceau.
+
+Flutter : petit bouton rond (`JokerButton`) dans la barre du haut à côté du timer, contour moutarde si
+disponible, grisé/barré si utilisé, masqué en bonus et une fois répondu. Appui long (~0,6 s, anneau qui se
+remplit) déclenche l'effet sur place, pas de boîte de dialogue. Mention « 1 joker pour la partie » au lobby.
+
 ## 7. Question bonus (fin de série)
 
 Mécanique en deux phases, mise choisie **à l'aveugle** avant de découvrir la question. *La durée de la phase mise et celle de la phase question sont configurables (voir section 10).*
@@ -415,6 +455,7 @@ RoundId (V2) : `SubmitAnswer`/`SelectStake`/`SubmitBonusAnswer` reprennent le `R
 | `SubmitAnswer(roundId, payload)` | Soumet une réponse (round classique) |
 | `SelectStake(roundId, index)` | Choisit un palier de mise (phase 1 bonus) |
 | `SubmitBonusAnswer(roundId, payload)` | Soumet une réponse (phase 2 bonus) |
+| `UtiliserJoker(roundId)` | V2, section 12.7 — active le joker sur le round classique en cours, renvoie un `JokerIndiceDto` à l'appelant seul (jamais en bonus, jamais après réponse, jamais en pause, jamais deux fois) |
 
 ### Reconnexion automatique (V2)
 
@@ -433,7 +474,8 @@ RoundId (V2) : `SubmitAnswer`/`SelectStake`/`SubmitBonusAnswer` reprennent le `R
 | `PlayerTeamChanged` | Un joueur a rejoint (ou changé d')équipe |
 | `EtatCourant` *(V2, joueur uniquement)* | Envoyé par `OnConnectedAsync` lors d'une reconnexion automatique — score, équipe, phase de jeu en cours (même contenu que le `EtatCourant` renvoyé par `JoinGame`), voir "Reconnexion automatique" |
 | `SerieAnnoncee` | Index de la série qui commence + ses tags (thème) — voir `AnnoncerSerieCourante()`. Retour utilisateur du 2026-08-24 : auparavant affiché uniquement côté host/écran public, jamais diffusé aux joueurs |
-| `RoundStarted` | `RoundId` (V2, à renvoyer dans `SubmitAnswer`), morceau (mode-dépendant), mode, cible (Titre/Auteur/Film/Année — voir section 6), URL audio + `refrainStartMs` (host uniquement — mémorisé côté host, appliqué au moment du `RoundEnded`, pas pendant la découverte). Options QCM (si applicable) incluent un champ `Film` par option, affiché à la place de titre/auteur quand la cible est Film ; `AnneeOptions` (V2) à la place de `QcmOptions` si la cible est Année |
+| `RoundStarted` | `RoundId` (V2, à renvoyer dans `SubmitAnswer`), morceau (mode-dépendant), mode, cible (Titre/Auteur/Film/Année — voir section 6), URL audio + `refrainStartMs` (host uniquement — mémorisé côté host, appliqué au moment du `RoundEnded`, pas pendant la découverte). Options QCM (si applicable) incluent un champ `Film` par option, affiché à la place de titre/auteur quand la cible est Film ; `AnneeOptions` (V2) à la place de `QcmOptions` si la cible est Année. Version joueurs : `JokerIndice` (V2, section 12.7), toujours `null` sauf reconstruction après reconnexion si ce joueur avait déjà utilisé son joker sur ce round |
+| `JokerUtilise` *(V2, section 12.7)* | `{ playerId }` — diffusé à tout le groupe quand un joueur active son joker, ne révèle jamais l'effet ni la cible |
 | `ScoreUpdate` | Scores à jour de tous les joueurs |
 | `RoundEnded` | Réponse correcte (titre + artiste), détail des points de chacun (`EcartAnnee` par joueur si la cible était Année, V2), cible du round, film déduit et année réelle (`Cible`/`Film`/`Annee`) — l'écran de révélation met le film ou l'année en avant selon `Cible` |
 | `BonusStakeOptions` | `RoundId` (V2, identité du `BonusRound`, stable entre les deux phases), les 4 paliers de la série courante |
@@ -549,6 +591,7 @@ Décision : les égalités sont acceptées telles quelles, pas de mécanisme de 
 | `PRUDENT` | Tortue prudente | Plus de mises au palier safe (index 0) + d'abstentions bonus | 3 occurrences |
 | `REMONTADA` | Remontada | Plus forte progression de classement entre la mi-partie (rejouée à partir des événements) et le classement final (`Player.Score`) | 2 places gagnées |
 | `PANNEAU` | Tombé dans le panneau | Plus de réponses sur une option piège (`trapWith`) ou une feinte (round classique + bonus) | 2 occurrences |
+| `JOKER_GACHE` | Joker gâché | A utilisé son joker et s'est quand même trompé (V2, section 12.7) — le plus tôt dans la partie en cas d'égalité | Au moins une occurrence |
 | `CHAT_NOIR` | Chat noir | Plus de points perdus en mauvaises réponses (non absentes, round classique + bonus) | Somme négative |
 | `FIDELE` | Présent jusqu'au bout | Titre de repli | Toujours éligible |
 

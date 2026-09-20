@@ -127,6 +127,12 @@ function handleEvent(name, payload) {
       displayBridge.sendPlayerAnswered(payload);
       break;
 
+    case "JokerUtilise":
+      // V2, section 12.7 — annonce transitoire sur l'écran public uniquement, jamais l'effet ni
+      // la cible révélée (voir JokerUtiliseDto côté backend : {playerId} seul).
+      displayBridge.sendJokerUtilise(payload);
+      break;
+
     case "RoundEnded":
       timers.stopTimer();
       displayBridge.resetPlayerAnswered();

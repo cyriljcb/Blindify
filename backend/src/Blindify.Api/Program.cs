@@ -2,11 +2,14 @@ using System.Security.Cryptography;
 using System.Text;
 using Blindify.Api.Contracts;
 using Blindify.Api.Hubs;
+using Blindify.Api.Jokers;
 using Blindify.Application.DependencyInjection;
 using Blindify.Infrastructure.DependencyInjection;
 using Blindify.Infrastructure.Tracks;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSingleton<RoundTimerCoordinator>();
 builder.Services.AddSingleton<BonusTimerCoordinator>();
+builder.Services.AddSingleton<IJokerCoverTokenStore, JokerCoverTokenStore>();
 
 builder.Services.AddSignalR().AddJsonProtocol(options =>
 {
@@ -108,6 +112,27 @@ app.MapGet("/api/tags", (ITracksRepository tracksRepository) =>
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
         .ToList());
+
+// V2, section 12.7 — pochette floutée pour l'indice de joker (TapeReponse + Titre/Auteur uniquement,
+// voir GameHub.UtiliserJoker). Le jeton (opaque, IJokerCoverTokenStore) est la seule protection : jamais
+// d'accès direct par trackId, sinon un joueur pourrait deviner la pochette d'un morceau pas encore joué.
+// Flou volontairement fort (aucun texte/logo ne doit rester lisible) — dataRootPath déjà résolu plus haut
+// pour /files, réutilisé tel quel (même convention de chemin que Track.CoverPath, ex. "covers/xxx.jpg").
+app.MapGet("/api/joker/cover/{jeton}", (string jeton, IJokerCoverTokenStore tokenStore, ITracksRepository tracksRepository) =>
+{
+    var trackId = tokenStore.Resoudre(jeton);
+    var track = trackId is null ? null : tracksRepository.GetById(trackId);
+    if (track?.CoverPath is null) return Results.NotFound();
+
+    var coverFullPath = Path.Combine(dataRootPath, track.CoverPath);
+    if (!File.Exists(coverFullPath)) return Results.NotFound();
+
+    using var image = Image.Load(coverFullPath);
+    image.Mutate(x => x.GaussianBlur(40f));
+    using var ms = new MemoryStream();
+    image.SaveAsJpeg(ms);
+    return Results.File(ms.ToArray(), "image/jpeg");
+});
 
 // Redémarrage à distance (retour utilisateur : pouvoir relancer le backend depuis la page host sans
 // accès physique/SSH au Raspberry Pi). Protégé par un mot de passe (Admin:RestartPassword, jamais

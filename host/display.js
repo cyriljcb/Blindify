@@ -432,8 +432,28 @@ window.addEventListener("message", (event) => {
   } else if (msg.type === "player-answered-reset") {
     state.playersAnswered = [];
     renderAnswerSpeedPanel();
+  } else if (msg.type === "joker-utilise") {
+    afficherBanniereJoker(msg.playerId);
   }
 });
+
+// V2, section 12.7 — annonce transitoire, jamais l'effet ni la cible révélée. Un nouvel appel
+// pendant l'affichage relance le délai plutôt que d'empiler les bannières (un seul joker à la
+// fois est réaliste, mais reste robuste si deux joueurs l'utilisent coup sur coup).
+const DUREE_BANNIERE_JOKER_MS = 3000;
+let jokerBannerTimeoutId = null;
+
+function afficherBanniereJoker(playerId) {
+  const nom = (roster().joueurs ?? []).find((j) => j.playerId === playerId)?.nom ?? "Un joueur";
+  const banner = el("joker-banner");
+  banner.textContent = `✨ ${nom} sort son joker`;
+  banner.classList.remove("hidden");
+  if (jokerBannerTimeoutId) clearTimeout(jokerBannerTimeoutId);
+  jokerBannerTimeoutId = setTimeout(() => {
+    banner.classList.add("hidden");
+    jokerBannerTimeoutId = null;
+  }, DUREE_BANNIERE_JOKER_MS);
+}
 
 // Demande un rattrapage d'état au panneau de contrôle (utile si cet écran est ouvert/rechargé
 // après que la partie a déjà commencé).

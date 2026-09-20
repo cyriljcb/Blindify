@@ -65,6 +65,29 @@ main {
   box-shadow: 6px 6px 0 var(--coral);
 }
 
+/* ----- Annonce transitoire "X sort son joker" (V2, section 12.7) — même gabarit que
+   .paused-banner mais positionnée plus bas pour ne jamais se superposer, disparaît d'elle-même
+   (voir display.js:"joker-utilise"). ----- */
+
+.joker-banner {
+  position: fixed;
+  top: 6.5rem;
+  left: 50%;
+  transform: translateX(-50%) rotate(1.5deg);
+  z-index: 20;
+  background: var(--mustard);
+  color: #241d05;
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 1.2rem;
+  padding: 0.5rem 1.4rem;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 6px 6px 0 var(--coral);
+}
+
 /* ----- Pochette / mystère, plus grande que sur le panneau de contrôle ----- */
 
 .cover-frame--big {

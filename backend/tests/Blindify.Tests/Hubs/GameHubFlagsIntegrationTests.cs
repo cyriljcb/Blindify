@@ -184,14 +184,14 @@ public class GameHubFlagsIntegrationTests : IAsyncLifetime
         await _hostConnection.InvokeAsync<SignalementResultDto>("SignalerMorceau", new SignalementRequestDto(trackIdBloque, RaisonSignalement.PasSaPlace, null));
         await _hostConnection.InvokeAsync("EndGame");
 
-        // Avec ExclureMorceauxSignales=false, les 4 morceaux du catalogue (dont le bloqué) doivent
-        // rester disponibles — sinon demander les 4 échouerait (pas assez de morceaux).
-        await CreerEtConfigurerPartie(_hostConnection, 4, new GameConfig { ExclureMorceauxSignales = false });
+        // Avec ExclureMorceauxSignales=false, les 5 morceaux du catalogue (dont le bloqué) doivent
+        // rester disponibles — sinon demander les 5 échouerait (pas assez de morceaux).
+        await CreerEtConfigurerPartie(_hostConnection, 5, new GameConfig { ExclureMorceauxSignales = false });
         var tracksSelectionnes = new List<string>();
-        for (var i = 0; i < 4; i++)
+        for (var i = 0; i < 5; i++)
         {
             tracksSelectionnes.Add(await DemarrerRoundEtObtenirTrackId());
-            if (i < 3) await _hostConnection.InvokeAsync("NextRound");
+            if (i < 4) await _hostConnection.InvokeAsync("NextRound");
         }
 
         Assert.Contains(trackIdBloque, tracksSelectionnes);

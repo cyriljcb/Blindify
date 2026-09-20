@@ -12,4 +12,8 @@ public class Player
     public int Score { get; set; }
     public string? TeamId { get; set; }
     public bool EstConnecte { get; set; }
+
+    /// <summary>Joker (V2, section 12.7) — un seul par joueur et par partie complète, remis à false par
+    /// GameHub.RejouerPartie.</summary>
+    public bool JokerUtilise { get; set; }
 }

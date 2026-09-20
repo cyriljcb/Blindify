@@ -25,14 +25,17 @@ public record EtatCourantJoueurDto(
 /// après d'autres ne les voyait jamais (PlayerJoined n'est diffusé qu'aux joueurs déjà présents,
 /// voir GameHub.JoinGame), y compris lui-même s'il était seul.
 /// EtatCourant : null si rien n'est actif (lobby, entre deux rounds, partie terminée) — le client
-/// retombe alors sur le lobby en attendant la prochaine diffusion serveur, comportement inchangé.</summary>
-public record JoinGameResultDto(bool Success, string? ErrorMessage, int Score, string? TeamId, List<TeamDto> Teams, List<PlayerSummaryDto> Joueurs, EtatCourantJoueurDto? EtatCourant);
+/// retombe alors sur le lobby en attendant la prochaine diffusion serveur, comportement inchangé.
+/// JokerDisponible (V2, section 12.7) : au même niveau que Score/TeamId (pas dans EtatCourant, qui
+/// est null en dehors d'un round/phase bonus actif) — état permanent du joueur pour la partie entière.</summary>
+public record JoinGameResultDto(bool Success, string? ErrorMessage, int Score, string? TeamId, List<TeamDto> Teams, List<PlayerSummaryDto> Joueurs, EtatCourantJoueurDto? EtatCourant, bool JokerDisponible = false);
 
 /// <summary>Envoyé (V2) au joueur automatiquement rattaché à sa partie via GameHub.OnConnectedAsync
 /// (reconnexion via ?code&playerId dans l'URL du hub) — remplace l'obligation de rappeler JoinGame après
 /// chaque reconnexion transport SignalR. Contenu volontairement réduit par rapport à JoinGameResultDto :
-/// pas de roster/teams à renvoyer, déjà connus du client depuis le join initial.</summary>
-public record EtatCourantConnexionDto(int Score, string? TeamId, EtatCourantJoueurDto? EtatCourant);
+/// pas de roster/teams à renvoyer, déjà connus du client depuis le join initial.
+/// JokerDisponible : voir JoinGameResultDto.</summary>
+public record EtatCourantConnexionDto(int Score, string? TeamId, EtatCourantJoueurDto? EtatCourant, bool JokerDisponible = false);
 
 public record PlayerJoinedDto(string PlayerId, string Nom);
 

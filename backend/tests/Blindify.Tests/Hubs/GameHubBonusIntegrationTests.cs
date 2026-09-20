@@ -80,7 +80,7 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
         Assert.NotNull(questionHost.FilePath);
         var questionPlayer = await AvecTimeout(questionStartedPlayerTcs.Task, TimeSpan.FromSeconds(5));
 
-        // Le morceau bonus est tiré au hasard dans le catalogue de test (t1..t4), et sa cible
+        // Le morceau bonus est tiré au hasard dans le catalogue de test (t1..t5), et sa cible
         // (Titre/Auteur) l'est aussi (voir BonusRoundService.CreerBonusRound) — on retrouve la bonne
         // réponse par TrackId + Cible plutôt que de les supposer, pour ne pas rendre le test
         // dépendant du tirage.
@@ -89,14 +89,16 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
             ["t1"] = "Under the Sea",
             ["t2"] = "Circle of Life",
             ["t3"] = "Let It Go",
-            ["t4"] = "Hakuna Matata"
+            ["t4"] = "Hakuna Matata",
+            ["t5"] = "Bohemian Rhapsody"
         };
         var artistesConnus = new Dictionary<string, string>
         {
             ["t1"] = "Samuel E. Wright",
             ["t2"] = "Elton John",
             ["t3"] = "Idina Menzel",
-            ["t4"] = "Nathan Lane"
+            ["t4"] = "Nathan Lane",
+            ["t5"] = "Queen"
         };
         // Mode tiré aléatoirement (Qcm/TapeReponse/PremiereLettre) depuis le retour utilisateur du
         // 2026-08-27 — voir BonusRoundService.CreerBonusRound. En Qcm la bonne réponse est le

@@ -29,7 +29,7 @@ public static class TitresService
     // gagnants) lors de l'attribution "du plus rare au plus courant" ; FIDELE n'y figure pas (jamais
     // dans candidatsTries, voir CalculerTitres, c'est le repli final).
     private static readonly string[] OrdreCatalogue =
-        ["ECLAIR", "SNIPER", "SPECIALISTE", "HORLOGE", "ROI_BONUS", "KAMIKAZE", "PRUDENT", "REMONTADA", "PANNEAU", "CHAT_NOIR"];
+        ["ECLAIR", "SNIPER", "SPECIALISTE", "HORLOGE", "ROI_BONUS", "KAMIKAZE", "PRUDENT", "REMONTADA", "PANNEAU", "JOKER_GACHE", "CHAT_NOIR"];
 
     private class StatsJoueur
     {
@@ -42,6 +42,11 @@ public static class TitresService
         public long EcartAnneeCumul;
 
         public int PanneauOccurrences;
+
+        // Index chronologique (totalRoundsClassiques au moment du round) du PREMIER round classique où
+        // ce joueur a répondu à côté après avoir utilisé son joker — voir AjouterJokerGache. Null tant
+        // que ça n'arrive jamais.
+        public int? PremierRoundJokerRateIndex;
 
         public int BonusNetPoints;
         public int BonusMisesTotal;
@@ -102,6 +107,7 @@ public static class TitresService
                     }
 
                     if (reponse.OptionChoisieEstPiege || reponse.OptionChoisieEstFeinte) s.PanneauOccurrences++;
+                    if (reponse.AvecJoker && !reponse.EstCorrecte) s.PremierRoundJokerRateIndex ??= totalRoundsClassiques;
 
                     if (track is not null)
                         foreach (var tag in track.Tags)
@@ -163,6 +169,7 @@ public static class TitresService
         AjouterPrudent(candidats, stats);
         AjouterRemontada(candidats, joueurs, evenementsParUnite);
         AjouterPanneau(candidats, stats);
+        AjouterJokerGache(candidats, stats);
         AjouterChatNoir(candidats, stats);
 
         return Attribuer(candidats, joueurs);
@@ -300,6 +307,20 @@ public static class TitresService
         var meilleur = eligibles.Max(kv => kv.Value.PanneauOccurrences);
         var gagnants = eligibles.Where(kv => kv.Value.PanneauOccurrences == meilleur).Select(kv => kv.Key).ToList();
         candidats.Add(new TitreResultat { Code = "PANNEAU", Libelle = "Tombé dans le panneau", Description = $"{meilleur} fois piégé(e) par un distracteur", PlayerIds = gagnants });
+    }
+
+    /// <summary>V2, section 12.7 — décerné à qui a utilisé son joker et s'est quand même trompé, le
+    /// plus tôt dans la partie en cas d'égalité (pas de partage à magnitude égale comme les autres
+    /// titres : l'artéfact précise explicitement ce départage). Pas de seuil minimal, comme CHAT_NOIR —
+    /// n'ajoute rien aux candidats si personne n'a jamais raté un round joker.</summary>
+    private static void AjouterJokerGache(List<TitreResultat> candidats, Dictionary<string, StatsJoueur> stats)
+    {
+        var eligibles = stats.Where(kv => kv.Value.PremierRoundJokerRateIndex is not null).ToList();
+        if (eligibles.Count == 0) return;
+
+        var plusTot = eligibles.Min(kv => kv.Value.PremierRoundJokerRateIndex!.Value);
+        var gagnants = eligibles.Where(kv => kv.Value.PremierRoundJokerRateIndex!.Value == plusTot).Select(kv => kv.Key).ToList();
+        candidats.Add(new TitreResultat { Code = "JOKER_GACHE", Libelle = "Joker gâché", Description = "A utilisé son joker et s'est quand même trompé", PlayerIds = gagnants });
     }
 
     private static void AjouterChatNoir(List<TitreResultat> candidats, Dictionary<string, StatsJoueur> stats)

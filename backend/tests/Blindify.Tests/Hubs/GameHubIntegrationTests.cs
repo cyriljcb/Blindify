@@ -365,20 +365,22 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     [Fact]
     public async Task QcmFeinteChamp_ProbabiliteMaximale_UnDistracteurAfficheLeChampOpposeDuMorceauCorrect()
     {
-        // Catalogue de test (GameHubTestFactory) : 4 morceaux, artistes tous distincts.
+        // Catalogue de test (GameHubTestFactory) : 5 morceaux, artistes tous distincts.
         var titresParId = new Dictionary<string, string>
         {
             ["t1"] = "Under the Sea",
             ["t2"] = "Circle of Life",
             ["t3"] = "Let It Go",
-            ["t4"] = "Hakuna Matata"
+            ["t4"] = "Hakuna Matata",
+            ["t5"] = "Bohemian Rhapsody"
         };
         var auteursParId = new Dictionary<string, string>
         {
             ["t1"] = "Samuel E. Wright",
             ["t2"] = "Elton John",
             ["t3"] = "Idina Menzel",
-            ["t4"] = "Nathan Lane"
+            ["t4"] = "Nathan Lane",
+            ["t5"] = "Queen"
         };
 
         RoundStartedForPlayersDto? roundStartedPlayer = null;

@@ -1,3 +1,4 @@
+import 'joker_indice.dart';
 import 'qcm_option.dart';
 import 'round_cible.dart';
 import 'round_mode.dart';
@@ -15,6 +16,7 @@ class RoundStarted {
     this.qcmOptions,
     this.tempsEcouleMs = 0,
     this.anneeOptions,
+    this.jokerIndice,
   });
 
   final RoundMode mode;
@@ -42,6 +44,11 @@ class RoundStarted {
   /// 12.5) — mutuellement exclusif avec [qcmOptions] selon la cible du round.
   final List<String>? anneeOptions;
 
+  /// V2, section 12.7 — toujours null sur un RoundStarted fraîchement diffusé ; rempli uniquement
+  /// à la reconstruction du round (reconnexion) si ce joueur avait déjà utilisé son joker sur ce
+  /// round avant la coupure, pour rejouer le même indice plutôt qu'un nouveau tirage.
+  final JokerIndice? jokerIndice;
+
   factory RoundStarted.fromJson(Map<String, dynamic> json) => RoundStarted(
         mode: RoundModeJson.fromJson(json['mode'] as String),
         cible: RoundCibleJson.fromJson(json['cible'] as String),
@@ -53,5 +60,6 @@ class RoundStarted {
             .toList(),
         tempsEcouleMs: json['tempsEcouleMs'] as int? ?? 0,
         anneeOptions: (json['anneeOptions'] as List<dynamic>?)?.map((e) => e as String).toList(),
+        jokerIndice: json['jokerIndice'] != null ? JokerIndice.fromJson(json['jokerIndice'] as Map<String, dynamic>) : null,
       );
 }

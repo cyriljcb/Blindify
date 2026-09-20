@@ -26,6 +26,7 @@ class JoinResult {
     required this.teams,
     required this.joueurs,
     this.etatCourant,
+    this.jokerDisponible = false,
   });
 
   final bool success;
@@ -42,6 +43,10 @@ class JoinResult {
   /// laisser au lobby en attendant le prochain événement serveur (voir EtatCourantJoueurDto).
   final EtatCourantJoueur? etatCourant;
 
+  /// V2, section 12.7 — au même niveau que score/teamId (pas dans etatCourant, qui est null en
+  /// dehors d'un round/phase bonus actif) : état permanent du joueur pour la partie entière.
+  final bool jokerDisponible;
+
   factory JoinResult.fromJson(Map<String, dynamic> json) => JoinResult(
         success: json['success'] as bool,
         errorMessage: json['errorMessage'] as String?,
@@ -55,5 +60,6 @@ class JoinResult {
             .toList(),
         etatCourant:
             json['etatCourant'] != null ? EtatCourantJoueur.fromJson(json['etatCourant'] as Map<String, dynamic>) : null,
+        jokerDisponible: json['jokerDisponible'] as bool? ?? false,
       );
 }

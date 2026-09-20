@@ -27,8 +27,11 @@ public record RoundStartedForHostDto(RoundMode Mode, RoundCible Cible, Guid Roun
 /// TempsEcouleMs : 0 au démarrage normal du round ; temps déjà écoulé quand ce DTO est réutilisé
 /// pour resynchroniser un joueur qui (re)rejoint en pleine partie (voir EtatCourantJoueurDto) —
 /// sans ça, la barre de temps du client redémarrait à la durée totale au lieu du temps restant.
-/// AnneeOptions : voir RoundStartedForHostDto.</summary>
-public record RoundStartedForPlayersDto(RoundMode Mode, RoundCible Cible, Guid RoundId, int DureeFenetreReponseMs, int SerieIndex, List<QcmOptionDto>? QcmOptions, int TempsEcouleMs, List<string>? AnneeOptions = null);
+/// AnneeOptions : voir RoundStartedForHostDto.
+/// JokerIndice (V2, section 12.7) : toujours null sur un RoundStarted fraîchement diffusé — rempli
+/// uniquement par GameHub.ConstruireEtatCourantJoueur quand ce joueur avait déjà utilisé son joker
+/// SUR CE ROUND avant une reconnexion, pour rejouer le même indice plutôt qu'un nouveau tirage.</summary>
+public record RoundStartedForPlayersDto(RoundMode Mode, RoundCible Cible, Guid RoundId, int DureeFenetreReponseMs, int SerieIndex, List<QcmOptionDto>? QcmOptions, int TempsEcouleMs, List<string>? AnneeOptions = null, JokerIndiceDto? JokerIndice = null);
 
 /// <summary>Diffusé à tout le groupe (host, écran public, autres joueurs) dès qu'une réponse est
 /// enregistrée — voir GameHub.SubmitAnswer/SubmitBonusAnswer. Volontairement minimal : ni la

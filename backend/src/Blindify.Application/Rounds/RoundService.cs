@@ -1,13 +1,15 @@
 using Blindify.Application.Answers;
+using Blindify.Application.Jokers;
 using Blindify.Application.Qcm;
 using Blindify.Application.Scoring;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
 using Blindify.Domain.Enums;
+using Blindify.Domain.Jokers;
 
 namespace Blindify.Application.Rounds;
 
-public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, IAnswerMatcher answerMatcher, IAnneeQcmGenerator anneeQcmGenerator) : IRoundService
+public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, IAnswerMatcher answerMatcher, IAnneeQcmGenerator anneeQcmGenerator, IJokerService jokerService) : IRoundService
 {
     public List<Track> SelectionnerMorceaux(IReadOnlyList<Track> pool, IReadOnlyList<string> tags, int nombre, HashSet<string> dejaUtilises, Func<string, int>? playCount = null)
     {
@@ -189,12 +191,31 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
             OptionChoisieEstPiege = optionChoisie?.EstPiege ?? false,
             TempsReponseMs = tempsReponseMs,
             EcartAnnee = ecartAnnee,
+            AvecJoker = round.JokerIndicesParJoueur.ContainsKey(playerId),
         };
 
         round.Reponses.Add(answer);
         AppliquerPoints(session, playerId, points);
 
         return answer;
+    }
+
+    /// <summary>V2, section 12.7 — un joker par joueur et par partie complète. Toutes les conditions de
+    /// refus sont vérifiées ici (même philosophie que le filet de sécurité de SoumettreReponse) : null
+    /// signifie refus, jamais d'exception depuis Application (GameHub traduit en HubException).</summary>
+    public JokerIndice? UtiliserJoker(GameSession session, Round round, Guid roundId, Track track, string playerId)
+    {
+        if (session.EnPause) return null;
+        if (round.Id != roundId) return null;
+        if (round.Reponses.Any(r => r.PlayerId == playerId)) return null;
+
+        var joueur = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
+        if (joueur is null || joueur.JokerUtilise) return null;
+
+        var indice = jokerService.CalculerIndice(round.Mode, round.Cible, track, round.Options, round.AnneeOptions);
+        joueur.JokerUtilise = true;
+        round.JokerIndicesParJoueur[playerId] = indice;
+        return indice;
     }
 
     public void TerminerParTimeout(GameSession session, Round round, SeriesConfig config)

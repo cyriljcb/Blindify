@@ -97,7 +97,7 @@ public class ContractsSerializationTests
             null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1"}],"etatCourant":null}""",
+            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1"}],"etatCourant":null,"jokerDisponible":false}""",
             json);
     }
 
@@ -109,7 +109,7 @@ public class ContractsSerializationTests
         var dto = new EtatCourantJoueurDto(PhaseJoueur.RoundClassique, false, true, round, null, null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"phase":"RoundClassique","enPause":false,"dejaRepondu":true,"round":{"mode":"TapeReponse","cible":"Auteur","roundId":"00000000-0000-0000-0000-000000000001","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":4200,"anneeOptions":null},"bonusMise":null,"bonusQuestion":null}""",
+            """{"phase":"RoundClassique","enPause":false,"dejaRepondu":true,"round":{"mode":"TapeReponse","cible":"Auteur","roundId":"00000000-0000-0000-0000-000000000001","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":4200,"anneeOptions":null,"jokerIndice":null},"bonusMise":null,"bonusQuestion":null}""",
             json);
     }
 
@@ -133,6 +133,14 @@ public class ContractsSerializationTests
         Assert.Equal(
             """{"phase":"Aucune","enPause":false,"dejaRepondu":false,"round":null,"bonusMise":null,"bonusQuestion":null}""",
             json);
+    }
+
+    [Fact]
+    public void EtatCourantConnexionDto_Golden()
+    {
+        var dto = new EtatCourantConnexionDto(120, "team-1", null, true);
+        var json = Serialize(dto);
+        Assert.Equal("""{"score":120,"teamId":"team-1","etatCourant":null,"jokerDisponible":true}""", json);
     }
 
     [Fact]
@@ -184,7 +192,7 @@ public class ContractsSerializationTests
         var roundId = Guid.Parse("00000000-0000-0000-0000-000000000004");
         var dto = new RoundStartedForPlayersDto(RoundMode.TapeReponse, RoundCible.Auteur, roundId, 20000, 2, null, TempsEcouleMs: 0);
         var json = Serialize(dto);
-        Assert.Equal("""{"mode":"TapeReponse","cible":"Auteur","roundId":"00000000-0000-0000-0000-000000000004","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":0,"anneeOptions":null}""", json);
+        Assert.Equal("""{"mode":"TapeReponse","cible":"Auteur","roundId":"00000000-0000-0000-0000-000000000004","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":0,"anneeOptions":null,"jokerIndice":null}""", json);
     }
 
     [Fact]
@@ -376,5 +384,29 @@ public class ContractsSerializationTests
     {
         var json = Serialize(new MorceauSignaleDto("t1", "Circle of Life", "Elton John", RaisonSignalement.AudioDefectueux));
         Assert.Equal("""{"trackId":"t1","titre":"Circle of Life","artiste":"Elton John","raison":"AudioDefectueux"}""", json);
+    }
+
+    // ----- JokerContracts.cs -> app/lib/models/joker_indice.dart, host (annonce transitoire uniquement,
+    //         V2 section 12.7) -----
+
+    [Fact]
+    public void JokerIndiceDto_Golden_OptionsRetirees()
+    {
+        var json = Serialize(new JokerIndiceDto(["t2", "t3"], null, null, null, null));
+        Assert.Equal("""{"optionsRetirees":["t2","t3"],"tuilesRestantes":null,"structure":null,"decennie":null,"coverUrl":null}""", json);
+    }
+
+    [Fact]
+    public void JokerIndiceDto_Golden_CoverEtStructure()
+    {
+        var json = Serialize(new JokerIndiceDto(null, null, "___ __ ___", null, "/api/joker/cover/abc123"));
+        Assert.Equal("""{"optionsRetirees":null,"tuilesRestantes":null,"structure":"___ __ ___","decennie":null,"coverUrl":"/api/joker/cover/abc123"}""", json);
+    }
+
+    [Fact]
+    public void JokerUtiliseDto_Golden()
+    {
+        var json = Serialize(new JokerUtiliseDto("player-1"));
+        Assert.Equal("""{"playerId":"player-1"}""", json);
     }
 }

@@ -207,6 +207,7 @@ export function registerHandlers(connection, callbacks) {
   connection.on("RoundStarted", (payload) => callbacks.onEvent("RoundStarted", payload));
   connection.on("ScoreUpdate", (payload) => callbacks.onEvent("ScoreUpdate", payload));
   connection.on("PlayerAnswered", (payload) => callbacks.onEvent("PlayerAnswered", payload));
+  connection.on("JokerUtilise", (payload) => callbacks.onEvent("JokerUtilise", payload));
   connection.on("RoundEnded", (payload) => callbacks.onEvent("RoundEnded", payload));
   connection.on("GamePaused", () => callbacks.onEvent("GamePaused"));
   connection.on("GameResumed", () => callbacks.onEvent("GameResumed"));

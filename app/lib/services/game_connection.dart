@@ -12,6 +12,7 @@ import '../models/bonus_result.dart';
 import '../models/bonus_stake_options.dart';
 import '../models/etat_courant_connexion.dart';
 import '../models/etat_courant_joueur.dart';
+import '../models/joker_indice.dart';
 import '../models/join_result.dart';
 import '../models/morceau_joue.dart';
 import '../models/raison_signalement.dart';
@@ -81,6 +82,12 @@ class GameConnection extends ChangeNotifier {
   String? coverUrl(String? coverPath) =>
       coverPath == null ? null : '${_resolvedUrl ?? serverUrl}/files/$coverPath';
 
+  /// URL complète de la pochette floutée servie par le joker (V2, section 12.7) — [relativeUrl]
+  /// est déjà le chemin renvoyé par le serveur (`/api/joker/cover/{jeton}`), à préfixer par
+  /// l'adresse du serveur, contrairement à [coverUrl] qui construit le chemin lui-même.
+  String? resolveServerUrl(String? relativeUrl) =>
+      relativeUrl == null ? null : '${_resolvedUrl ?? serverUrl}$relativeUrl';
+
   AppScreen screen = AppScreen.loading;
   bool connected = false;
   bool connecting = false;
@@ -96,6 +103,13 @@ class GameConnection extends ChangeNotifier {
   RoundStarted? currentRound;
   bool roundAnswered = false;
   bool paused = false;
+
+  /// V2, section 12.7 — un joker par joueur et par partie complète, optimiste par défaut (corrigé
+  /// dès JoinGame/EtatCourant/reconnexion). jokerIndiceActuel : indice obtenu pour LE ROUND EN
+  /// COURS (soit via [utiliserJoker], soit déjà présent dans currentRound.jokerIndice après une
+  /// reconnexion) — remis à null à chaque nouveau round.
+  bool jokerDisponible = true;
+  JokerIndice? jokerIndiceActuel;
 
   RoundEnded? lastRoundResult;
   ScoreUpdate? scoreUpdate;
@@ -338,6 +352,7 @@ class GameConnection extends ChangeNotifier {
       final etat = EtatCourantConnexion.fromJson(data);
       score = etat.score;
       teamId = etat.teamId;
+      jokerDisponible = etat.jokerDisponible;
       appliquerEtatCourant(etat.etatCourant, actualiserEcran: false);
       notifyListeners();
     });
@@ -386,6 +401,10 @@ class GameConnection extends ChangeNotifier {
       final data = args![0] as Map<String, dynamic>;
       currentRound = RoundStarted.fromJson(data);
       roundAnswered = false;
+      // V2, section 12.7 : null sur un round fraîchement diffusé (currentRound.jokerIndice l'est
+      // toujours ici) — la lecture depuis l'objet plutôt qu'un null en dur garde un seul point de
+      // vérité avec la branche reconnexion d'appliquerEtatCourant.
+      jokerIndiceActuel = currentRound!.jokerIndice;
       lastRoundResult = null;
       errorMessage = null;
       screen = AppScreen.round;
@@ -448,6 +467,8 @@ class GameConnection extends ChangeNotifier {
       serieIntro = null;
       currentRound = null;
       roundAnswered = false;
+      jokerDisponible = true;
+      jokerIndiceActuel = null;
       lastRoundResult = null;
       scoreUpdate = null;
       finalScores = null;
@@ -639,6 +660,7 @@ class GameConnection extends ChangeNotifier {
       score = joinResult.score;
       teamId = joinResult.teamId;
       teams = joinResult.teams;
+      jokerDisponible = joinResult.jokerDisponible;
       await _prefs?.setString(_prefsNom, pseudo);
       await _prefs?.setString(_prefsGameCode, code);
 
@@ -680,6 +702,9 @@ class GameConnection extends ChangeNotifier {
       case PhaseJoueur.roundClassique:
         currentRound = etat.round;
         roundAnswered = etat.dejaRepondu;
+        // V2, section 12.7 : non null seulement si ce joueur avait déjà utilisé son joker sur ce
+        // round avant la coupure — rejoue alors le même indice plutôt qu'un nouveau tirage.
+        jokerIndiceActuel = etat.round?.jokerIndice;
         lastRoundResult = null;
         screen = AppScreen.round;
       case PhaseJoueur.bonusMise:
@@ -811,6 +836,24 @@ class GameConnection extends ChangeNotifier {
       await _hub?.invoke('SubmitAnswer', args: [
         {if (currentRound != null) 'roundId': currentRound!.roundId, 'reponse': reponse}
       ]);
+    } catch (e) {
+      errorMessage = 'Erreur : ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  /// V2, section 12.7 — un joker par joueur et par partie complète, round classique uniquement
+  /// (jamais en bonus, voir AnswerPhaseScreen qui n'affiche le bouton que côté classique). Un refus
+  /// serveur (déjà répondu/déjà utilisé/en pause/round périmé) reste une HubException : jokerDisponible
+  /// n'est mis à jour qu'en cas de succès, pour ne pas rouvrir le bouton sur un état qui restera refusé.
+  Future<void> utiliserJoker() async {
+    if (!jokerDisponible || roundAnswered || paused || currentRound == null) return;
+
+    try {
+      final result = await _hub!.invoke('UtiliserJoker', args: [currentRound!.roundId]);
+      jokerIndiceActuel = JokerIndice.fromJson(result as Map<String, dynamic>);
+      jokerDisponible = false;
+      notifyListeners();
     } catch (e) {
       errorMessage = 'Erreur : ${e.toString()}';
       notifyListeners();

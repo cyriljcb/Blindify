@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Blindify.Tests.Hubs;
 
@@ -19,17 +21,27 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
 
     public GameHubTestFactory()
     {
+        // t5 : seul morceau NON "disney" du jeu de test (les 4 autres forcent Cible.Film, jamais
+        // Titre/Auteur — voir RoundService.ChoisirCible) — nécessaire pour tester le joker en cible
+        // Titre/Auteur (ex. GameHubJokerIntegrationTests, pochette floutée). Tag "test-cover" unique
+        // pour le sélectionner de façon déterministe via ThemesVivier plutôt que de dépendre du tirage
+        // aléatoire du catalogue entier.
         File.WriteAllText(TracksPath, """
             [
               { "id": "t1", "title": "Under the Sea", "artist": "Samuel E. Wright", "filePath": "audio/t1.mp3", "genres": ["disney"], "tags": [], "trapTextArtist": "Faux Artiste Test" },
               { "id": "t2", "title": "Circle of Life", "artist": "Elton John", "filePath": "audio/t2.mp3", "genres": ["disney"], "tags": [] },
               { "id": "t3", "title": "Let It Go", "artist": "Idina Menzel", "filePath": "audio/t3.mp3", "genres": ["disney"], "tags": [] },
-              { "id": "t4", "title": "Hakuna Matata", "artist": "Nathan Lane", "filePath": "audio/t4.mp3", "genres": ["disney"], "tags": [] }
+              { "id": "t4", "title": "Hakuna Matata", "artist": "Nathan Lane", "filePath": "audio/t4.mp3", "genres": ["disney"], "tags": [] },
+              { "id": "t5", "title": "Bohemian Rhapsody", "artist": "Queen", "filePath": "audio/t5.mp3", "coverPath": "covers/t5.jpg", "genres": [], "tags": ["test-cover"] }
             ]
             """);
 
         Directory.CreateDirectory(Path.Combine(RootPath, "audio"));
         File.WriteAllBytes(Path.Combine(RootPath, "audio", "t1.mp3"), [0x00, 0x01, 0x02]);
+
+        Directory.CreateDirectory(Path.Combine(RootPath, "covers"));
+        using (var image = new Image<Rgba32>(4, 4))
+            image.SaveAsJpeg(Path.Combine(RootPath, "covers", "t5.jpg"));
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

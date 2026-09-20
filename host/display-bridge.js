@@ -86,6 +86,12 @@ export function resetPlayerAnswered() {
   sendToDisplay({ type: "player-answered-reset" });
 }
 
+// V2, section 12.7 — annonce transitoire "X sort son joker" sur l'écran public, jamais l'effet ni
+// la cible révélée (voir JokerUtiliseDto côté backend : {playerId} seul).
+export function sendJokerUtilise({ playerId }) {
+  sendToDisplay({ type: "joker-utilise", playerId });
+}
+
 // onStartRoundRequested : relaie le clic du bouton "Lancer" de l'écran public (retour utilisateur :
 // éviter le switch de fenêtre) vers l'orchestration de main.js.
 export function initDisplayBridge(state, { onStartRoundRequested }) {

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Blindify.Api.Contracts;
+using Blindify.Api.Jokers;
 using Blindify.Application.Awards;
 using Blindify.Application.Bonus;
 using Blindify.Application.Rounds;
@@ -9,6 +10,7 @@ using Blindify.Application.Sessions;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
 using Blindify.Domain.Enums;
+using Blindify.Domain.Jokers;
 using Blindify.Infrastructure.Flags;
 using Blindify.Infrastructure.Stats;
 using Blindify.Infrastructure.Tracks;
@@ -31,6 +33,7 @@ public class GameHub(
     ITracksRepository tracksRepository,
     IStatsRepository statsRepository,
     IFlagsRepository flagsRepository,
+    IJokerCoverTokenStore jokerCoverTokenStore,
     RoundTimerCoordinator timerCoordinator,
     BonusTimerCoordinator bonusTimerCoordinator,
     IConfiguration configuration) : Hub
@@ -485,7 +488,11 @@ public class GameHub(
             session.EnPause = false;
             session.PauseDemarreeA = null;
 
-            foreach (var player in session.Players) player.Score = 0;
+            foreach (var player in session.Players)
+            {
+                player.Score = 0;
+                player.JokerUtilise = false; // V2, section 12.7 — un joker par partie complète
+            }
         }
 
         await Clients.Group(session.Id).SendAsync("GameRestarted");
@@ -539,7 +546,7 @@ public class GameHub(
         else
             await Clients.OthersInGroup(code).SendAsync("PlayerJoined", new PlayerJoinedDto(joueur.PlayerId, joueur.Nom));
 
-        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs, etatCourant);
+        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs, etatCourant, !joueur.JokerUtilise);
     }
 
     /// <summary>Rejoint (ou change) d'équipe — autorisé à tout moment, pas seulement au lobby, pour
@@ -594,6 +601,43 @@ public class GameHub(
 
         return new RoundAnswerResultDto(reponse.EstCorrecte, reponse.Points, joueur.Score);
     }
+
+    /// <summary>V2, section 12.7 — un joker par joueur et par partie complète, round classique
+    /// uniquement (jamais en question bonus, pas de méthode équivalente côté BonusRoundService).
+    /// Toutes les conditions de refus sont vérifiées dans RoundService.UtiliserJoker (pause, roundId
+    /// périmé, déjà répondu, déjà utilisé) : null se traduit ici en HubException, ce contrat n'ayant
+    /// pas de DTO de résultat avec indicateur d'échec comme SubmitAnswer.</summary>
+    public async Task<JokerIndiceDto> UtiliserJoker(Guid roundId)
+    {
+        var session = ResoudreSession();
+        JokerIndice? indice;
+        Player joueur;
+        Round round;
+        Track track;
+
+        lock (session.Lock)
+        {
+            joueur = ResoudrePlayer(session);
+            round = session.RoundCourant() ?? throw new HubException("Aucun round en cours.");
+            track = tracksRepository.GetById(round.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
+            indice = roundService.UtiliserJoker(session, round, roundId, track, joueur.PlayerId);
+        }
+
+        if (indice is null) throw new HubException("Joker indisponible pour ce round.");
+
+        // Cover floutée uniquement pour TapeReponse + Titre/Auteur (voir table de l'artéfact) — jamais
+        // pour Film (la cover donnerait la réponse) ni Annee. Le jeton est ajouté après coup : il
+        // dépend d'un service HTTP, hors de portée de JokerService (pur, Blindify.Application).
+        if (round.Mode == RoundMode.TapeReponse && round.Cible is RoundCible.Titre or RoundCible.Auteur)
+            indice.CoverToken = jokerCoverTokenStore.Emettre(track.Id);
+
+        await Clients.Group(session.Id).SendAsync("JokerUtilise", new JokerUtiliseDto(joueur.PlayerId));
+        return ConstruireJokerIndiceDto(indice);
+    }
+
+    private static JokerIndiceDto ConstruireJokerIndiceDto(JokerIndice indice) => new(
+        indice.OptionsRetirees, indice.TuilesRestantes, indice.Structure, indice.Decennie,
+        indice.CoverToken is null ? null : $"/api/joker/cover/{indice.CoverToken}");
 
     public bool SelectStake(SelectStakeRequestDto request)
     {
@@ -672,7 +716,7 @@ public class GameHub(
                 EtatCourantJoueurDto? etatCourant;
                 lock (session.Lock) { etatCourant = ConstruireEtatCourantJoueur(session, playerId); }
 
-                await Clients.Caller.SendAsync("EtatCourant", new EtatCourantConnexionDto(joueur.Score, joueur.TeamId, etatCourant));
+                await Clients.Caller.SendAsync("EtatCourant", new EtatCourantConnexionDto(joueur.Score, joueur.TeamId, etatCourant, !joueur.JokerUtilise));
                 await Clients.OthersInGroup(code).SendAsync("PlayerReconnected", new PlayerConnectionChangedDto(playerId, true));
             }
         }
@@ -938,7 +982,12 @@ public class GameHub(
                     var qcmOptions = QcmOptionsDepuisRoundOptions(round.Options, round.Cible, tracksRepository);
                     var anneeOptions = round.AnneeOptions?.Select(a => a.ToString()).ToList();
                     var dejaRepondu = round.Reponses.Any(r => r.PlayerId == playerId);
-                    var dto = new RoundStartedForPlayersDto(round.Mode, round.Cible, round.Id, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions, (int)Math.Max(0, ecouleMs), anneeOptions);
+                    // V2, section 12.7 : rejoue le MÊME indice si ce joueur avait déjà utilisé son
+                    // joker sur ce round avant la coupure — jamais un nouveau tirage à la reconnexion.
+                    var jokerIndice = round.JokerIndicesParJoueur.TryGetValue(playerId, out var indiceExistant)
+                        ? ConstruireJokerIndiceDto(indiceExistant)
+                        : null;
+                    var dto = new RoundStartedForPlayersDto(round.Mode, round.Cible, round.Id, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions, (int)Math.Max(0, ecouleMs), anneeOptions, jokerIndice);
                     return new EtatCourantJoueurDto(PhaseJoueur.RoundClassique, session.EnPause, dejaRepondu, dto, null, null);
                 }
             }
