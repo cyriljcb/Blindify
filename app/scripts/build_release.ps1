@@ -1,4 +1,4 @@
-# Build de l'APK Android + déploiement vers host/ (V2 — remplace la procédure manuelle
+﻿# Build de l'APK Android + déploiement vers host/ (V2 — remplace la procédure manuelle
 # copier-coller documentée jusqu'ici dans docs/architecture.md "Mettre à jour l'app Android sans
 # câble"). Lit version/buildNumber directement depuis pubspec.yaml plutôt que de les redemander,
 # pour ne plus jamais désynchroniser host/apk_version.json du build réellement copié (retour
@@ -37,7 +37,7 @@ if (-not (Test-Path $apkSource)) { throw "APK introuvable après build : $apkSou
 Copy-Item -Path $apkSource -Destination (Join-Path $hostDir "blindify.apk") -Force
 
 $versionJson = @{ versionName = $versionName; buildNumber = $buildNumber } | ConvertTo-Json -Compress
-Set-Content -Path (Join-Path $hostDir "apk_version.json") -Value $versionJson -Encoding utf8NoBOM
+Set-Content -Path (Join-Path $hostDir "apk_version.json") -Value $versionJson -Encoding ascii
 
 Write-Host "OK — host/blindify.apk et host/apk_version.json à jour ($versionName+$buildNumber)."
 Write-Host "Rappel : ni blindify.apk ni apk_version.json ne sont commités (état de déploiement, voir .gitignore)."
