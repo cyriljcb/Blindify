@@ -48,6 +48,21 @@ description: Procédure de déploiement de Blindify sur le Raspberry Pi de produ
 
 `AtomicJsonFile.Write` (`backend/src/Blindify.Infrastructure/Persistence/`) utilise donc `File.Copy` + `File.Delete` du temporaire, jamais `File.Move`, pour tout fichier qui finit dans `data/` et est monté individuellement. **Ne jamais revenir à `File.Move`/rename pour ces fichiers** — ce bug a fait planter `StartRound` en production dès le premier round (`IncrementPlayCount` → `AtomicJsonFile.Write` → EBUSY) avant d'être découvert et corrigé via une vraie partie test.
 
+## Piège connu — SixLabors.ImageSharp et `dotnet publish -c Release` (incident du 2026-09-20)
+
+À partir de la version 4.0.0, le paquet `SixLabors.ImageSharp` embarque une tâche MSBuild
+(`SixLabors.Licensing`) qui **échoue en erreur dure** sans clé de licence enregistrée sur
+sixlabors.com — mais seulement en configuration Release (`ContinueOnError` dépend de
+`$(Configuration)` dans les `.targets` du paquet). `dotnet build`/`dotnet test` en local (Debug) ne
+faisaient donc qu'avertir, alors que le `Dockerfile` du Pi (`dotnet publish -c Release`) plantait
+dès la première tentative de build de l'image — le bug n'était visible qu'au moment du déploiement,
+jamais en local. Corrigé en épinglant `SixLabors.ImageSharp` sur **3.1.12** (dernière version 3.x,
+avant l'introduction de cette tâche) dans `backend/src/Blindify.Api/Blindify.Api.csproj` — même
+licence (Six Labors Split), même conformité gratuite pour Blindify, juste sans le blocage. **Pour
+toute future dépendance NuGet touchant à des paquets avec un modèle de licence commercial/split** :
+valider un `dotnet publish -c Release` en local (pas seulement `dotnet build`/`dotnet test`) avant
+de pousser sur le Pi.
+
 ## Piège connu — scripts PowerShell et encodage
 
 Les `.ps1` du repo (ex. `app/scripts/build_release.ps1`) contiennent des accents et doivent avoir un **BOM UTF-8**, sinon Windows PowerShell 5.1 (le shell réellement utilisé ici, pas PowerShell Core) corrompt les caractères multi-octets et peut casser le parseur en plein milieu d'une chaîne. `-Encoding utf8NoBOM` n'existe QUE dans PowerShell Core — en 5.1, utiliser `ascii` (contenu pur ASCII, cas de `apk_version.json`) ou `UTF8` (ajoute un BOM, sans risque pour du JSON).
