@@ -40,7 +40,9 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
         File.WriteAllBytes(Path.Combine(RootPath, "audio", "t1.mp3"), [0x00, 0x01, 0x02]);
 
         Directory.CreateDirectory(Path.Combine(RootPath, "covers"));
-        using (var image = new Image<Rgba32>(4, 4))
+        // 200x200 plutôt qu'une taille minuscule : le flou gaussien du joker (rayon 40, voir Program.cs)
+        // exige une image nettement plus grande que le rayon, comme une vraie pochette (jamais 4x4 en pratique).
+        using (var image = new Image<Rgba32>(200, 200))
             image.SaveAsJpeg(Path.Combine(RootPath, "covers", "t5.jpg"));
     }
 

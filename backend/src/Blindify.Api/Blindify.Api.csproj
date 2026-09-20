@@ -7,10 +7,15 @@
 
   <ItemGroup>
     <!-- Pochette floutée du joker (V2, section 12.7), Program.cs "/api/joker/cover/{jeton}". Six Labors
-         Split License : gratuit sous Apache 2.0 pour un usage non commercial/individuel <1M$ de revenu
-         annuel (voir LICENSE du paquet) — Blindify qualifie, le warning de build à la restauration est
-         un simple rappel, pas un blocage. -->
-    <PackageReference Include="SixLabors.ImageSharp" Version="4.1.2" />
+         Split License (même texte en 3.x et 4.x) : gratuit pour un usage non commercial/individuel
+         <1M$ de revenu annuel (voir LICENSE du paquet) — Blindify qualifie. Épinglé sur 3.1.12 (dernière
+         version 3.x) plutôt que 4.x : à partir de 4.0.0 le paquet embarque une tâche MSBuild
+         (SixLabors.Licensing) qui échoue en BUILD RELEASE (pas juste un warning) sans clé de licence
+         payante enregistrée sur sixlabors.com — même en cas d'usage gratuit légitime. Découvert en
+         production : `dotnet build`/`dotnet test` (Debug) ne faisaient que avertir, mais
+         `dotnet publish -c Release` (utilisé par le Dockerfile) échouait dur. 3.1.12 n'a pas cette tâche
+         de validation, même licence, même conformité. -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
   </ItemGroup>
 
   <PropertyGroup>
