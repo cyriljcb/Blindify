@@ -5,6 +5,11 @@ namespace Blindify.Domain.Entities;
 /// <summary>Round classique — voir architecture.md section 6.</summary>
 public class Round
 {
+    /// <summary>Identité stable de CE round (V2, reconnexion) — envoyée aux clients dans RoundStarted et
+    /// reprise dans SubmitAnswer pour que le serveur ignore silencieusement une soumission tardive
+    /// arrivée après que le round suivant a déjà démarré (voir GameHub.SubmitAnswer).</summary>
+    public Guid Id { get; set; } = Guid.NewGuid();
+
     public required string TrackId { get; set; }
     public RoundMode Mode { get; set; }
 
@@ -19,4 +24,15 @@ public class Round
 
     /// <summary>Les 4 IDs de morceaux proposés (mode Qcm uniquement), générés au démarrage du round.</summary>
     public List<string>? QcmOptionTrackIds { get; set; }
+
+    /// <summary>Les options QCM réellement présentées (mode Qcm uniquement, V2) — voir RoundOption.
+    /// Construit une seule fois au démarrage du round (GameHub.StartRound), jamais recalculé
+    /// (contrairement à QcmOptionTrackIds qui ne porte que les IDs) : la reconnexion et le calcul des
+    /// statistiques de réponse s'appuient dessus plutôt que de reconstruire les feintes à la volée.</summary>
+    public List<RoundOption>? Options { get; set; }
+
+    /// <summary>Les 4 années proposées (cible Année + mode Qcm uniquement, V2 section 12.5), triées,
+    /// générées au démarrage du round — voir AnneeQcmGenerator. Distinct de Options : ce ne sont pas
+    /// des morceaux (pas de TrackId/feinte/piège), juste des années.</summary>
+    public List<int>? AnneeOptions { get; set; }
 }

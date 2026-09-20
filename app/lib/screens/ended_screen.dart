@@ -46,6 +46,12 @@ class _EndedScreenState extends State<EndedScreen> {
     }
 
     final joueurs = [...scores.joueurs]..sort((a, b) => b.score.compareTo(a.score));
+    // Titre de repli, décerné à qui n'a rien gagné d'autre — affiché en dernier, pas mis en avant
+    // au même titre qu'un vrai fait d'armes (voir TitresService, section 12.6).
+    final titresTries = [
+      ...game.finalTitres.where((t) => t.code != 'FIDELE'),
+      ...game.finalTitres.where((t) => t.code == 'FIDELE'),
+    ];
 
     return Stack(
       alignment: Alignment.topCenter,
@@ -67,9 +73,52 @@ class _EndedScreenState extends State<EndedScreen> {
               const SizedBox(height: 16),
               Expanded(
                 child: ListView.separated(
-                  itemCount: joueurs.length,
+                  itemCount: joueurs.length + (titresTries.isEmpty ? 0 : titresTries.length + 1),
                   separatorBuilder: (context, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
+                    if (index >= joueurs.length) {
+                      final indexTitre = index - joueurs.length;
+                      if (indexTitre == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text('🎖️ Titres de la partie', style: Theme.of(context).textTheme.titleMedium),
+                        ).animate(delay: Duration(milliseconds: 120 * (joueurs.length + 1))).fadeIn(duration: BlindifyMotion.normal);
+                      }
+
+                      final titre = titresTries[indexTitre - 1];
+                      final estAMoi = game.playerId != null && titre.playerIds.contains(game.playerId);
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: estAMoi ? BlindifyColors.mustard.withValues(alpha: 0.15) : BlindifyColors.surfaceAlt,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: estAMoi ? BlindifyColors.mustard : BlindifyColors.ink, width: estAMoi ? 3 : 1),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(titre.libelle, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                            const SizedBox(height: 2),
+                            Text(titre.description, style: Theme.of(context).textTheme.bodySmall),
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: titre.playerIds
+                                  .map((id) => joueurs.where((j) => j.playerId == id).map((j) => j.nom).firstOrNull ?? id)
+                                  .map((nom) => Chip(
+                                        label: Text(nom, style: const TextStyle(fontSize: 12)),
+                                        visualDensity: VisualDensity.compact,
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ))
+                                  .toList(),
+                            ),
+                          ],
+                        ),
+                      ).animate(delay: Duration(milliseconds: 120 * (joueurs.length + 1 + indexTitre))).fadeIn(duration: BlindifyMotion.normal).slideY(begin: 0.2, curve: BlindifyMotion.pop);
+                    }
+
                     final j = joueurs[index];
                     final estTop3 = index < 3;
                     final couleurMedaille = switch (index) {

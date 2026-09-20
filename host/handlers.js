@@ -8,6 +8,15 @@
 
 import { libelleSerie, libelleTheme, lettreSerie } from "./shared/format.js";
 
+// Signalement en direct (V2, section 12.4) — alimente state.morceauxJoues depuis RoundEnded/BonusResult,
+// jamais avant le reveal. Dédoublonné par trackId (peu probable qu'un même morceau repasse dans la même
+// partie, mais SelectionnerMorceaux ne l'exclut pas explicitement pour la question bonus d'une série
+// déjà rejouée avec RejouerPartie).
+function ajouterMorceauJoue(state, trackId, titre, artiste) {
+  if (state.morceauxJoues.some((m) => m.trackId === trackId)) return;
+  state.morceauxJoues.push({ trackId, titre, artiste });
+}
+
 export function onPlayerJoined(state, { playerId, nom }) {
   state.players.push({ playerId, nom, estConnecte: true });
 }
@@ -68,6 +77,7 @@ export function onScoreUpdate(state, dto) {
 
 export function onRoundEnded(state, payload) {
   state.dernierResultats = payload.resultats;
+  ajouterMorceauJoue(state, payload.trackId, payload.title, payload.artist);
   state.currentScreen = "round-ended";
   state.currentDisplayScreen = "round-ended";
   state.currentRevealInfo = {
@@ -96,7 +106,11 @@ export function onLeaderboardShown(state, dto) {
 export function onGameEnded(state, dto) {
   state.currentScreen = "ended";
   state.currentDisplayScreen = "ended";
-  state.currentScoresInfo = dto;
+  state.currentScoresInfo = dto.score;
+  state.currentTitresInfo = dto.titres ?? [];
+  // Le défilement séquentiel démarre depuis main.js (case "GameEnded"), pas ici : ce handler ne
+  // fait que poser les données, la mise en scène (timers) reste dans l'orchestrateur.
+  state.titreIndexAffiche = -1;
 }
 
 export function onGameRestarted(state) {
@@ -114,6 +128,9 @@ export function onGameRestarted(state) {
   state.currentRoundInfo = {};
   state.currentRevealInfo = {};
   state.currentScoresInfo = null;
+  state.currentTitresInfo = [];
+  state.titreIndexAffiche = -1;
+  state.morceauxJoues = [];
 }
 
 export function onBonusStakeOptions(state, payload) {
@@ -150,6 +167,7 @@ export function onBonusResult(state, payload) {
   // Capturé AVANT l'incrément de serieCouranteIndex plus bas : ce résultat concerne la série qui
   // vient de se terminer, pas la suivante.
   const labelSerieTerminee = libelleSerie(state.serieCouranteIndex, state.nombreSeriesTotal, state.tagsParSerieCourante);
+  ajouterMorceauJoue(state, payload.trackId, payload.title, payload.artist);
 
   // Un seul point par série (pas un par round) : retour utilisateur — la question bonus marque la
   // fin de la série, c'est le seul moment où on capture le score sur le graphique.

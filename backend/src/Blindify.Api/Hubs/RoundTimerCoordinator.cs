@@ -2,8 +2,10 @@ using System.Collections.Concurrent;
 using Blindify.Api.Contracts;
 using Blindify.Application.Rounds;
 using Blindify.Application.Sessions;
+using Blindify.Application.Stats;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
+using Blindify.Infrastructure.Stats;
 using Blindify.Infrastructure.Tracks;
 using Microsoft.AspNetCore.SignalR;
 
@@ -18,7 +20,8 @@ public class RoundTimerCoordinator(
     IHubContext<GameHub> hubContext,
     IGameSessionStore sessionStore,
     IRoundService roundService,
-    ITracksRepository tracksRepository)
+    ITracksRepository tracksRepository,
+    IStatsRepository statsRepository)
 {
     private const int IntervalleVerificationMs = 250;
 
@@ -91,18 +94,23 @@ public class RoundTimerCoordinator(
     {
         var track = tracksRepository.GetById(round.TrackId);
 
+        // V2 (socle statistiques) — TerminerParTimeout vient de tourner (voir SurveillerAsync
+        // ci-dessus), Reponses contient donc déjà les entrées synthétiques EstAbsent. Ne tient pas
+        // compte d'un ValidateAnswerManually ultérieur — limitation assumée, voir RoundStatsAggregator.
+        statsRepository.EnregistrerResultatsRound(RoundStatsAggregator.PourRoundClassique(round));
+
         var resultats = session.Players
             .Select(p =>
             {
                 var reponse = round.Reponses.FirstOrDefault(r => r.PlayerId == p.PlayerId);
-                return new RoundResultEntryDto(p.PlayerId, reponse?.Reponse, reponse?.EstCorrecte, reponse?.Points ?? 0);
+                return new RoundResultEntryDto(p.PlayerId, reponse?.Reponse, reponse?.EstCorrecte, reponse?.Points ?? 0, reponse?.EcartAnnee);
             })
             .ToList();
 
         var film = track is not null ? FilmNameResolver.Resoudre(track) : "?";
 
         await hubContext.Clients.Group(session.Id)
-            .SendAsync("RoundEnded", new RoundEndedDto(round.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, round.Cible, film, resultats));
+            .SendAsync("RoundEnded", new RoundEndedDto(round.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, round.Cible, film, resultats, track?.Year));
 
         await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
     }

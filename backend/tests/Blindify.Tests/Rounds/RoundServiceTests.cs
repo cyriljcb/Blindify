@@ -10,7 +10,7 @@ namespace Blindify.Tests.Rounds;
 
 public class RoundServiceTests
 {
-    private readonly RoundService _service = new(new ScoringService(), new QcmGenerator(), new AnswerMatcher());
+    private readonly RoundService _service = new(new ScoringService(), new QcmGenerator(), new AnswerMatcher(), new AnneeQcmGenerator());
 
     private static Track NouveauTrack(string id, List<string>? genres = null, List<string>? tags = null) => new()
     {
@@ -204,7 +204,7 @@ public class RoundServiceTests
         var track = NouveauTrack("a");
         var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "a", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "a", round.DebutRound!.Value);
 
         Assert.NotNull(reponse);
         Assert.True(reponse!.EstCorrecte);
@@ -220,7 +220,7 @@ public class RoundServiceTests
         var track = NouveauTrack("a");
         var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "b", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "b", round.DebutRound!.Value);
 
         Assert.False(reponse!.EstCorrecte);
         Assert.Equal(-50, reponse.Points);
@@ -241,7 +241,7 @@ public class RoundServiceTests
         var catalogue = new[] { correct, doublon }.ToDictionary(t => t.Id);
         var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), correct, "p1", "b", round.DebutRound!.Value, id => catalogue.GetValueOrDefault(id));
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), correct, "p1", round.Id, "b", round.DebutRound!.Value, id => catalogue.GetValueOrDefault(id));
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -256,7 +256,7 @@ public class RoundServiceTests
         var catalogue = new[] { correct, autreAuteur }.ToDictionary(t => t.Id);
         var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), correct, "p1", "b", round.DebutRound!.Value, id => catalogue.GetValueOrDefault(id));
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), correct, "p1", round.Id, "b", round.DebutRound!.Value, id => catalogue.GetValueOrDefault(id));
 
         Assert.False(reponse!.EstCorrecte);
     }
@@ -272,7 +272,7 @@ public class RoundServiceTests
         var correct = new Track { Id = "a", Title = "Stargazing", Artist = "Myles Smith", FilePath = "audio/a.mp3" };
         var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), correct, "p1", "b", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), correct, "p1", round.Id, "b", round.DebutRound!.Value);
 
         Assert.False(reponse!.EstCorrecte);
     }
@@ -285,7 +285,7 @@ public class RoundServiceTests
         var track = NouveauTrack("a"); // Title = "Titre a"
         var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, DebutRound = DateTimeOffset.UtcNow };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "t", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "t", round.DebutRound!.Value);
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -298,7 +298,7 @@ public class RoundServiceTests
         var track = NouveauTrack("a");
         var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, DebutRound = DateTimeOffset.UtcNow };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "T", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "T", round.DebutRound!.Value);
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -311,7 +311,7 @@ public class RoundServiceTests
         var track = new Track { Id = "a", Title = "Étoile", Artist = "Artiste", FilePath = "audio/a.mp3" };
         var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, DebutRound = DateTimeOffset.UtcNow };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "e", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "e", round.DebutRound!.Value);
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -324,7 +324,7 @@ public class RoundServiceTests
         var track = NouveauTrack("a");
         var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, DebutRound = DateTimeOffset.UtcNow };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "x", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "x", round.DebutRound!.Value);
 
         Assert.False(reponse!.EstCorrecte);
     }
@@ -484,11 +484,11 @@ public class RoundServiceTests
         };
         var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Film, DebutRound = DateTimeOffset.UtcNow };
 
-        var mauvaiseReponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Un rêve est un souhait", round.DebutRound!.Value);
+        var mauvaiseReponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "Un rêve est un souhait", round.DebutRound!.Value);
         Assert.False(mauvaiseReponse!.EstCorrecte);
 
         round.Reponses.Clear();
-        var bonneReponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Cendrillon", round.DebutRound!.Value);
+        var bonneReponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "Cendrillon", round.DebutRound!.Value);
         Assert.True(bonneReponse!.EstCorrecte);
     }
 
@@ -500,7 +500,7 @@ public class RoundServiceTests
         var track = new Track { Id = "a", Title = "Sweat (A La La La La Long)", Artist = "Inner Circle", FilePath = "audio/a.mp3" };
         var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Sweat", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "Sweat", round.DebutRound!.Value);
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -513,7 +513,7 @@ public class RoundServiceTests
         var track = new Track { Id = "a", Title = "Sweat (A La La La La Long)", Artist = "Inner Circle", FilePath = "audio/a.mp3" };
         var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Titre, DebutRound = DateTimeOffset.UtcNow };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Sweat (A La La La La Long)", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "Sweat (A La La La La Long)", round.DebutRound!.Value);
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -526,7 +526,7 @@ public class RoundServiceTests
         var track = new Track { Id = "a", Title = "Gone Gone Gone", Artist = "David Guetta, Tones And I, Teddy Swims", FilePath = "audio/a.mp3" };
         var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Teddy Swims", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "Teddy Swims", round.DebutRound!.Value);
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -539,7 +539,7 @@ public class RoundServiceTests
         var track = new Track { Id = "a", Title = "Gone Gone Gone", Artist = "David Guetta, Tones And I, Teddy Swims", FilePath = "audio/a.mp3" };
         var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "Gone Gone Gone", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "Gone Gone Gone", round.DebutRound!.Value);
 
         Assert.False(reponse!.EstCorrecte);
     }
@@ -552,7 +552,7 @@ public class RoundServiceTests
         var track = new Track { Id = "a", Title = "Gone Gone Gone", Artist = "David Guetta, Tones And I, Teddy Swims", FilePath = "audio/a.mp3" };
         var round = new Round { TrackId = "a", Mode = RoundMode.PremiereLettre, Cible = RoundCible.Auteur, DebutRound = DateTimeOffset.UtcNow };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "t", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "t", round.DebutRound!.Value);
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -565,8 +565,8 @@ public class RoundServiceTests
         var track = NouveauTrack("a");
         var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
 
-        _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "a", round.DebutRound!.Value);
-        var deuxieme = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "b", round.DebutRound!.Value);
+        _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "a", round.DebutRound!.Value);
+        var deuxieme = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "b", round.DebutRound!.Value);
 
         Assert.Null(deuxieme);
         Assert.Equal(100, joueur.Score);
@@ -581,7 +581,7 @@ public class RoundServiceTests
         var track = NouveauTrack("a");
         var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", "a", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "a", round.DebutRound!.Value);
 
         Assert.Null(reponse);
     }
@@ -596,7 +596,7 @@ public class RoundServiceTests
         var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
         var config = NouveauConfig();
 
-        _service.SoumettreReponse(session, round, config, track, "p1", "a", round.DebutRound!.Value);
+        _service.SoumettreReponse(session, round, config, track, "p1", round.Id, "a", round.DebutRound!.Value);
         _service.TerminerParTimeout(session, round, config);
 
         Assert.Equal(100, alice.Score);
@@ -617,7 +617,7 @@ public class RoundServiceTests
         var config = NouveauConfig();
 
         // Réponse jugée fausse automatiquement (ex. faute de frappe hors tolérance) : -50.
-        _service.SoumettreReponse(session, round, config, track, "p1", "Reponse hors tolerance", round.DebutRound!.Value);
+        _service.SoumettreReponse(session, round, config, track, "p1", round.Id, "Reponse hors tolerance", round.DebutRound!.Value);
         Assert.Equal(-50, joueur.Score);
 
         var revalidee = _service.ValiderManuellement(session, round, config, "p1", estCorrecte: true);
@@ -638,5 +638,215 @@ public class RoundServiceTests
         var resultat = _service.ValiderManuellement(session, round, NouveauConfig(), "p1", estCorrecte: true);
 
         Assert.Null(resultat);
+    }
+
+    // ----- V2 (socle statistiques) : RoundOption / RoundAnswer enrichis -----
+
+    [Fact]
+    public void SoumettreReponse_ModeQcm_RenseigneOptionChoisieDepuisRoundOptions()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round
+        {
+            TrackId = "a",
+            Mode = RoundMode.Qcm,
+            DebutRound = DateTimeOffset.UtcNow,
+            QcmOptionTrackIds = ["a", "b", "c", "d"],
+            Options =
+            [
+                new RoundOption { TrackId = "a", TexteAffiche = "Titre a", EstFeinte = false, EstPiege = false },
+                new RoundOption { TrackId = "b", TexteAffiche = "Titre b", EstFeinte = true, EstPiege = false },
+                new RoundOption { TrackId = "c", TexteAffiche = "Titre c", EstFeinte = false, EstPiege = true },
+                new RoundOption { TrackId = "d", TexteAffiche = "Titre d", EstFeinte = false, EstPiege = false },
+            ],
+        };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "c", round.DebutRound!.Value);
+
+        Assert.Equal("c", reponse!.OptionChoisieTrackId);
+        Assert.False(reponse.OptionChoisieEstFeinte);
+        Assert.True(reponse.OptionChoisieEstPiege);
+        Assert.True(reponse.TempsReponseMs >= 0);
+    }
+
+    [Fact]
+    public void SoumettreReponse_ModeTapeReponse_OptionChoisieResteNull()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "Titre a", round.DebutRound!.Value);
+
+        Assert.Null(reponse!.OptionChoisieTrackId);
+        Assert.False(reponse.OptionChoisieEstFeinte);
+        Assert.False(reponse.OptionChoisieEstPiege);
+    }
+
+    [Fact]
+    public void TerminerParTimeout_MarqueLesEntreesSynthetiquesCommeAbsentes()
+    {
+        var alice = new Player { PlayerId = "p1", Nom = "Alice" };
+        var bob = new Player { PlayerId = "p2", Nom = "Bob" };
+        var session = NouvelleSession(alice, bob);
+        var track = NouveauTrack("a");
+        var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, DebutRound = DateTimeOffset.UtcNow, QcmOptionTrackIds = ["a", "b", "c", "d"] };
+        var config = NouveauConfig();
+
+        _service.SoumettreReponse(session, round, config, track, "p1", round.Id, "a", round.DebutRound!.Value);
+        _service.TerminerParTimeout(session, round, config);
+
+        Assert.False(round.Reponses.Single(r => r.PlayerId == "p1").EstAbsent);
+        Assert.True(round.Reponses.Single(r => r.PlayerId == "p2").EstAbsent);
+    }
+
+    // ----- V2, section 12.5 : cible Année -----
+
+    [Fact]
+    public void DemarrerRound_MorceauSansAnnee_CibleAnneeNestJamaisTiree()
+    {
+        var track = NouveauTrack("a"); // Year non renseigné
+        var config = new GameConfig();
+
+        for (var i = 0; i < 50; i++)
+        {
+            var round = new Round { TrackId = track.Id, Mode = RoundMode.TapeReponse };
+            _service.DemarrerRound(round, track, [track], tags: [], config, DateTimeOffset.UtcNow);
+            Assert.NotEqual(RoundCible.Annee, round.Cible);
+        }
+    }
+
+    [Fact]
+    public void DemarrerRound_MorceauAvecAnnee_PoidsAnneeAcentPourcent_ToujoursAnnee()
+    {
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var config = new GameConfig { PoidsCibleTitre = 0, PoidsCibleAuteur = 0, PoidsCibleAnnee = 1 };
+
+        for (var i = 0; i < 20; i++)
+        {
+            var round = new Round { TrackId = track.Id, Mode = RoundMode.TapeReponse };
+            _service.DemarrerRound(round, track, [track], tags: [], config, DateTimeOffset.UtcNow);
+            Assert.Equal(RoundCible.Annee, round.Cible);
+        }
+    }
+
+    [Fact]
+    public void DemarrerRound_MorceauDisney_ResteFilmMemeAvecAnneeConnue()
+    {
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990, Tags = ["disney"] };
+        var config = new GameConfig { PoidsCibleAnnee = 100 };
+        var round = new Round { TrackId = track.Id, Mode = RoundMode.TapeReponse };
+
+        _service.DemarrerRound(round, track, [track], tags: [], config, DateTimeOffset.UtcNow);
+
+        Assert.Equal(RoundCible.Film, round.Cible);
+    }
+
+    [Fact]
+    public void DemarrerRound_CibleAnneeModePremiereLettre_BasculeVersTapeReponse()
+    {
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var config = new GameConfig { PoidsCibleTitre = 0, PoidsCibleAuteur = 0, PoidsCibleAnnee = 1 };
+        var round = new Round { TrackId = track.Id, Mode = RoundMode.PremiereLettre };
+
+        _service.DemarrerRound(round, track, [track], tags: [], config, DateTimeOffset.UtcNow);
+
+        Assert.Equal(RoundCible.Annee, round.Cible);
+        Assert.Equal(RoundMode.TapeReponse, round.Mode);
+    }
+
+    [Fact]
+    public void DemarrerRound_CibleAnneeModeQcm_GenereQuatreAnneesDontLaBonne()
+    {
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var config = new GameConfig { PoidsCibleTitre = 0, PoidsCibleAuteur = 0, PoidsCibleAnnee = 1 };
+        var round = new Round { TrackId = track.Id, Mode = RoundMode.Qcm };
+
+        _service.DemarrerRound(round, track, [track], tags: [], config, DateTimeOffset.UtcNow);
+
+        Assert.Equal(RoundCible.Annee, round.Cible);
+        Assert.NotNull(round.AnneeOptions);
+        Assert.Equal(4, round.AnneeOptions!.Count);
+        Assert.Contains(1990, round.AnneeOptions);
+        Assert.Null(round.QcmOptionTrackIds); // pas d'options "morceau" pour une question Année
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAnnee_EcartNul_CreditePleinPointsEnJeu()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Annee, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "1990", round.DebutRound!.Value);
+
+        Assert.True(reponse!.EstCorrecte);
+        Assert.Equal(0, reponse.EcartAnnee);
+        Assert.Equal(100, reponse.Points);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAnnee_EcartDansLaTolerance_CreditePartiellement()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Annee, DebutRound = DateTimeOffset.UtcNow };
+        var config = NouveauConfig(); // ToleranceAnnee = 3 par défaut
+
+        // écart 1 sur pointsEnJeu=100 -> round(100 * (1 - 1/4)) = 75
+        var reponse = _service.SoumettreReponse(session, round, config, track, "p1", round.Id, "1991", round.DebutRound!.Value);
+
+        Assert.True(reponse!.EstCorrecte); // écart <= ToleranceAnnee
+        Assert.Equal(1, reponse.EcartAnnee);
+        Assert.Equal(75, reponse.Points);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAnnee_EcartAuDelaDeLaTolerance_PenaliteHabituelle()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Annee, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "1980", round.DebutRound!.Value);
+
+        Assert.False(reponse!.EstCorrecte);
+        Assert.Equal(10, reponse.EcartAnnee);
+        Assert.Equal(-50, reponse.Points); // pénalité habituelle : -round(100 * 0.5)
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAnnee_SaisieNonNumerique_EstMauvaiseReponseSansEcart()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var round = new Round { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Annee, DebutRound = DateTimeOffset.UtcNow };
+
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "pas un nombre", round.DebutRound!.Value);
+
+        Assert.False(reponse!.EstCorrecte);
+        Assert.Null(reponse.EcartAnnee);
+        Assert.Equal(-50, reponse.Points);
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAnneeModeQcm_CompareLeTexteDeLAnnee()
+    {
+        var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(joueur);
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var round = new Round { TrackId = "a", Mode = RoundMode.Qcm, Cible = RoundCible.Annee, DebutRound = DateTimeOffset.UtcNow, AnneeOptions = [1985, 1990, 1995, 2000] };
+
+        var bonneReponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "1990", round.DebutRound!.Value);
+
+        Assert.True(bonneReponse!.EstCorrecte);
+        Assert.Null(bonneReponse.OptionChoisieTrackId); // pas d'"option" RoundOption pour une année
     }
 }

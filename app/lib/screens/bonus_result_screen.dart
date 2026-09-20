@@ -72,7 +72,11 @@ class _BonusResultScreenState extends State<BonusResultScreen> {
               // Titre toujours au-dessus de l'artiste, quelle que soit la cible — même ordre que
               // l'écran public (host/shared/format.js:libelleReveal).
               Text(
-                result.cible == 'Film' ? result.film : result.title,
+                result.cible == 'Film'
+                    ? result.film
+                    : result.cible == 'Annee' && result.annee != null
+                        ? '${result.annee}'
+                        : result.title,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge,
               ).animate().fadeIn(delay: 150.ms, duration: BlindifyMotion.normal).slideY(begin: 0.3),
@@ -93,6 +97,16 @@ class _BonusResultScreenState extends State<BonusResultScreen> {
                 Text('Mise : ${monResultat.mise} pts', style: Theme.of(context).textTheme.bodySmall)
                     .animate()
                     .fadeIn(delay: 500.ms),
+                // Cible Année (V2, section 12.5) — voir RoundEndedScreen pour le même principe.
+                if (monResultat.ecartAnnee != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    monResultat.ecartAnnee == 0
+                        ? 'Année exacte !'
+                        : 'à ${monResultat.ecartAnnee} an${monResultat.ecartAnnee! > 1 ? 's' : ''} près',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ] else if (result.estCourse) ...[
                 const Icon(Icons.bolt_rounded, color: BlindifyColors.mustard, size: 48)
                     .animate()

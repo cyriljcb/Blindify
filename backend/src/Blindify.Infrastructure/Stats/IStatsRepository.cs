@@ -1,3 +1,5 @@
+using Blindify.Domain.Statistics;
+
 namespace Blindify.Infrastructure.Stats;
 
 /// <summary>
@@ -8,4 +10,10 @@ public interface IStatsRepository
 {
     int GetPlayCount(string trackId);
     void IncrementPlayCount(string trackId);
+
+    /// <summary>Fusionne (ajoute aux compteurs déjà accumulés, jamais un remplacement) le résultat
+    /// d'un round classique ou d'une question bonus (V2, socle statistiques de réponse) — voir
+    /// Blindify.Application.Stats.RoundStatsAggregator. Une seule écriture atomique par round, jamais
+    /// combinée avec IncrementPlayCount (compteur distinct, déjà écrit au démarrage du round).</summary>
+    void EnregistrerResultatsRound(RoundStatsUpdate update);
 }

@@ -18,4 +18,18 @@ public class ScoringService : IScoringService
         -(int)Math.Round(pointsEnJeu * config.PenaliteMauvaiseReponseRatio);
 
     public int PointsAbsenceReponse(SeriesConfig config) => config.PenaliteAbsenceReponse;
+
+    public bool EstPenaliteAbsenceEquitable(int penaliteAbsenceReponse, double penaliteMauvaiseReponseRatio, int pointsMin)
+    {
+        var seuil = -(0.75 * penaliteMauvaiseReponseRatio - 0.25) * pointsMin;
+        return penaliteAbsenceReponse > seuil;
+    }
+
+    public int PointsAnneeApproximative(int pointsEnJeu, int ecartAnnee, SeriesConfig config)
+    {
+        if (ecartAnnee == 0) return PointsBonneReponse(pointsEnJeu);
+        if (ecartAnnee <= config.ToleranceAnnee)
+            return (int)Math.Round(pointsEnJeu * (1 - (double)ecartAnnee / (config.ToleranceAnnee + 1)));
+        return PointsMauvaiseReponse(pointsEnJeu, config);
+    }
 }

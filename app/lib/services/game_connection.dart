@@ -10,13 +10,17 @@ import 'mdns_resolver.dart';
 import '../models/bonus_question_started.dart';
 import '../models/bonus_result.dart';
 import '../models/bonus_stake_options.dart';
+import '../models/etat_courant_connexion.dart';
 import '../models/etat_courant_joueur.dart';
 import '../models/join_result.dart';
+import '../models/morceau_joue.dart';
+import '../models/raison_signalement.dart';
 import '../models/round_ended.dart';
 import '../models/round_started.dart';
 import '../models/score_update.dart';
 import '../models/serie_annoncee.dart';
 import '../models/team.dart';
+import '../models/titre.dart';
 import 'update_checker.dart';
 
 enum AppScreen { loading, connect, join, lobby, serieIntro, round, roundEnded, bonusStake, bonusCourseIntro, bonusQuestion, bonusResult, ended }
@@ -98,6 +102,7 @@ class GameConnection extends ChangeNotifier {
   ScoreUpdate? leaderboard;
   bool showLeaderboard = false;
   ScoreUpdate? finalScores;
+  List<Titre> finalTitres = [];
 
   BonusStakeOptions? bonusStakeOptions;
   int? bonusPalierSelectionne;
@@ -115,6 +120,11 @@ class GameConnection extends ChangeNotifier {
   /// host web n'est jamais mémorisé en clair côté client.
   bool isAdmin = false;
   String? adminError;
+
+  /// Morceaux joués ET révélés dans la partie courante (V2, section 12.4) — alimenté depuis RoundEnded/
+  /// BonusResult, jamais avant le reveal (voir MorceauJoue). Vidé à GameRestarted (nouvelle manche).
+  final List<MorceauJoue> morceauxJoues = [];
+  String? flagError;
 
   /// Mise à jour APK détectée sur le serveur (voir services/update_checker.dart) — Android natif
   /// uniquement (web/iOS n'ont pas cette notion d'APK installé, voir apk_update.dart). Bannière
@@ -227,7 +237,16 @@ class GameConnection extends ChangeNotifier {
     // en arrière-plan, écoutant toujours ses handlers, sans jamais être arrêté.
     await _hub?.stop();
 
-    _hub = HubConnectionBuilder().withUrl('$resolvedUrl/hubs/game').withAutomaticReconnect().build();
+    // V2 — reconnexion automatique : dès que le code de partie est connu (pas au tout premier
+    // lancement, avant tout JoinGame), l'URL du hub porte ?code&playerId. SignalR réutilise cette
+    // même URL à chaque reconnexion transport (withAutomaticReconnect) : GameHub.OnConnectedAsync
+    // peut alors rattacher automatiquement ce joueur (score, phase en cours) sans attendre le
+    // rappel explicite à JoinGame fait plus bas par le handler onreconnected (qui reste en place
+    // comme filet de sécurité si cette voie plus rapide échoue pour une raison quelconque).
+    final hubUrl = gameCode != null && playerId != null
+        ? '$resolvedUrl/hubs/game?code=$gameCode&playerId=$playerId'
+        : '$resolvedUrl/hubs/game';
+    _hub = HubConnectionBuilder().withUrl(hubUrl).withAutomaticReconnect().build();
 
     _registerHandlers();
 
@@ -309,6 +328,20 @@ class GameConnection extends ChangeNotifier {
       }
     });
 
+    // V2 : envoyé par GameHub.OnConnectedAsync quand cette connexion (URL avec ?code&playerId, voir
+    // connect() ci-dessus) vient d'être automatiquement rattachée à ce joueur — arrive typiquement
+    // plus tôt que le rejoint via onreconnected ci-dessus (pas d'aller-retour Invoke supplémentaire),
+    // donc appliqué dès réception. actualiserEcran=false : mêmes raisons que onreconnected, ne pas
+    // écraser silencieusement l'écran courant pour un aléa réseau s'il n'y a rien de plus récent.
+    hub.on('EtatCourant', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      final etat = EtatCourantConnexion.fromJson(data);
+      score = etat.score;
+      teamId = etat.teamId;
+      appliquerEtatCourant(etat.etatCourant, actualiserEcran: false);
+      notifyListeners();
+    });
+
     hub.on('PlayerJoined', (args) {
       final data = args![0] as Map<String, dynamic>;
       final id = data['playerId'] as String;
@@ -369,6 +402,7 @@ class GameConnection extends ChangeNotifier {
     hub.on('RoundEnded', (args) {
       final data = args![0] as Map<String, dynamic>;
       lastRoundResult = RoundEnded.fromJson(data);
+      _ajouterMorceauJoue(lastRoundResult!.trackId, lastRoundResult!.title, lastRoundResult!.artist);
       screen = AppScreen.roundEnded;
       notifyListeners();
     });
@@ -392,7 +426,10 @@ class GameConnection extends ChangeNotifier {
 
     hub.on('GameEnded', (args) {
       final data = args![0] as Map<String, dynamic>;
-      finalScores = ScoreUpdate.fromJson(data);
+      finalScores = ScoreUpdate.fromJson(data['score'] as Map<String, dynamic>);
+      finalTitres = (data['titres'] as List<dynamic>)
+          .map((e) => Titre.fromJson(e as Map<String, dynamic>))
+          .toList();
       screen = AppScreen.ended;
       // On ne vide QUE le pref persisté (lu au prochain démarrage froid de l'appli, cf. connect())
       // pour ne pas retenter un rejoin auto sur une partie terminée — gameCode en mémoire, lui,
@@ -414,6 +451,9 @@ class GameConnection extends ChangeNotifier {
       lastRoundResult = null;
       scoreUpdate = null;
       finalScores = null;
+      finalTitres = [];
+      morceauxJoues.clear();
+      flagError = null;
       bonusStakeOptions = null;
       bonusPalierSelectionne = null;
       bonusStakeEnvoyee = false;
@@ -466,8 +506,14 @@ class GameConnection extends ChangeNotifier {
   void onBonusResult(Map<String, dynamic> data) {
     _introCourseTimer?.cancel();
     lastBonusResult = BonusResult.fromJson(data);
+    _ajouterMorceauJoue(lastBonusResult!.trackId, lastBonusResult!.title, lastBonusResult!.artist);
     screen = AppScreen.bonusResult;
     notifyListeners();
+  }
+
+  void _ajouterMorceauJoue(String trackId, String titre, String artiste) {
+    if (morceauxJoues.any((m) => m.trackId == trackId)) return;
+    morceauxJoues.add(MorceauJoue(trackId: trackId, titre: titre, artiste: artiste));
   }
 
   /// Le reconnect auto de SignalR (withAutomaticReconnect) a une fenêtre de retry bornée ; une fois
@@ -728,6 +774,27 @@ class GameConnection extends ChangeNotifier {
     }
   }
 
+  /// V2, section 12.4 — voir GameHub.SignalerMorceau. `trackId` doit venir de [morceauxJoues] (déjà
+  /// révélé dans cette partie), jamais saisi librement : le serveur rejette sinon avec une HubException.
+  Future<bool> signalerMorceau(String trackId, RaisonSignalement raison, String? commentaire) async {
+    if (!isAdmin) return false;
+    flagError = null;
+    try {
+      await _hub!.invoke('SignalerMorceau', args: [
+        {
+          'trackId': trackId,
+          'raison': raison.code,
+          if (commentaire != null && commentaire.trim().isNotEmpty) 'commentaire': commentaire.trim(),
+        }
+      ]);
+      return true;
+    } catch (e) {
+      flagError = 'Erreur : ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Un seul essai par round — déjà appliqué côté serveur (voir RoundService.SoumettreReponse),
   /// mais l'UI doit refléter l'état immédiatement pour ne pas laisser croire qu'une
   /// deuxième soumission est possible.
@@ -738,8 +805,11 @@ class GameConnection extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // roundId omis si currentRound est encore null (ne devrait pas arriver en usage réel — cet
+      // écran n'est affiché qu'après réception de RoundStarted) : le serveur traite alors la
+      // soumission comme un roundId périmé et l'ignore silencieusement, plutôt que de planter.
       await _hub?.invoke('SubmitAnswer', args: [
-        {'reponse': reponse}
+        {if (currentRound != null) 'roundId': currentRound!.roundId, 'reponse': reponse}
       ]);
     } catch (e) {
       errorMessage = 'Erreur : ${e.toString()}';
@@ -758,7 +828,7 @@ class GameConnection extends ChangeNotifier {
 
     try {
       await _hub?.invoke('SelectStake', args: [
-        {'palierIndex': palierIndex}
+        {if (bonusStakeOptions != null) 'roundId': bonusStakeOptions!.roundId, 'palierIndex': palierIndex}
       ]);
     } catch (e) {
       errorMessage = 'Erreur : ${e.toString()}';
@@ -774,7 +844,7 @@ class GameConnection extends ChangeNotifier {
 
     try {
       await _hub?.invoke('SubmitBonusAnswer', args: [
-        {'reponse': reponse}
+        {if (bonusQuestion != null) 'roundId': bonusQuestion!.roundId, 'reponse': reponse}
       ]);
     } catch (e) {
       errorMessage = 'Erreur : ${e.toString()}';

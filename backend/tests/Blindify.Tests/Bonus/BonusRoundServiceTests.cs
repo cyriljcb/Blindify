@@ -10,7 +10,7 @@ namespace Blindify.Tests.Bonus;
 
 public class BonusRoundServiceTests
 {
-    private readonly BonusRoundService _service = new(new BonusScoringService(), new AnswerMatcher(), new QcmGenerator());
+    private readonly BonusRoundService _service = new(new BonusScoringService(), new AnswerMatcher(), new QcmGenerator(), new AnneeQcmGenerator());
 
     private static Track NouveauTrack(string id = "a") => new()
     {
@@ -49,7 +49,7 @@ public class BonusRoundServiceTests
         var session = NouvelleSession(new Player { PlayerId = "p1", Nom = "Alice" });
         var bonusRound = CreerBonusRound(NouveauTrack());
 
-        var succes = _service.EnregistrerMise(session, bonusRound, "p1", 1);
+        var succes = _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,1);
 
         Assert.True(succes);
         Assert.Single(bonusRound.Mises);
@@ -60,9 +60,9 @@ public class BonusRoundServiceTests
     {
         var session = NouvelleSession(new Player { PlayerId = "p1", Nom = "Alice" });
         var bonusRound = CreerBonusRound(NouveauTrack());
-        _service.EnregistrerMise(session, bonusRound, "p1", 1);
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,1);
 
-        var succes = _service.EnregistrerMise(session, bonusRound, "p1", 2);
+        var succes = _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2);
 
         Assert.False(succes);
         Assert.Single(bonusRound.Mises);
@@ -75,7 +75,7 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(NouveauTrack());
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var succes = _service.EnregistrerMise(session, bonusRound, "p1", 1);
+        var succes = _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,1);
 
         Assert.False(succes);
     }
@@ -90,7 +90,7 @@ public class BonusRoundServiceTests
         session.EnPause = true;
         var bonusRound = CreerBonusRound(NouveauTrack());
 
-        var succes = _service.EnregistrerMise(session, bonusRound, "p1", 1);
+        var succes = _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,1);
 
         Assert.False(succes);
         Assert.Empty(bonusRound.Mises);
@@ -103,7 +103,7 @@ public class BonusRoundServiceTests
         var bob = new Player { PlayerId = "p2", Nom = "Bob" };
         var session = NouvelleSession(alice, bob);
         var bonusRound = CreerBonusRound(NouveauTrack());
-        _service.EnregistrerMise(session, bonusRound, "p1", 3);
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,3);
 
         _service.AppliquerPaliersParDefaut(session, bonusRound);
 
@@ -121,10 +121,10 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Cible = RoundCible.Titre; // cible tirée aléatoirement depuis le retour utilisateur du 2026-08-24 — fixée ici pour isoler le scoring testé
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le scoring testé
-        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "Under the Sea", DateTimeOffset.UtcNow);
+        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"Under the Sea", DateTimeOffset.UtcNow);
 
         Assert.NotNull(reponse);
         Assert.True(reponse!.EstCorrecte);
@@ -139,10 +139,10 @@ public class BonusRoundServiceTests
         var track = NouveauTrack();
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le scoring testé
-        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "Autre Chose", DateTimeOffset.UtcNow);
+        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"Autre Chose", DateTimeOffset.UtcNow);
 
         Assert.False(reponse!.EstCorrecte);
         Assert.Equal(-30, alice.Score);
@@ -157,7 +157,7 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "Under the Sea", DateTimeOffset.UtcNow);
+        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"Under the Sea", DateTimeOffset.UtcNow);
 
         Assert.Null(reponse);
         Assert.Equal(0, alice.Score);
@@ -173,11 +173,11 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Cible = RoundCible.Titre; // cible tirée aléatoirement depuis le retour utilisateur du 2026-08-24 — fixée ici pour isoler le comportement testé
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", 0); // palier 10
-        _service.EnregistrerMise(session, bonusRound, "p2", 3); // palier 50
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,0); // palier 10
+        _service.EnregistrerMise(session, bonusRound, "p2", bonusRound.Id,3); // palier 50
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "Under the Sea", DateTimeOffset.UtcNow);
+        _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"Under the Sea", DateTimeOffset.UtcNow);
         _service.TerminerParTimeout(session, bonusRound, NouveauConfig());
 
         Assert.Equal(10, alice.Score);
@@ -256,10 +256,10 @@ public class BonusRoundServiceTests
         };
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var reponseAvecTitreReel = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "If I Didn't Have You", DateTimeOffset.UtcNow);
+        var reponseAvecTitreReel = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"If I Didn't Have You", DateTimeOffset.UtcNow);
         Assert.False(reponseAvecTitreReel!.EstCorrecte);
     }
 
@@ -272,10 +272,10 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Cible = RoundCible.Titre; // cible tirée aléatoirement depuis le retour utilisateur du 2026-08-24 — fixée ici pour isoler le comportement testé
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "Sweat", DateTimeOffset.UtcNow);
+        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"Sweat", DateTimeOffset.UtcNow);
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -325,10 +325,10 @@ public class BonusRoundServiceTests
         var track = NouveauTrack();
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.Qcm; // tiré aléatoirement — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var bonneReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", track.Id, DateTimeOffset.UtcNow);
+        var bonneReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,track.Id, DateTimeOffset.UtcNow);
 
         Assert.True(bonneReponse!.EstCorrecte);
     }
@@ -347,10 +347,10 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(correct);
         bonusRound.Cible = RoundCible.Auteur;
         bonusRound.Mode = RoundMode.Qcm;
-        _service.EnregistrerMise(session, bonusRound, "p1", 2);
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2);
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), correct, "p1", "b", DateTimeOffset.UtcNow, id => catalogue.GetValueOrDefault(id));
+        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), correct, "p1", bonusRound.Id,"b", DateTimeOffset.UtcNow, id => catalogue.GetValueOrDefault(id));
 
         Assert.True(reponse!.EstCorrecte);
     }
@@ -364,10 +364,10 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Cible = RoundCible.Titre;
         bonusRound.Mode = RoundMode.PremiereLettre; // tiré aléatoirement — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var bonneReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "U", DateTimeOffset.UtcNow);
+        var bonneReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"U", DateTimeOffset.UtcNow);
 
         Assert.True(bonneReponse!.EstCorrecte);
     }
@@ -433,12 +433,12 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.Qcm;
         bonusRound.EstCourse = true;
-        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
-        _service.EnregistrerMise(session, bonusRound, "p2", 3); // palier 50
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p2", bonusRound.Id,3); // palier 50
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var premiereReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", "autre-id", DateTimeOffset.UtcNow);
-        var deuxiemeReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p2", track.Id, DateTimeOffset.UtcNow);
+        var premiereReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"autre-id", DateTimeOffset.UtcNow);
+        var deuxiemeReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p2", bonusRound.Id,track.Id, DateTimeOffset.UtcNow);
 
         Assert.NotNull(premiereReponse);
         Assert.False(premiereReponse!.EstCorrecte);
@@ -457,11 +457,11 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.Qcm;
         bonusRound.EstCourse = true;
-        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
-        _service.EnregistrerMise(session, bonusRound, "p2", 3); // palier 50
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p2", bonusRound.Id,3); // palier 50
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", track.Id, DateTimeOffset.UtcNow);
+        _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,track.Id, DateTimeOffset.UtcNow);
         _service.TerminerParTimeout(session, bonusRound, NouveauConfig());
 
         Assert.Equal(30, alice.Score); // premier, correct : gagne sa mise
@@ -477,11 +477,121 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.Qcm;
         bonusRound.EstCourse = true;
-        _service.EnregistrerMise(session, bonusRound, "p1", 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         _service.TerminerParTimeout(session, bonusRound, NouveauConfig());
 
         Assert.Equal(-30, alice.Score); // aucune réponse du tout : comportement inchangé (perte de la mise)
+    }
+
+    // ----- V2 (socle statistiques) -----
+
+    [Fact]
+    public void SoumettreReponse_ModeQcm_RenseigneOptionChoisieDepuisRoundOptions()
+    {
+        var alice = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(alice);
+        var track = NouveauTrack();
+        var bonusRound = CreerBonusRound(track);
+        bonusRound.Mode = RoundMode.Qcm;
+        bonusRound.Options =
+        [
+            new RoundOption { TrackId = track.Id, TexteAffiche = "Under the Sea", EstFeinte = false, EstPiege = false },
+            new RoundOption { TrackId = "b", TexteAffiche = "Autre", EstFeinte = false, EstPiege = true },
+        ];
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id, 2);
+        _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+
+        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id, "b", DateTimeOffset.UtcNow);
+
+        Assert.Equal("b", reponse!.OptionChoisieTrackId);
+        Assert.True(reponse.OptionChoisieEstPiege);
+    }
+
+    [Fact]
+    public void TerminerParTimeout_MarqueLesEntreesSynthetiquesCommeAbsentes()
+    {
+        var alice = new Player { PlayerId = "p1", Nom = "Alice" };
+        var bob = new Player { PlayerId = "p2", Nom = "Bob" };
+        var session = NouvelleSession(alice, bob);
+        var track = NouveauTrack();
+        var bonusRound = CreerBonusRound(track);
+        bonusRound.Mode = RoundMode.TapeReponse;
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id, 0);
+        _service.EnregistrerMise(session, bonusRound, "p2", bonusRound.Id, 0);
+        _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+
+        _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id, "Under the Sea", DateTimeOffset.UtcNow);
+        _service.TerminerParTimeout(session, bonusRound, NouveauConfig());
+
+        Assert.False(bonusRound.Reponses.Single(r => r.PlayerId == "p1").EstAbsent);
+        Assert.True(bonusRound.Reponses.Single(r => r.PlayerId == "p2").EstAbsent);
+    }
+
+    // ----- V2, section 12.5 : cible Année -----
+
+    [Fact]
+    public void CreerBonusRound_ModeQcmProbabiliteAnneeA100Pourcent_GenereAnneeOptions()
+    {
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var config = new GameConfig { PoidsCibleTitre = 0, PoidsCibleAuteur = 0, PoidsCibleAnnee = 1, ProbabiliteBonusCourse = 0 };
+
+        BonusRound? bonusRound = null;
+        for (var i = 0; i < 100 && bonusRound?.Mode != RoundMode.Qcm; i++)
+            bonusRound = _service.CreerBonusRound(track, [track], [], config);
+
+        Assert.Equal(RoundMode.Qcm, bonusRound!.Mode);
+        Assert.Equal(RoundCible.Annee, bonusRound.Cible);
+        Assert.NotNull(bonusRound.AnneeOptions);
+        Assert.Equal(4, bonusRound.AnneeOptions!.Count);
+    }
+
+    [Fact]
+    public void CreerBonusRound_CibleAnneeModePremiereLettre_BasculeVersTapeReponse()
+    {
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var config = new GameConfig { PoidsCibleTitre = 0, PoidsCibleAuteur = 0, PoidsCibleAnnee = 1, ProbabiliteBonusCourse = 0 };
+
+        for (var i = 0; i < 30; i++)
+        {
+            var bonusRound = _service.CreerBonusRound(track, [track], [], config);
+            Assert.Equal(RoundCible.Annee, bonusRound.Cible);
+            Assert.NotEqual(RoundMode.PremiereLettre, bonusRound.Mode);
+        }
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAnnee_EcartDansLaToleranceBonus_GagneLaMiseEntiere()
+    {
+        var alice = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(alice);
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var bonusRound = new BonusRound { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Annee };
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id, 2); // palier 30
+        _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+        var config = NouveauConfig(); // ToleranceAnneeBonus = 1 par défaut
+
+        var reponse = _service.SoumettreReponse(session, bonusRound, config, track, "p1", bonusRound.Id, "1991", DateTimeOffset.UtcNow);
+
+        Assert.True(reponse!.EstCorrecte);
+        Assert.Equal(1, reponse.EcartAnnee);
+        Assert.Equal(30, alice.Score); // tout ou rien, pas de dégressivité côté bonus
+    }
+
+    [Fact]
+    public void SoumettreReponse_CibleAnnee_EcartAuDelaDeLaToleranceBonus_PerdLaMiseEntiere()
+    {
+        var alice = new Player { PlayerId = "p1", Nom = "Alice" };
+        var session = NouvelleSession(alice);
+        var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
+        var bonusRound = new BonusRound { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Annee };
+        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id, 2); // palier 30
+        _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
+
+        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id, "1985", DateTimeOffset.UtcNow);
+
+        Assert.False(reponse!.EstCorrecte);
+        Assert.Equal(-30, alice.Score);
     }
 }

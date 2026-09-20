@@ -74,7 +74,11 @@ class _RoundEndedScreenState extends State<RoundEndedScreen> {
               // que l'écran public (host/shared/format.js:libelleReveal), pour que les deux écrans se
               // lisent pareil pendant une partie.
               Text(
-                result.cible == 'Film' ? result.film : result.title,
+                result.cible == 'Film'
+                    ? result.film
+                    : result.cible == 'Annee' && result.annee != null
+                        ? '${result.annee}'
+                        : result.title,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge,
               ).animate().fadeIn(delay: 150.ms, duration: BlindifyMotion.normal).slideY(begin: 0.3),
@@ -92,6 +96,17 @@ class _RoundEndedScreenState extends State<RoundEndedScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ).animate().fadeIn(delay: 400.ms),
                 _PointsCountUp(points: monResultat.points, color: correct ? BlindifyColors.good : BlindifyColors.bad),
+                // Cible Année (V2, section 12.5) : affiche l'écart en plus du résultat brut — sans
+                // ça, "mauvaise réponse" ne dit pas si on était loin ou à un an près.
+                if (monResultat.ecartAnnee != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    monResultat.ecartAnnee == 0
+                        ? 'Année exacte !'
+                        : 'à ${monResultat.ecartAnnee} an${monResultat.ecartAnnee! > 1 ? 's' : ''} près',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ],
               const Spacer(),
               Text(

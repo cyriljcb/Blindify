@@ -1,12 +1,15 @@
 using System.Security.Cryptography;
 using System.Text;
 using Blindify.Api.Contracts;
+using Blindify.Application.Awards;
 using Blindify.Application.Bonus;
 using Blindify.Application.Rounds;
+using Blindify.Application.Scoring;
 using Blindify.Application.Sessions;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
 using Blindify.Domain.Enums;
+using Blindify.Infrastructure.Flags;
 using Blindify.Infrastructure.Stats;
 using Blindify.Infrastructure.Tracks;
 using Microsoft.AspNetCore.SignalR;
@@ -24,8 +27,10 @@ public class GameHub(
     IGameCodeGenerator codeGenerator,
     IRoundService roundService,
     IBonusRoundService bonusRoundService,
+    IScoringService scoringService,
     ITracksRepository tracksRepository,
     IStatsRepository statsRepository,
+    IFlagsRepository flagsRepository,
     RoundTimerCoordinator timerCoordinator,
     BonusTimerCoordinator bonusTimerCoordinator,
     IConfiguration configuration) : Hub
@@ -77,9 +82,20 @@ public class GameHub(
             if (session.Etat != GameState.Lobby)
                 throw new HubException("La partie a déjà démarré — configuration verrouillée.");
 
+            if (!scoringService.EstPenaliteAbsenceEquitable(request.PenaliteAbsenceReponse, request.PenaliteMauvaiseReponseRatio, request.PointsMin))
+                throw new HubException(
+                    $"Pénalité d'absence ({request.PenaliteAbsenceReponse}) trop sévère par rapport à la pénalité de mauvaise réponse et à PointsMin ({request.PointsMin}) : un joueur hésitant serait mathématiquement incité à ne jamais répondre.");
+
+            // Résolu AVANT la construction des séries (et non après, comme avant V2) : SeriesPlanner.
+            // PaliersPourSerie a besoin de Config.FacteurProgressionPaliers pour chaque série.
+            session.Config = request.Config ?? session.Config;
+
             var tagsParSerie = SeriesPlanner.AssignerThemesAuxSeries(request.ThemesVivier, request.NombreSeries);
             var catalogue = tracksRepository.GetAll();
-            var dejaUtilises = new HashSet<string>();
+            // V2, section 12.4 : pré-remplir l'exclusion avec les morceaux bloqués plutôt que de changer
+            // la signature de SelectionnerMorceaux — dejaUtilises EST déjà l'ensemble d'exclusion qu'il
+            // accumule série après série.
+            var dejaUtilises = session.Config.ExclureMorceauxSignales ? flagsRepository.ObtenirTrackIdsBloquants() : [];
             var seriesList = new List<Series>();
 
             for (var index = 0; index < request.NombreSeries; index++)
@@ -103,7 +119,7 @@ public class GameHub(
                     PointsMin = request.PointsMin,
                     PenaliteMauvaiseReponseRatio = request.PenaliteMauvaiseReponseRatio,
                     PenaliteAbsenceReponse = request.PenaliteAbsenceReponse,
-                    PaliersDeMise = SeriesPlanner.PaliersPourSerie(index, request.NombreSeries),
+                    PaliersDeMise = SeriesPlanner.PaliersPourSerie(index, session.Config.FacteurProgressionPaliers),
                     DureePhaseMiseMs = request.DureePhaseMiseMs,
                     DureePhaseQuestionMs = request.DureePhaseQuestionMs,
                 };
@@ -111,7 +127,6 @@ public class GameHub(
             }
 
             session.SeriesList = seriesList;
-            session.Config = request.Config ?? session.Config;
             session.SerieCouranteIndex = 0;
             session.RoundCourantIndex = -1;
         }
@@ -160,6 +175,7 @@ public class GameHub(
         Series serie;
         Track track;
         List<QcmOptionDto>? qcmOptions;
+        List<string>? anneeOptions;
 
         lock (session.Lock)
         {
@@ -179,18 +195,19 @@ public class GameHub(
             session.Etat = GameState.EnCours;
             statsRepository.IncrementPlayCount(track.Id);
 
-            qcmOptions = ConstruireQcmOptions(round.QcmOptionTrackIds, track, round.Cible, session.Config, tracksRepository);
+            (qcmOptions, round.Options) = ConstruireQcmOptions(round.QcmOptionTrackIds, track, round.Cible, session.Config, tracksRepository);
+            anneeOptions = round.AnneeOptions?.Select(a => a.ToString()).ToList();
         }
 
         if (session.HostConnectionId is not null)
         {
             await Clients.Client(session.HostConnectionId)
-                .SendAsync("RoundStarted", new RoundStartedForHostDto(round.Mode, round.Cible, track.Id, track.FilePath, track.RefrainStartMs, serie.Config.DureeFenetreReponseMs, qcmOptions));
+                .SendAsync("RoundStarted", new RoundStartedForHostDto(round.Mode, round.Cible, round.Id, track.Id, track.FilePath, track.RefrainStartMs, serie.Config.DureeFenetreReponseMs, qcmOptions, anneeOptions));
         }
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
         await Clients.Clients(joueursConnectes)
-            .SendAsync("RoundStarted", new RoundStartedForPlayersDto(round.Mode, round.Cible, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions, TempsEcouleMs: 0));
+            .SendAsync("RoundStarted", new RoundStartedForPlayersDto(round.Mode, round.Cible, round.Id, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions, TempsEcouleMs: 0, AnneeOptions: anneeOptions));
 
         timerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
     }
@@ -214,6 +231,7 @@ public class GameHub(
                 .SelectMany(s => s.Rounds.Select(r => r.TrackId))
                 .Concat(session.SeriesList.Where(s => s.BonusRound is not null).Select(s => s.BonusRound!.TrackId))
                 .ToHashSet();
+            if (session.Config.ExclureMorceauxSignales) dejaUtilises.UnionWith(flagsRepository.ObtenirTrackIdsBloquants());
 
             var morceaux = roundService.SelectionnerMorceaux(tracksRepository.GetAll(), serie.Tags, 1, dejaUtilises, statsRepository.GetPlayCount);
             if (morceaux.Count == 0)
@@ -225,7 +243,7 @@ public class GameHub(
             statsRepository.IncrementPlayCount(morceaux[0].Id);
         }
 
-        await Clients.Group(session.Id).SendAsync("BonusStakeOptions", new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.Config.DureePhaseMiseMs, serie.Index, TempsEcouleMs: 0));
+        await Clients.Group(session.Id).SendAsync("BonusStakeOptions", new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.BonusRound!.Id, serie.Config.DureePhaseMiseMs, serie.Index, TempsEcouleMs: 0));
 
         bonusTimerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
     }
@@ -370,7 +388,58 @@ public class GameHub(
         timerCoordinator.Annuler(session.Id);
         bonusTimerCoordinator.Annuler(session.Id);
 
-        await Clients.Group(session.Id).SendAsync("GameEnded", ScoreDtoBuilder.Construire(session));
+        var titres = TitresService.CalculerTitres(session, tracksRepository.GetById)
+            .Select(t => new TitreDto(t.Code, t.Libelle, t.Description, t.PlayerIds))
+            .ToList();
+
+        await Clients.Group(session.Id).SendAsync("GameEnded", new GameEndedDto(ScoreDtoBuilder.Construire(session), titres));
+    }
+
+    /// <summary>Signalement en direct (V2, section 12.4) — host ou admin authentifié uniquement,
+    /// jamais les joueurs (ResoudreSessionHostOuAdmin), depuis l'écran de reveal (l'admin est aussi un
+    /// joueur, afficher le morceau plus tôt lui donnerait la réponse — appliqué côté client). Vérifie
+    /// que le morceau a bien été joué dans cette session (jamais un id arbitraire) avant d'écrire dans
+    /// flags.json. Diffuse MorceauSignale au host et aux admins seulement, pour confirmation visuelle
+    /// même en cas de doublon (l'appelant sait alors que ce n'est pas la première fois).</summary>
+    public async Task<SignalementResultDto> SignalerMorceau(SignalementRequestDto request)
+    {
+        var session = ResoudreSessionHostOuAdmin();
+        RoundCible cible;
+        RoundMode mode;
+        List<string> serieTags;
+
+        lock (session.Lock)
+        {
+            Round? round = null;
+            BonusRound? bonusRound = null;
+            Series? serieTrouvee = null;
+
+            foreach (var serie in session.SeriesList)
+            {
+                round = serie.Rounds.FirstOrDefault(r => r.TrackId == request.TrackId);
+                if (round is not null) { serieTrouvee = serie; break; }
+
+                if (serie.BonusRound?.TrackId == request.TrackId) { bonusRound = serie.BonusRound; serieTrouvee = serie; break; }
+            }
+
+            if (serieTrouvee is null)
+                throw new HubException("Ce morceau n'a pas été joué dans cette partie.");
+
+            cible = round?.Cible ?? bonusRound!.Cible;
+            mode = round?.Mode ?? bonusRound!.Mode;
+            serieTags = serieTrouvee.Tags;
+        }
+
+        var par = Context.ConnectionId == session.HostConnectionId ? "host" : "admin";
+        var (flagId, dejaSignale) = flagsRepository.Ajouter(
+            request.TrackId, request.Raison, request.Commentaire, par, session.Id, serieTags, cible, mode);
+
+        var track = tracksRepository.GetById(request.TrackId);
+        var cibles = session.AdminConnectionIds.ToList();
+        if (session.HostConnectionId is not null) cibles.Add(session.HostConnectionId);
+        await Clients.Clients(cibles).SendAsync("MorceauSignale", new MorceauSignaleDto(request.TrackId, track?.Title ?? request.TrackId, track?.Artist ?? "?", request.Raison));
+
+        return new SignalementResultDto(flagId, dejaSignale);
     }
 
     /// <summary>Relance une partie terminée avec le même groupe (même code, mêmes joueurs) — mêmes
@@ -393,7 +462,7 @@ public class GameHub(
             var tagsParSerieRebattus = SeriesPlanner.AssignerThemesAuxSeries(vivierOriginal, session.SeriesList.Count);
 
             var catalogue = tracksRepository.GetAll();
-            var dejaUtilises = new HashSet<string>();
+            var dejaUtilises = session.Config.ExclureMorceauxSignales ? flagsRepository.ObtenirTrackIdsBloquants() : [];
             var nouvellesSeries = new List<Series>();
 
             for (var index = 0; index < session.SeriesList.Count; index++)
@@ -448,8 +517,7 @@ public class GameHub(
             else
             {
                 joueur = existant;
-                joueur.ConnectionId = Context.ConnectionId;
-                joueur.EstConnecte = true;
+                ReassocierConnexion(joueur, Context.ConnectionId);
             }
 
             teams = session.Teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList();
@@ -460,6 +528,9 @@ public class GameHub(
             etatCourant = ConstruireEtatCourantJoueur(session, playerId);
         }
 
+        // Posé aussi ici (pas seulement dans OnConnectedAsync) pour couvrir le tout premier join d'un
+        // joueur — avant cet appel, aucune reconnexion automatique n'a encore eu l'occasion de le poser.
+        Context.Items["playerId"] = playerId;
         sessionStore.AssocierConnexion(Context.ConnectionId, code);
         await Groups.AddToGroupAsync(Context.ConnectionId, code);
 
@@ -481,8 +552,7 @@ public class GameHub(
 
         lock (session.Lock)
         {
-            var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
-                         ?? throw new HubException("Joueur non reconnu dans cette partie.");
+            var joueur = ResoudrePlayer(session);
 
             var team = session.Teams.FirstOrDefault(t => t.Id == teamId)
                        ?? throw new HubException("Équipe introuvable.");
@@ -504,14 +574,13 @@ public class GameHub(
 
         lock (session.Lock)
         {
-            joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
-                     ?? throw new HubException("Joueur non reconnu dans cette partie.");
+            joueur = ResoudrePlayer(session);
 
             var round = session.RoundCourant() ?? throw new HubException("Aucun round en cours.");
             var track = tracksRepository.GetById(round.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
             var serie = session.SerieCourante();
 
-            reponse = roundService.SoumettreReponse(session, round, serie.Config, track, joueur.PlayerId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
+            reponse = roundService.SoumettreReponse(session, round, serie.Config, track, joueur.PlayerId, request.RoundId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
             if (reponse is null)
                 return new RoundAnswerResultDto(false, 0, joueur.Score);
 
@@ -531,12 +600,11 @@ public class GameHub(
         var session = ResoudreSession();
         lock (session.Lock)
         {
-            var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
-                         ?? throw new HubException("Joueur non reconnu dans cette partie.");
+            var joueur = ResoudrePlayer(session);
 
             var bonusRound = session.SerieCourante().BonusRound ?? throw new HubException("Aucune question bonus en cours.");
 
-            return bonusRoundService.EnregistrerMise(session, bonusRound, joueur.PlayerId, request.PalierIndex);
+            return bonusRoundService.EnregistrerMise(session, bonusRound, joueur.PlayerId, request.RoundId, request.PalierIndex);
         }
     }
 
@@ -549,14 +617,13 @@ public class GameHub(
 
         lock (session.Lock)
         {
-            joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId)
-                     ?? throw new HubException("Joueur non reconnu dans cette partie.");
+            joueur = ResoudrePlayer(session);
 
             var serie = session.SerieCourante();
             var bonusRound = serie.BonusRound ?? throw new HubException("Aucune question bonus en cours.");
             var track = tracksRepository.GetById(bonusRound.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
 
-            reponse = bonusRoundService.SoumettreReponse(session, bonusRound, serie.Config, track, joueur.PlayerId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
+            reponse = bonusRoundService.SoumettreReponse(session, bonusRound, serie.Config, track, joueur.PlayerId, request.RoundId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
             if (reponse is null)
                 return new BonusAnswerResultDto(false, 0, joueur.Score);
 
@@ -573,34 +640,108 @@ public class GameHub(
 
     // ----- Cycle de connexion -----
 
+    /// <summary>Reconnexion automatique (V2) : le client (joueur) ouvre le hub avec
+    /// "/hubs/game?code=XXXX&amp;playerId=..." dès que le code de partie est connu — SignalR réutilise
+    /// cette URL à chaque reconnexion transport (withAutomaticReconnect), donc ce handler s'exécute
+    /// aussi bien à la connexion initiale (avant même le premier JoinGame, où il ne trouve encore aucun
+    /// Player et ne fait rien) qu'à chaque reconnexion (où il retrouve le Player par playerId et le
+    /// rattache SANS que le client ait besoin de rappeler JoinGame). Ne concerne jamais le host : celui-ci
+    /// n'a pas de playerId et continue de passer par RejoinAsHost (authentifié par hostSecret), jamais par
+    /// une simple query string non authentifiée.</summary>
+    public override async Task OnConnectedAsync()
+    {
+        var query = Context.GetHttpContext()?.Request.Query;
+        var code = query?["code"].ToString();
+        var playerId = query?["playerId"].ToString();
+
+        if (!string.IsNullOrEmpty(code) && !string.IsNullOrEmpty(playerId) && sessionStore.Get(code) is { } session)
+        {
+            Player? joueur;
+            lock (session.Lock)
+            {
+                joueur = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
+                if (joueur is not null) ReassocierConnexion(joueur, Context.ConnectionId);
+            }
+
+            if (joueur is not null)
+            {
+                Context.Items["playerId"] = playerId;
+                sessionStore.AssocierConnexion(Context.ConnectionId, code);
+                await Groups.AddToGroupAsync(Context.ConnectionId, code);
+
+                EtatCourantJoueurDto? etatCourant;
+                lock (session.Lock) { etatCourant = ConstruireEtatCourantJoueur(session, playerId); }
+
+                await Clients.Caller.SendAsync("EtatCourant", new EtatCourantConnexionDto(joueur.Score, joueur.TeamId, etatCourant));
+                await Clients.OthersInGroup(code).SendAsync("PlayerReconnected", new PlayerConnectionChangedDto(playerId, true));
+            }
+        }
+
+        await base.OnConnectedAsync();
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var code = sessionStore.ObtenirCodeParConnexion(Context.ConnectionId);
-        sessionStore.DissocierConnexion(Context.ConnectionId);
+        var connectionId = Context.ConnectionId;
+        var code = sessionStore.ObtenirCodeParConnexion(connectionId);
+        sessionStore.DissocierConnexion(connectionId);
 
         if (code is not null && sessionStore.Get(code) is { } session)
         {
-            string? playerId = null;
+            string? playerId;
             lock (session.Lock)
             {
-                var joueur = session.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
-                if (joueur is not null)
-                {
-                    joueur.EstConnecte = false;
-                    playerId = joueur.PlayerId;
-                }
-
-                session.AdminConnectionIds.Remove(Context.ConnectionId);
+                playerId = session.Players.FirstOrDefault(p => p.ConnectionId == connectionId)?.PlayerId;
+                session.AdminConnectionIds.Remove(connectionId);
             }
 
             if (playerId is not null)
-                await Clients.Group(code).SendAsync("PlayerDisconnected", new PlayerConnectionChangedDto(playerId, false));
+            {
+                // Délai de grâce (V2, GameConfig.DelaiGraceDeconnexionMs) : une micro-coupure suivie
+                // d'une reconnexion automatique (OnConnectedAsync ci-dessus) ne doit pas faire clignoter
+                // l'indicateur de connexion côté host. On revérifie après coup plutôt que d'annuler une
+                // tâche différée : plus simple, et cette méthode est déjà awaitable tant qu'elle veut.
+                var delaiMs = session.Config.DelaiGraceDeconnexionMs;
+                if (delaiMs > 0) await Task.Delay(delaiMs);
+
+                bool toujoursDeconnecte;
+                lock (session.Lock)
+                {
+                    var joueur = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
+                    toujoursDeconnecte = joueur is not null && joueur.ConnectionId == connectionId;
+                    if (toujoursDeconnecte) joueur!.EstConnecte = false;
+                }
+
+                if (toujoursDeconnecte)
+                    await Clients.Group(code).SendAsync("PlayerDisconnected", new PlayerConnectionChangedDto(playerId, false));
+            }
         }
 
         await base.OnDisconnectedAsync(exception);
     }
 
     // ----- Aides privées -----
+
+    private static void ReassocierConnexion(Player joueur, string connectionId)
+    {
+        joueur.ConnectionId = connectionId;
+        joueur.EstConnecte = true;
+    }
+
+    /// <summary>Retrouve le joueur courant via l'identité posée par JoinGame/OnConnectedAsync
+    /// (Context.Items["playerId"]) plutôt que par ConnectionId (V2) — un ConnectionId change à chaque
+    /// reconnexion transport, alors que Context.Items est repeuplé à chaque connexion (voir
+    /// OnConnectedAsync) donc reste fiable même juste après une reconnexion automatique, avant tout
+    /// nouvel appel explicite à JoinGame. Appelé sous session.Lock par tous ses appelants.</summary>
+    private Player ResoudrePlayer(GameSession session)
+    {
+        var playerId = Context.Items.TryGetValue("playerId", out var value) ? value as string : null;
+        if (playerId is null)
+            throw new HubException("Joueur non reconnu dans cette partie.");
+
+        return session.Players.FirstOrDefault(p => p.PlayerId == playerId)
+               ?? throw new HubException("Joueur non reconnu dans cette partie.");
+    }
 
     private GameSession ResoudreSession()
     {
@@ -631,17 +772,19 @@ public class GameHub(
 
     /// <summary>Feinte QCM purement visuelle (retour utilisateur) — voir GameConfig.ProbabiliteQcmFeinteChamp.
     /// Remplace le champ affiché d'un distracteur tiré au sort par le champ opposé du morceau
-    /// correct, sans toucher à son TrackId : le sélectionner reste une mauvaise réponse normale.</summary>
+    /// correct, sans toucher à son TrackId : le sélectionner reste une mauvaise réponse normale.
+    /// Retourne le TrackId de l'option modifiée (V2, pour RoundOption.EstFeinte), ou null si aucune
+    /// feinte n'a été appliquée.</summary>
     // Interne plutôt que privé : réutilisé par BonusTimerCoordinator pour appliquer les mêmes
     // feintes QCM à la question bonus (retour utilisateur : QCM aussi disponible en bonus).
-    internal static void AppliquerFeinteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
+    internal static string? AppliquerFeinteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
     {
         // Pas de dualité "champ opposé" pertinente pour Film (pas de second champ à échanger).
-        if (cible == RoundCible.Film) return;
-        if (Random.Shared.NextDouble() >= config.ProbabiliteQcmFeinteChamp) return;
+        if (cible == RoundCible.Film) return null;
+        if (Random.Shared.NextDouble() >= config.ProbabiliteQcmFeinteChamp) return null;
 
         var distracteurs = options.Where(o => o.TrackId != correct.Id).ToList();
-        if (distracteurs.Count == 0) return;
+        if (distracteurs.Count == 0) return null;
 
         var optionChoisie = distracteurs[Random.Shared.Next(distracteurs.Count)];
         var index = options.IndexOf(optionChoisie);
@@ -649,6 +792,7 @@ public class GameHub(
         options[index] = cible == RoundCible.Titre
             ? optionChoisie with { Title = correct.Artist }
             : optionChoisie with { Artist = correct.Title };
+        return optionChoisie.TrackId;
     }
 
     /// <summary>Feinte texte inventé (retour utilisateur, ex. Bastille - Pompéi -> "Baptiste") —
@@ -656,27 +800,30 @@ public class GameHub(
     /// le texte de substitution ne vient pas d'un champ réel du morceau correct mais de
     /// Track.TrapTextArtist, un leurre écrit à la main. Ne s'applique qu'en cible Auteur, et
     /// seulement si le morceau correct a un TrapTextArtist renseigné. Le TrackId du distracteur
-    /// ne change pas : le sélectionner reste une mauvaise réponse normale.</summary>
-    internal static void AppliquerFeinteTexteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
+    /// ne change pas : le sélectionner reste une mauvaise réponse normale. Retourne le TrackId
+    /// modifié (V2) ou null — voir AppliquerFeinteEventuelle.</summary>
+    internal static string? AppliquerFeinteTexteEventuelle(List<QcmOptionDto> options, Track correct, RoundCible cible, GameConfig config)
     {
-        if (cible != RoundCible.Auteur || string.IsNullOrEmpty(correct.TrapTextArtist)) return;
-        if (Random.Shared.NextDouble() >= config.ProbabiliteQcmFeinteTexteArtiste) return;
+        if (cible != RoundCible.Auteur || string.IsNullOrEmpty(correct.TrapTextArtist)) return null;
+        if (Random.Shared.NextDouble() >= config.ProbabiliteQcmFeinteTexteArtiste) return null;
 
         var distracteurs = options.Where(o => o.TrackId != correct.Id).ToList();
-        if (distracteurs.Count == 0) return;
+        if (distracteurs.Count == 0) return null;
 
         var optionChoisie = distracteurs[Random.Shared.Next(distracteurs.Count)];
         var index = options.IndexOf(optionChoisie);
 
         options[index] = optionChoisie with { Artist = correct.TrapTextArtist };
+        return optionChoisie.TrackId;
     }
 
     /// <summary>Factorisé depuis StartRound (round classique) et réutilisé par BonusTimerCoordinator
-    /// (question bonus) ET ConstruireEtatCourantJoueur (resynchronisation à la reconnexion) — les
-    /// trois doivent produire exactement les mêmes options pour un même round, seules les feintes
-    /// (probabilistes, non persistées) peuvent varier d'un appel à l'autre si celui-ci est refait
-    /// plus tard pour le même round ; sans conséquence, voir ConstruireEtatCourantJoueur.</summary>
-    internal static List<QcmOptionDto>? ConstruireQcmOptions(List<string>? qcmOptionTrackIds, Track correct, RoundCible cible, GameConfig config, ITracksRepository tracksRepository)
+    /// (question bonus) — construit à la fois les DTOs envoyés au réseau (QcmOptions) et leur miroir
+    /// persistable (Options, V2) à stocker une seule fois sur Round/BonusRound. Depuis V2, les
+    /// feintes ne sont donc plus jamais recalculées pour un même round (voir
+    /// QcmOptionsDepuisRoundOptions, utilisé par ConstruireEtatCourantJoueur à la reconnexion).</summary>
+    internal static (List<QcmOptionDto>? QcmOptions, List<RoundOption>? Options) ConstruireQcmOptions(
+        List<string>? qcmOptionTrackIds, Track correct, RoundCible cible, GameConfig config, ITracksRepository tracksRepository)
     {
         var qcmOptions = qcmOptionTrackIds?
             .Select(id => tracksRepository.GetById(id))
@@ -684,13 +831,52 @@ public class GameHub(
             .Select(t => new QcmOptionDto(t!.Id, t.Title, t.Artist, FilmNameResolver.Resoudre(t)))
             .ToList();
 
-        if (qcmOptions is not null)
-        {
-            AppliquerFeinteEventuelle(qcmOptions, correct, cible, config);
-            AppliquerFeinteTexteEventuelle(qcmOptions, correct, cible, config);
-        }
+        if (qcmOptions is null) return (null, null);
 
-        return qcmOptions;
+        var feinteTrackIds = new HashSet<string>();
+        var feinteChamp = AppliquerFeinteEventuelle(qcmOptions, correct, cible, config);
+        if (feinteChamp is not null) feinteTrackIds.Add(feinteChamp);
+        var feinteTexte = AppliquerFeinteTexteEventuelle(qcmOptions, correct, cible, config);
+        if (feinteTexte is not null) feinteTrackIds.Add(feinteTexte);
+
+        var options = qcmOptions.Select(o => new RoundOption
+        {
+            TrackId = o.TrackId,
+            TexteAffiche = TexteAffichePourCible(o, cible),
+            EstFeinte = feinteTrackIds.Contains(o.TrackId),
+            EstPiege = correct.TrapWith.Contains(o.TrackId),
+        }).ToList();
+
+        return (qcmOptions, options);
+    }
+
+    private static string TexteAffichePourCible(QcmOptionDto option, RoundCible cible) => cible switch
+    {
+        RoundCible.Titre => option.Title,
+        RoundCible.Auteur => option.Artist,
+        RoundCible.Film => option.Film,
+        _ => option.Title,
+    };
+
+    /// <summary>Reconstruit les DTOs QCM envoyés aux clients à partir des options déjà persistées
+    /// (V2, Round.Options/BonusRound.Options) — utilisé par ConstruireEtatCourantJoueur (reconnexion)
+    /// plutôt que ConstruireQcmOptions, pour renvoyer EXACTEMENT les mêmes options (feintes comprises)
+    /// que celles vues par les autres joueurs, au lieu de retirer une feinte au hasard à chaque
+    /// reconnexion. Seul le champ correspondant à la cible provient du texte persisté (peut être une
+    /// feinte) ; les deux autres sont résolus depuis le catalogue (jamais affichés au joueur, mais
+    /// QcmOptionDto porte toujours les trois champs).</summary>
+    private static List<QcmOptionDto>? QcmOptionsDepuisRoundOptions(List<RoundOption>? options, RoundCible cible, ITracksRepository tracksRepository)
+    {
+        if (options is null) return null;
+
+        return options.Select(o =>
+        {
+            var track = tracksRepository.GetById(o.TrackId);
+            var titre = cible == RoundCible.Titre ? o.TexteAffiche : track?.Title ?? o.TexteAffiche;
+            var artiste = cible == RoundCible.Auteur ? o.TexteAffiche : track?.Artist ?? o.TexteAffiche;
+            var film = cible == RoundCible.Film ? o.TexteAffiche : track is not null ? FilmNameResolver.Resoudre(track) : o.TexteAffiche;
+            return new QcmOptionDto(o.TrackId, titre, artiste, film);
+        }).ToList();
     }
 
     /// <summary>Reconstruit, pour un joueur qui (re)rejoint, la phase actuellement active (round
@@ -701,12 +887,10 @@ public class GameHub(
     /// coordinator correspondant — fenêtre de quelques centaines de ms, sans conséquence : le
     /// prochain événement (RoundEnded/BonusResult puis la suite) rattrape le client normalement).
     ///
-    /// Les feintes QCM (AppliquerFeinteEventuelle/AppliquerFeinteTexteEventuelle) sont probabilistes
-    /// et non persistées sur le Round/BonusRound — reconstruire les options ici peut donc tirer une
-    /// feinte différente de celle vue par les autres joueurs pour le même round. Sans conséquence :
-    /// la validation de réponse compare du texte, jamais un TrackId (voir SubmitAnswerRequestDto),
-    /// et personne ne compare les QCM entre téléphones — persister les options déjà construites sur
-    /// l'entité serait plus rigoureux mais alourdirait le schéma pour un bénéfice invisible en jeu.</summary>
+    /// Depuis V2, les options QCM sont lues sur Round.Options/BonusRound.Options (déjà persistées à
+    /// la construction du round, voir ConstruireQcmOptions/QcmOptionsDepuisRoundOptions) plutôt que
+    /// recalculées ici — un joueur qui se reconnecte voit donc exactement les mêmes options (feintes
+    /// comprises) que les autres, plutôt qu'un nouveau tirage de feinte à chaque reconnexion.</summary>
     private EtatCourantJoueurDto? ConstruireEtatCourantJoueur(GameSession session, string playerId)
     {
         if (session.Etat != GameState.EnCours) return null;
@@ -723,9 +907,10 @@ public class GameHub(
                 var track = tracksRepository.GetById(bonusRound.TrackId);
                 if (track is not null)
                 {
-                    var qcmOptions = ConstruireQcmOptions(bonusRound.QcmOptionTrackIds, track, bonusRound.Cible, session.Config, tracksRepository);
+                    var qcmOptions = QcmOptionsDepuisRoundOptions(bonusRound.Options, bonusRound.Cible, tracksRepository);
+                    var anneeOptions = bonusRound.AnneeOptions?.Select(a => a.ToString()).ToList();
                     var dejaRepondu = bonusRound.Reponses.Any(r => r.PlayerId == playerId);
-                    var dto = new BonusQuestionStartedForPlayersDto(serie.Config.DureePhaseQuestionMs, bonusRound.Cible, serie.Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, (int)Math.Max(0, ecouleMs));
+                    var dto = new BonusQuestionStartedForPlayersDto(bonusRound.Id, serie.Config.DureePhaseQuestionMs, bonusRound.Cible, serie.Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, (int)Math.Max(0, ecouleMs), anneeOptions);
                     return new EtatCourantJoueurDto(PhaseJoueur.BonusQuestion, session.EnPause, dejaRepondu, null, null, dto);
                 }
             }
@@ -736,7 +921,7 @@ public class GameHub(
             if (ecouleMs < serie.Config.DureePhaseMiseMs)
             {
                 var dejaMise = bonusRound.Mises.Any(m => m.PlayerId == playerId);
-                var dto = new BonusStakeOptionsDto(serie.Config.PaliersDeMise, serie.Config.DureePhaseMiseMs, serie.Index, (int)Math.Max(0, ecouleMs));
+                var dto = new BonusStakeOptionsDto(serie.Config.PaliersDeMise, bonusRound.Id, serie.Config.DureePhaseMiseMs, serie.Index, (int)Math.Max(0, ecouleMs));
                 return new EtatCourantJoueurDto(PhaseJoueur.BonusMise, session.EnPause, dejaMise, null, dto, null);
             }
         }
@@ -750,9 +935,10 @@ public class GameHub(
                 var track = tracksRepository.GetById(round.TrackId);
                 if (track is not null)
                 {
-                    var qcmOptions = ConstruireQcmOptions(round.QcmOptionTrackIds, track, round.Cible, session.Config, tracksRepository);
+                    var qcmOptions = QcmOptionsDepuisRoundOptions(round.Options, round.Cible, tracksRepository);
+                    var anneeOptions = round.AnneeOptions?.Select(a => a.ToString()).ToList();
                     var dejaRepondu = round.Reponses.Any(r => r.PlayerId == playerId);
-                    var dto = new RoundStartedForPlayersDto(round.Mode, round.Cible, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions, (int)Math.Max(0, ecouleMs));
+                    var dto = new RoundStartedForPlayersDto(round.Mode, round.Cible, round.Id, serie.Config.DureeFenetreReponseMs, serie.Index, qcmOptions, (int)Math.Max(0, ecouleMs), anneeOptions);
                     return new EtatCourantJoueurDto(PhaseJoueur.RoundClassique, session.EnPause, dejaRepondu, dto, null, null);
                 }
             }

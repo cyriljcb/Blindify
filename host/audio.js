@@ -73,6 +73,29 @@ export function jouerRefrain(refrainStartMs) {
   });
 }
 
+// Reprise après RejoinAsHost (V2) — contrairement à playAudio, reprend à une position donnée plutôt
+// que depuis le début. currentTime n'est fiable qu'une fois les métadonnées chargées (durée connue),
+// d'où l'attente de "loadedmetadata" plutôt qu'une affectation immédiate après load().
+export function resumeAudio(serverBaseUrl, filePath, positionMs, enPause) {
+  audioEl.src = `${serverBaseUrl}/files/${filePath}`;
+  audioEl.load();
+  manualPlayBtn.classList.add("hidden");
+
+  const reprendre = () => {
+    audioEl.currentTime = positionMs / 1000;
+    if (enPause) {
+      audioEl.pause();
+      audioEl.volume = 1;
+    } else {
+      audioEl.volume = 0;
+      lancerLecture();
+      fadeAudioVolume(1, 450);
+    }
+  };
+
+  audioEl.addEventListener("loadedmetadata", reprendre, { once: true });
+}
+
 export function pauseAudioEnDouceur() {
   fadeAudioVolume(0, 320, () => audioEl.pause());
 }

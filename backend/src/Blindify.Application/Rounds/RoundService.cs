@@ -7,7 +7,7 @@ using Blindify.Domain.Enums;
 
 namespace Blindify.Application.Rounds;
 
-public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, IAnswerMatcher answerMatcher) : IRoundService
+public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, IAnswerMatcher answerMatcher, IAnneeQcmGenerator anneeQcmGenerator) : IRoundService
 {
     public List<Track> SelectionnerMorceaux(IReadOnlyList<Track> pool, IReadOnlyList<string> tags, int nombre, HashSet<string> dejaUtilises, Func<string, int>? playCount = null)
     {
@@ -61,9 +61,19 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     public void DemarrerRound(Round round, Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config, DateTimeOffset maintenant)
     {
         round.DebutRound = maintenant;
-        round.Cible = ChoisirCible(answerMatcher, round.Mode, track);
+        round.Cible = ChoisirCible(answerMatcher, round.Mode, track, config);
 
-        if (round.Mode == RoundMode.Qcm)
+        // V2, section 12.5 : la combinaison PremiereLettre + Année n'a pas de sens (pas de "première
+        // lettre" d'un nombre) — ChoisirCible ne le sait pas (le mode y sert seulement à filtrer
+        // Titre/Auteur), donc l'override se fait ici, après coup, comme pour Cible elle-même.
+        if (round.Cible == RoundCible.Annee && round.Mode == RoundMode.PremiereLettre)
+            round.Mode = RoundMode.TapeReponse;
+
+        if (round.Mode == RoundMode.Qcm && round.Cible == RoundCible.Annee)
+        {
+            round.AnneeOptions = anneeQcmGenerator.GenererOptions(track.Year!.Value, Random.Shared);
+        }
+        else if (round.Mode == RoundMode.Qcm)
         {
             var pool = PoolPourQcm(round.Cible, track, catalogueComplet, tags);
             var options = qcmGenerator.GenererOptions(track, pool, config, Random.Shared);
@@ -106,29 +116,65 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         return catalogueComplet.Where(t => !t.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)).ToList();
     }
 
-    public RoundAnswer? SoumettreReponse(GameSession session, Round round, SeriesConfig seriesConfig, Track track, string playerId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null)
+    public RoundAnswer? SoumettreReponse(GameSession session, Round round, SeriesConfig seriesConfig, Track track, string playerId, Guid roundId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null)
     {
         if (session.EnPause) return null;
         if (round.DebutRound is null) return null;
+        if (round.Id != roundId) return null;
         if (round.Reponses.Any(r => r.PlayerId == playerId)) return null;
 
-        var reponsesAcceptables = ReponsesAcceptables(round.Cible, track);
-        var estCorrecte = round.Mode switch
-        {
-            RoundMode.Qcm => EstQcmCorrect(round.Cible, track, reponse, resolveTrack),
-            RoundMode.PremiereLettre => reponsesAcceptables.Any(texte => EstPremiereLettreCorrecte(reponse, texte)),
-            _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(
-                reponse, texte,
-                session.Config.SeuilToleranceLevenshteinRatio,
-                session.Config.LongueurMinimalePourTolerance,
-                session.Config.LongueurMinimalePourToleranceFixe,
-                session.Config.ToleranceFixeReponseCourte)),
-        };
-
         var pointsEnJeu = scoring.CalculerPointsEnJeu(round.DebutRound.Value, maintenant, round.DureeEnPauseMs, seriesConfig);
-        var points = estCorrecte
-            ? scoring.PointsBonneReponse(pointsEnJeu)
-            : scoring.PointsMauvaiseReponse(pointsEnJeu, seriesConfig);
+        bool estCorrecte;
+        int points;
+        int? ecartAnnee = null;
+
+        if (round.Cible == RoundCible.Annee)
+        {
+            // Qcm : comparaison stricte texte d'année (pas de TrackId, voir Round.AnneeOptions) —
+            // pas de dégressivité par proximité, comme pour toute autre cible en mode Qcm. Saisie :
+            // écart en années, dégressif jusqu'à ToleranceAnnee (voir ScoringService), non numérique
+            // traité comme une mauvaise réponse habituelle (aucun écart calculable).
+            if (round.Mode == RoundMode.Qcm)
+            {
+                estCorrecte = track.Year is not null && reponse == track.Year.Value.ToString();
+                points = estCorrecte ? scoring.PointsBonneReponse(pointsEnJeu) : scoring.PointsMauvaiseReponse(pointsEnJeu, seriesConfig);
+            }
+            else if (track.Year is not null && int.TryParse(reponse, out var anneeReponse))
+            {
+                ecartAnnee = Math.Abs(anneeReponse - track.Year.Value);
+                estCorrecte = ecartAnnee <= seriesConfig.ToleranceAnnee;
+                points = scoring.PointsAnneeApproximative(pointsEnJeu, ecartAnnee.Value, seriesConfig);
+            }
+            else
+            {
+                estCorrecte = false;
+                points = scoring.PointsMauvaiseReponse(pointsEnJeu, seriesConfig);
+            }
+        }
+        else
+        {
+            var reponsesAcceptables = ReponsesAcceptables(round.Cible, track);
+            estCorrecte = round.Mode switch
+            {
+                RoundMode.Qcm => EstQcmCorrect(round.Cible, track, reponse, resolveTrack),
+                RoundMode.PremiereLettre => reponsesAcceptables.Any(texte => EstPremiereLettreCorrecte(reponse, texte)),
+                _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(
+                    reponse, texte,
+                    session.Config.SeuilToleranceLevenshteinRatio,
+                    session.Config.LongueurMinimalePourTolerance,
+                    session.Config.LongueurMinimalePourToleranceFixe,
+                    session.Config.ToleranceFixeReponseCourte)),
+            };
+            points = estCorrecte ? scoring.PointsBonneReponse(pointsEnJeu) : scoring.PointsMauvaiseReponse(pointsEnJeu, seriesConfig);
+        }
+
+        // V2 (socle statistiques) : option choisie recoupée avec round.Options uniquement en mode
+        // Qcm hors cible Année (reponse = le TrackId cliqué) — voir RoundOption/RoundAnswer. Une
+        // question Année en Qcm n'a pas d'"option" au sens RoundOption (voir Round.AnneeOptions).
+        var optionChoisie = round.Mode == RoundMode.Qcm && round.Cible != RoundCible.Annee
+            ? round.Options?.FirstOrDefault(o => o.TrackId == reponse)
+            : null;
+        var tempsReponseMs = (int)Math.Max(0, (maintenant - round.DebutRound.Value).TotalMilliseconds - round.DureeEnPauseMs);
 
         var answer = new RoundAnswer
         {
@@ -137,7 +183,12 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
             Reponse = reponse,
             EstCorrecte = estCorrecte,
             Points = points,
-            PointsEnJeu = pointsEnJeu
+            PointsEnJeu = pointsEnJeu,
+            OptionChoisieTrackId = optionChoisie?.TrackId,
+            OptionChoisieEstFeinte = optionChoisie?.EstFeinte ?? false,
+            OptionChoisieEstPiege = optionChoisie?.EstPiege ?? false,
+            TempsReponseMs = tempsReponseMs,
+            EcartAnnee = ecartAnnee,
         };
 
         round.Reponses.Add(answer);
@@ -160,7 +211,8 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
                 Reponse = "",
                 EstCorrecte = false,
                 Points = penalite,
-                PointsEnJeu = 0
+                PointsEnJeu = 0,
+                EstAbsent = true,
             });
 
             AppliquerPoints(session, player.PlayerId, penalite);
@@ -227,24 +279,43 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
 
     /// <summary>Cible du round/question bonus — partagée avec BonusRoundService.CreerBonusRound.
     /// Film forcé pour les morceaux "disney" (ni le titre réel ni l'artiste crédité n'y sont
-    /// devinables, voir DemarrerRound ci-dessus), sinon 50/50 Titre/Auteur pondéré par
-    /// l'éligibilité de chacun — longueur du titre (TitreVariantes.EstEligibleCommeCible) et,
-    /// en Mode PremiereLettre, premier caractère effectivement une lettre (retour utilisateur :
-    /// un auteur comme "50 Cent" ne matche aucune tuile A-Z côté joueur, voir
-    /// EstEligiblePremiereLettre). Jamais totalement bloquant : si aucune des deux cibles n'est
-    /// éligible en PremiereLettre (rare — titre trop long ET auteur commençant par un chiffre en
-    /// même temps), retombe sur Auteur quand même plutôt que d'empêcher le round, même philosophie
-    /// que le filet de sécurité de QcmGenerator.</summary>
-    internal static RoundCible ChoisirCible(IAnswerMatcher answerMatcher, RoundMode mode, Track track)
+    /// devinables, voir DemarrerRound ci-dessus), sinon tirage pondéré (V2, GameConfig.PoidsCible*)
+    /// parmi Titre/Auteur/Année, restreint aux cibles éligibles — longueur du titre
+    /// (TitreVariantes.EstEligibleCommeCible), année connue (Track.Year) et, en Mode PremiereLettre,
+    /// premier caractère effectivement une lettre pour Titre/Auteur (retour utilisateur : un auteur
+    /// comme "50 Cent" ne matche aucune tuile A-Z côté joueur, voir EstEligiblePremiereLettre — la
+    /// combinaison PremiereLettre+Année n'est pas filtrée ici, voir DemarrerRound qui bascule alors
+    /// le Mode vers TapeReponse après coup). Jamais totalement bloquant : si aucune cible n'est
+    /// éligible (rare), retombe sur Auteur quand même plutôt que d'empêcher le round, même
+    /// philosophie que le filet de sécurité de QcmGenerator.</summary>
+    internal static RoundCible ChoisirCible(IAnswerMatcher answerMatcher, RoundMode mode, Track track, GameConfig config)
     {
         if (track.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)) return RoundCible.Film;
 
         var titreEligible = TitreVariantes.EstEligibleCommeCible(track.Title)
             && (mode != RoundMode.PremiereLettre || EstEligiblePremiereLettre(answerMatcher, RoundCible.Titre, track));
         var auteurEligible = mode != RoundMode.PremiereLettre || EstEligiblePremiereLettre(answerMatcher, RoundCible.Auteur, track);
+        var anneeEligible = track.Year is not null;
 
-        if (titreEligible && auteurEligible) return Random.Shared.Next(2) == 0 ? RoundCible.Titre : RoundCible.Auteur;
-        return titreEligible ? RoundCible.Titre : RoundCible.Auteur;
+        var candidats = new List<(RoundCible Cible, int Poids)>();
+        if (titreEligible) candidats.Add((RoundCible.Titre, config.PoidsCibleTitre));
+        if (auteurEligible) candidats.Add((RoundCible.Auteur, config.PoidsCibleAuteur));
+        if (anneeEligible) candidats.Add((RoundCible.Annee, config.PoidsCibleAnnee));
+
+        if (candidats.Count == 0) return RoundCible.Auteur;
+
+        var totalPoids = candidats.Sum(c => c.Poids);
+        if (totalPoids <= 0) return candidats[Random.Shared.Next(candidats.Count)].Cible;
+
+        var tirage = Random.Shared.Next(totalPoids);
+        var cumul = 0;
+        foreach (var (cible, poids) in candidats)
+        {
+            cumul += poids;
+            if (tirage < cumul) return cible;
+        }
+
+        return candidats[^1].Cible;
     }
 
     /// <summary>Un texte candidat n'est éligible comme cible "Première lettre" que si son premier

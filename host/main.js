@@ -3,7 +3,7 @@
 // Bootstrap et câblage — orchestre tous les autres modules (docs/refactor-decisions.md section 2).
 // Point d'entrée unique chargé par host/index.html (`<script type="module" src="main.js">`).
 
-import { state, notify, subscribe } from "./state.js";
+import { state, notify, subscribe, loadHostSession, clearHostSession } from "./state.js";
 import * as transport from "./transport.js";
 import { registerHandlers, mutations } from "./handlers.js";
 import { render, setConnected, showScreen } from "./render.js";
@@ -13,6 +13,13 @@ import * as displayBridge from "./display-bridge.js";
 import { chargerTagsDisponibles } from "./config.js";
 
 const el = (id) => document.getElementById(id);
+
+// Écran host censé rester allumé toute la soirée (contrôle du jeu + lecture audio) — best-effort,
+// support Screen Wake Lock API pas garanti sur tous les navigateurs desktop (voir docs/architecture.md
+// "Écran toujours allumé"). Jamais bloquant si l'API est absente ou refuse (onglet en arrière-plan).
+if ("wakeLock" in navigator) {
+  navigator.wakeLock.request("screen").catch(() => {});
+}
 
 subscribe(render);
 subscribe(displayBridge.syncDisplay);
@@ -42,8 +49,8 @@ async function tenterConnexion(url, { silencieux = false, timeoutMs = null } = {
     await transport.demarrerConnexion(timeoutMs);
     setConnected(true);
     localStorage.setItem(SERVER_URL_STORAGE_KEY, state.serverBaseUrl);
-    showScreen("screen-setup");
     chargerTagsDisponibles(); // best-effort — n'empêche pas de créer une partie si ça échoue
+    if (!(await tenterResumeHostSession())) showScreen("screen-setup");
     return true;
   } catch (err) {
     console.error(err);
@@ -54,6 +61,41 @@ async function tenterConnexion(url, { silencieux = false, timeoutMs = null } = {
 }
 
 el("btn-connect").addEventListener("click", () => tenterConnexion(el("server-url").value));
+
+// V2 — reconnexion host : restaure le contrôle d'une partie déjà créée après un refresh accidentel
+// de la page (code + hostSecret en sessionStorage, voir state.js). Le snapshot renvoyé par
+// RejoinAsHost (position audio, pause, mode) ne porte pas assez d'info (joueurs, série, options QCM)
+// pour reconstruire fidèlement l'écran de round : on atterrit sur le lobby avec le contrôle restauré
+// (pause/reprise/tableau général/fin de partie redeviennent utilisables) plutôt que d'afficher un
+// écran de round forcément incomplet. Retourne true si une session a été reprise avec succès.
+async function tenterResumeHostSession() {
+  const session = loadHostSession();
+  if (!session) return false;
+
+  try {
+    const snapshot = await transport.invoke.rejoinAsHost(session.code, session.hostSecret);
+    state.gameCode = session.code;
+    state.hostSecret = session.hostSecret;
+    state.jeuEnPause = snapshot.enPause;
+
+    if (snapshot.trackId) {
+      audio.resumeAudio(state.serverBaseUrl, snapshot.filePath, snapshot.positionAudioMs, snapshot.enPause);
+    }
+
+    state.currentScreen = "lobby";
+    showScreen("screen-lobby");
+    el("lobby-error").textContent =
+      "Partie en cours reprise après rechargement de la page — utilise les actions ci-dessous (pause, tableau général, fin de partie) ; l'écran de round n'est pas reconstruit.";
+    notify();
+    return true;
+  } catch (err) {
+    // Secret invalide ou partie disparue (backend redémarré entre-temps, état 100% en mémoire) —
+    // pas la peine de réessayer indéfiniment, ni de bloquer la connexion pour autant.
+    console.error("RejoinAsHost:", err);
+    clearHostSession();
+    return false;
+  }
+}
 
 // ----- Dispatch des événements SignalR : mutation d'état (handlers.js) + effets de bord (audio,
 // minuteur, écran public) + notify(). handlers.js reste le seul fichier qui connaît le vocabulaire
@@ -120,11 +162,13 @@ function handleEvent(name, payload) {
     case "GameEnded":
       timers.stopTimer();
       timers.annulerMinuteur("auto-fin-ou-serie-suivante");
+      demarrerDefilementTitres();
       break;
 
     case "GameRestarted":
       timers.annulerMinuteur("auto-intro-serie");
       timers.annulerMinuteur("bonus-course-intro");
+      timers.annulerMinuteur("titre-suivant");
       audio.remettreVitesseNormale();
       displayBridge.resetPlayerAnswered();
       break;
@@ -271,6 +315,39 @@ function demarrerRoundApresIntro() {
 
 el("btn-start-serie").addEventListener("click", demarrerRoundApresIntro);
 
+// ----- Défilement séquentiel des titres de fin de partie (V2, section 12.6) -----
+// ~4 s/titre, interruptible par le host via btn-titre-suivant (avance immédiatement le décompte).
+
+const DUREE_AFFICHAGE_TITRE_MS = 4000;
+
+function demarrerDefilementTitres() {
+  if (!state.currentTitresInfo || state.currentTitresInfo.length === 0) return;
+  state.titreIndexAffiche = 0;
+  notify();
+  programmerTitreSuivant();
+}
+
+function programmerTitreSuivant() {
+  timers.minuteurAnnulable("titre-suivant", DUREE_AFFICHAGE_TITRE_MS, avancerTitre);
+}
+
+function avancerTitre() {
+  const suivant = state.titreIndexAffiche + 1;
+  if (suivant >= state.currentTitresInfo.length) {
+    state.titreIndexAffiche = -1; // dernier titre déjà montré : masque le panneau
+    notify();
+    return;
+  }
+  state.titreIndexAffiche = suivant;
+  notify();
+  programmerTitreSuivant();
+}
+
+el("btn-titre-suivant").addEventListener("click", () => {
+  timers.annulerMinuteur("titre-suivant");
+  avancerTitre();
+});
+
 // Extrait pour être aussi déclenchable depuis l'écran public (retour utilisateur : pénible de
 // switcher vers le panneau de contrôle juste pour lancer — voir display-bridge.js:"start-round").
 function lancerLaPartieDepuisLobby() {
@@ -403,6 +480,34 @@ el("btn-rejouer").addEventListener("click", async () => {
 });
 
 el("btn-open-display").addEventListener("click", () => displayBridge.openDisplayWindow());
+
+// ----- Signalement en direct (V2, section 12.4) -----
+// Délégation d'événement : les lignes de #flags-list sont générées dynamiquement (render.js), on ne
+// peut pas leur attacher un listener individuel au chargement de la page.
+el("flags-list").addEventListener("click", async (event) => {
+  const bouton = event.target.closest(".flags-submit");
+  if (!bouton) return;
+
+  const ligne = bouton.closest("[data-track-id]");
+  const trackId = ligne.dataset.trackId;
+  const raison = ligne.querySelector(".flags-raison").value;
+  const commentaire = ligne.querySelector(".flags-commentaire").value.trim();
+  const statusEl = ligne.querySelector(".flags-status");
+
+  bouton.disabled = true;
+  statusEl.textContent = "";
+  statusEl.classList.remove("flags-status--error");
+  try {
+    const resultat = await transport.invoke.signalerMorceau(trackId, raison, commentaire);
+    statusEl.textContent = resultat.dejaSignale ? "Déjà signalé." : "Signalé.";
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = "Erreur : " + (err.message || err);
+    statusEl.classList.add("flags-status--error");
+  } finally {
+    bouton.disabled = false;
+  }
+});
 
 // ----- Redémarrage du serveur (retour utilisateur) -----
 // Requête HTTP directe (pas SignalR) vers POST /api/admin/restart — indépendante de la connexion

@@ -9,7 +9,6 @@ namespace Blindify.Application.Rounds;
 public static class SeriesPlanner
 {
     private static readonly int[] PaliersBase = [10, 20, 30, 50];
-    private const int PlafondPalierMax = 3000;
     private static readonly RoundMode[] ModesPossibles = [RoundMode.Qcm, RoundMode.TapeReponse, RoundMode.PremiereLettre];
 
     /// <summary>Une série = un thème, jamais un mélange. Chaque série tirée reçoit un thème distinct
@@ -48,17 +47,14 @@ public static class SeriesPlanner
         return copie;
     }
 
-    /// <summary>Palier de base (série 1), plafond visé pour le palier le plus haut de la DERNIÈRE
-    /// série de la partie (architecture.md section 7 : "jusqu'à 3000 pts"). La raison géométrique
-    /// dépend du nombre de séries réellement choisi pour cette partie, pas une constante fixe. Une
-    /// seule série -> pas de progression possible, on garde la base telle quelle.</summary>
-    public static int[] PaliersPourSerie(int indexSerie, int nombreSeriesTotal)
+    /// <summary>Palier de base (série 1) multiplié par un ratio géométrique CONSTANT
+    /// (GameConfig.FacteurProgressionPaliers) élevé à la puissance de l'index de série — voir ce champ
+    /// pour la raison du changement (V2) par rapport à l'ancien calcul "viser 3000 pts à la dernière
+    /// série", qui dépendait du nombre total de séries et produisait une progression trop brusque avec
+    /// peu de séries.</summary>
+    public static int[] PaliersPourSerie(int indexSerie, double facteurProgression)
     {
-        if (nombreSeriesTotal <= 1) return (int[])PaliersBase.Clone();
-
-        var dernierPalierBase = PaliersBase[^1];
-        var raison = Math.Pow((double)PlafondPalierMax / dernierPalierBase, 1.0 / (nombreSeriesTotal - 1));
-        var facteur = Math.Pow(raison, indexSerie);
+        var facteur = Math.Pow(facteurProgression, indexSerie);
         return PaliersBase.Select(v => (int)Math.Round(v * facteur)).ToArray();
     }
 

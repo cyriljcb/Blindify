@@ -7,7 +7,7 @@
 // incrémentale ciblée par événement (un seul chemin entre "l'état a changé" et "l'écran est à jour").
 
 import { escapeHtml, libelleCible, libelleReveal, lettreSerie } from "./shared/format.js";
-import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode } from "./shared/components.js";
+import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode, renderTitrePanel } from "./shared/components.js";
 
 const el = (id) => document.getElementById(id);
 const connectionIndicator = el("connection-indicator");
@@ -47,6 +47,19 @@ const SCREEN_ID = {
 };
 
 const DUREE_TRANSITION_MS = 350;
+
+// Signalement en direct (V2, section 12.4) — catalogue figé selon RaisonSignalement côté backend
+// (Blindify.Domain.Enums), dupliqué ici comme le reste du contrat (voir CLAUDE.md — pas de génération
+// de code entre les trois clients).
+const RAISONS_SIGNALEMENT = [
+  { code: "PasSaPlace", libelle: "N'a rien à faire dans le catalogue" },
+  { code: "MauvaiseVersion", libelle: "Mauvaise version (live, remix, reprise...)" },
+  { code: "AudioDefectueux", libelle: "Audio défectueux (coupure, volume, qualité...)" },
+  { code: "MetadonneesFausses", libelle: "Métadonnées fausses (titre, artiste, année...)" },
+  { code: "HorsTheme", libelle: "Hors thème de la série" },
+  { code: "RefrainMalPlace", libelle: "Refrain mal placé" },
+  { code: "Autre", libelle: "Autre" },
+];
 
 // Exporté : utilisé aussi par config.js pour les écrans "connect"/"setup", hors du flux réactif
 // (formulaires locaux, rien à refléter depuis l'état serveur — voir docs/refactor-decisions.md
@@ -269,6 +282,18 @@ function renderBonusResult(state) {
 function renderEnded(state) {
   renderScoreList(el("final-scores"), state.currentScoresInfo, roster(state), { medailles: true });
   renderScoreChart(el("score-chart"), state.scoreHistory, state.currentScoresInfo, roster(state));
+  renderTitrePanel(
+    {
+      panel: el("titre-panel"),
+      compteur: el("titre-compteur"),
+      libelle: el("titre-libelle"),
+      description: el("titre-description"),
+      joueurs: el("titre-joueurs"),
+    },
+    state.currentTitresInfo,
+    state.titreIndexAffiche,
+    roster(state)
+  );
 }
 
 const RENDERERS = {
@@ -282,6 +307,39 @@ const RENDERERS = {
   ended: renderEnded,
 };
 
+function renderFlagsPanel(state) {
+  const panel = el("flags-panel");
+  const morceaux = state.morceauxJoues;
+  panel.classList.toggle("hidden", morceaux.length === 0);
+  if (morceaux.length === 0) return;
+
+  el("flags-count").textContent = String(morceaux.length);
+
+  const list = el("flags-list");
+  // Reconstruit seulement si le nombre de lignes a changé — évite d'effacer la saisie en cours
+  // (raison/commentaire) d'une ligne existante à chaque re-render déclenché par un événement sans
+  // rapport (ScoreUpdate, etc. — voir render(), appelé après CHAQUE notify()).
+  if (list.children.length === morceaux.length) return;
+
+  list.innerHTML = [...morceaux]
+    .reverse() // plus récent d'abord
+    .map(
+      (m) => `
+    <li class="flags-list-item" data-track-id="${escapeHtml(m.trackId)}">
+      <div class="flags-list-item__info"><strong>${escapeHtml(m.titre)}</strong> — ${escapeHtml(m.artiste)}</div>
+      <div class="flags-list-item__form">
+        <select class="flags-raison">
+          ${RAISONS_SIGNALEMENT.map((r) => `<option value="${r.code}">${escapeHtml(r.libelle)}</option>`).join("")}
+        </select>
+        <input type="text" class="flags-commentaire" placeholder="Commentaire (facultatif)" />
+        <button type="button" class="flags-submit">Signaler</button>
+        <span class="flags-status"></span>
+      </div>
+    </li>`
+    )
+    .join("");
+}
+
 export function render(state) {
   if (!state.leaderboardOpen) {
     el("leaderboard-overlay").classList.add("hidden");
@@ -289,6 +347,8 @@ export function render(state) {
     renderScoreList(el("leaderboard-scores"), state.lastLeaderboardDto, roster(state), { medailles: true });
     el("leaderboard-overlay").classList.remove("hidden");
   }
+
+  renderFlagsPanel(state);
 
   if (!state.currentScreen) return; // encore sur connect/setup, piloté par config.js
 

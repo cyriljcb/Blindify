@@ -10,7 +10,7 @@
 // Rounds.SeriesPlanner) — ce module se contente de collecter les choix de l'écran et d'envoyer une
 // intention (nombre de séries/rounds/durée + vivier de thèmes), plus léger qu'avant.
 
-import { state, notify } from "./state.js";
+import { state, notify, saveHostSession } from "./state.js";
 import { invoke } from "./transport.js";
 import { escapeHtml } from "./shared/format.js";
 
@@ -102,6 +102,7 @@ el("btn-create-game").addEventListener("click", async () => {
     const result = await invoke.createGame(payload);
     state.gameCode = result.code;
     state.hostSecret = result.hostSecret;
+    saveHostSession();
     state.partieConfiguree = false;
     el("configurer-error").textContent = "";
     el("configurer-note").textContent = "";
@@ -117,6 +118,9 @@ el("btn-create-game").addEventListener("click", async () => {
     state.currentRoundInfo = {};
     state.currentRevealInfo = {};
     state.currentScoresInfo = null;
+    state.currentTitresInfo = [];
+    state.titreIndexAffiche = -1;
+    state.morceauxJoues = [];
     notify();
   } catch (err) {
     console.error(err);

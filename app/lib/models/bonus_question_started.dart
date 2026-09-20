@@ -8,14 +8,19 @@ class BonusQuestionStarted {
   BonusQuestionStarted({
     required this.dureePhaseQuestionMs,
     required this.cible,
+    required this.roundId,
     required this.serieIndex,
     required this.mode,
     this.qcmOptions,
     this.estCourse = false,
     this.tempsEcouleMs = 0,
+    this.anneeOptions,
   });
 
   final int dureePhaseQuestionMs;
+
+  /// Identité du BonusRound (V2) — voir BonusStakeOptions.roundId, à renvoyer dans SubmitBonusAnswer.
+  final String roundId;
 
   /// Toujours Titre, sauf morceau "disney" (Film) — voir BonusRoundService.CreerBonusRound.
   final RoundCible cible;
@@ -36,9 +41,13 @@ class BonusQuestionStarted {
   /// RoundStarted.tempsEcouleMs.
   final int tempsEcouleMs;
 
+  /// Voir RoundStarted.anneeOptions.
+  final List<String>? anneeOptions;
+
   factory BonusQuestionStarted.fromJson(Map<String, dynamic> json) => BonusQuestionStarted(
         dureePhaseQuestionMs: json['dureePhaseQuestionMs'] as int,
         cible: RoundCibleJson.fromJson(json['cible'] as String),
+        roundId: json['roundId'] as String,
         serieIndex: json['serieIndex'] as int,
         mode: RoundModeJson.fromJson(json['mode'] as String),
         qcmOptions: (json['qcmOptions'] as List<dynamic>?)
@@ -46,5 +55,6 @@ class BonusQuestionStarted {
             .toList(),
         estCourse: json['estCourse'] as bool? ?? false,
         tempsEcouleMs: json['tempsEcouleMs'] as int? ?? 0,
+        anneeOptions: (json['anneeOptions'] as List<dynamic>?)?.map((e) => e as String).toList(),
       );
 }

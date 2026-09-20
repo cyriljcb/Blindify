@@ -36,14 +36,23 @@ export function libelleReveal(reveal) {
   if (reveal?.cible === "Film") {
     return { titre: reveal?.film ?? "", sousTitre: `${reveal?.title ?? ""} — ${reveal?.artist ?? ""}` };
   }
+  // V2, section 12.5 : met l'année réelle en avant (comme le film pour la cible Film), le titre
+  // réel reste affiché en dessous à titre de trivia — annee absente si Track.Year n'était pas
+  // renseigné, repli sur le titre dans ce cas plutôt que d'afficher "undefined".
+  if (reveal?.cible === "Annee" && reveal?.annee != null) {
+    return { titre: `${reveal.annee}`, sousTitre: `${reveal?.title ?? ""} — ${reveal?.artist ?? ""}` };
+  }
   return { titre: reveal?.title ?? "", sousTitre: reveal?.artist ?? "" };
 }
 
-// Libellé complet "trouve le titre/l'artiste/le film" — utilisé par le panneau de contrôle sur les
-// écrans round/bonus-question.
+// Libellé complet "trouve le titre/l'artiste/le film/l'année" — utilisé par le panneau de contrôle
+// sur les écrans round/bonus-question. V2, section 12.5 : cible Annee ajoutée — sans branche
+// explicite, elle retombait sur "le film" (dernier cas du if/else en cascade), affichant "Trouve le
+// film" pendant une question qui demandait l'année.
 export function libelleCible(cible) {
   if (cible === "Titre") return "le titre";
   if (cible === "Auteur") return "l'artiste";
+  if (cible === "Annee") return "l'année";
   return "le film";
 }
 

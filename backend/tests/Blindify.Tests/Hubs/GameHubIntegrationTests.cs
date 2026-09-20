@@ -101,7 +101,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         var bonneOption = roundStartedPlayer.QcmOptions.First(o => o.TrackId == roundStartedHost.TrackId);
 
-        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
+        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
 
         Assert.True(resultat.EstCorrecte);
         Assert.True(resultat.Points > 0);
@@ -237,7 +237,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         }
 
         var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
-        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
+        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
         await AvecTimeout(roundEndedTcs.Task, TimeSpan.FromSeconds(5));
 
         await _hostConnection.InvokeAsync("EndGame");
@@ -305,7 +305,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         // N'importe quelle réponse (juste ou fausse) déclenche l'évènement — seule l'absence de
         // réponse (reponse is null côté RoundService) ne le déclenche pas.
-        await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto("n'importe quoi"));
+        await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, "n'importe quoi"));
 
         var playerAnswered = await AvecTimeout(playerAnsweredTcs.Task, TimeSpan.FromSeconds(5));
         Assert.Equal("player-1", playerAnswered.PlayerId);
@@ -351,7 +351,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         }
 
         var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
-        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
+        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
 
         await AttendreAsync(() => scoreUpdates.Count > 0);
         var dernier = scoreUpdates[^1];
@@ -524,7 +524,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         // Peu importe le mode ou la justesse de la réponse ici : un seul essai est déjà consommé
         // dès la première soumission (RoundService.SoumettreReponse), correcte ou non.
-        await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto("peu importe"));
+        await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, "peu importe"));
 
         await using var reconnexion = _factory.CreateHubConnection();
         await reconnexion.StartAsync();
@@ -638,7 +638,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         // essai du joueur (RoundService.SoumettreReponse retourne avant d'enregistrer la réponse).
         var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
         var reponsePendantPause = await _playerConnection.InvokeAsync<RoundAnswerResultDto>(
-            "SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
+            "SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
         Assert.False(reponsePendantPause.EstCorrecte);
         Assert.Equal(0, reponsePendantPause.Points);
 
@@ -648,7 +648,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         // Après reprise, l'essai du joueur est toujours disponible et accepté normalement.
         var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>(
-            "SubmitAnswer", new SubmitAnswerRequestDto(bonneOption.TrackId));
+            "SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
         Assert.True(resultat.EstCorrecte);
         Assert.True(resultat.Points > 0);
     }

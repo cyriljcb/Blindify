@@ -2,9 +2,9 @@
 Réinjecte dans tracks.json les tags corrigés au tableur (voir export_tags_csv.py) — deuxième
 moitié du "Outil de curation des tags" recommandé dans docs/architecture.md section 11.
 
-Ne touche QUE le champ "tags" de chaque morceau, jamais title/artist/year/genres (colonnes de
-lecture seule dans le CSV, présentes uniquement pour juger au tableur) : les modifier dans le
-CSV n'a aucun effet ici. Un id du CSV absent de tracks.json est signalé et ignoré plutôt que de
+Ne touche QUE le champ "tags" de chaque morceau, jamais title/artist/year/genres/tauxReussite
+(colonnes de lecture seule dans le CSV, présentes uniquement pour juger au tableur — tauxReussite,
+V2, vient de stats_common.py) : les modifier dans le CSV n'a aucun effet ici. Un id du CSV absent de tracks.json est signalé et ignoré plutôt que de
 faire échouer tout l'import. Un morceau de tracks.json absent du CSV garde ses tags actuels
 inchangés — un export filtré par --tag (voir export_tags_csv.py) peut donc être réimporté tel
 quel sans toucher au reste du catalogue.

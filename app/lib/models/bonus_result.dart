@@ -5,6 +5,7 @@ class BonusResultEntry {
     this.reponse,
     required this.estCorrecte,
     required this.points,
+    this.ecartAnnee,
   });
 
   final String playerId;
@@ -13,12 +14,16 @@ class BonusResultEntry {
   final bool estCorrecte;
   final int points;
 
+  /// Voir RoundResultEntry.ecartAnnee.
+  final int? ecartAnnee;
+
   factory BonusResultEntry.fromJson(Map<String, dynamic> json) => BonusResultEntry(
         playerId: json['playerId'] as String,
         mise: json['mise'] as int,
         reponse: json['reponse'] as String?,
         estCorrecte: json['estCorrecte'] as bool,
         points: json['points'] as int,
+        ecartAnnee: json['ecartAnnee'] as int?,
       );
 }
 
@@ -32,6 +37,7 @@ class BonusResult {
     required this.film,
     required this.resultats,
     this.estCourse = false,
+    this.annee,
   });
 
   final String trackId;
@@ -52,6 +58,9 @@ class BonusResult {
   /// autres n'ont ni gagné ni perdu leur mise. Voir BonusRound.EstCourse côté serveur.
   final bool estCourse;
 
+  /// Voir RoundEnded.annee.
+  final int? annee;
+
   factory BonusResult.fromJson(Map<String, dynamic> json) => BonusResult(
         trackId: json['trackId'] as String,
         title: json['title'] as String,
@@ -63,5 +72,6 @@ class BonusResult {
             .map((e) => BonusResultEntry.fromJson(e as Map<String, dynamic>))
             .toList(),
         estCourse: json['estCourse'] as bool? ?? false,
+        annee: json['annee'] as int?,
       );
 }

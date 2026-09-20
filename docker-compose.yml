@@ -9,6 +9,10 @@
 #   - stats.json doit exister, même vide (`echo '{}' > stats.json`) : un mount de fichier Docker
 #     sur un chemin qui n'existe pas encore côté hôte crée un dossier vide à la place, ce qui fait
 #     planter le backend au premier écriture de playCount.
+#   - flags.json doit exister, même vide (`echo '[]' > flags.json`) — même avertissement que
+#     stats.json ci-dessus (V2, section 12.4 : signalement en direct).
+#   - flags_resolutions.json doit exister, même vide (`echo '{}' > flags_resolutions.json`) — écrit
+#     uniquement par data/scripts/import_flag_resolutions.py, jamais par le backend.
 #   - Les dossiers audio/ et covers/ doivent exister (mêmes vides), peuplés ensuite par
 #     data/scripts/download_audio.py (voir data/scripts/sync_daily.py pour l'automatisation).
 #
@@ -36,6 +40,8 @@ services:
     volumes:
       - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/tracks.json:/data/tracks.json:ro
       - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/stats.json:/data/stats.json
+      - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/flags.json:/data/flags.json
+      - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/flags_resolutions.json:/data/flags_resolutions.json:ro
       - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/audio:/data/audio:ro
       - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/covers:/data/covers:ro
       # Relatif à ce fichier (racine du repo) : host/ est versionné avec Git, pas un point de montage
@@ -49,6 +55,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - Data__TracksPath=/data/tracks.json
       - Data__StatsPath=/data/stats.json
+      - Data__FlagsPath=/data/flags.json
+      - Data__FlagsResolutionsPath=/data/flags_resolutions.json
       - Data__AudioPath=/data/audio
       - Data__CoversPath=/data/covers
       - Data__RootPath=/data

@@ -128,6 +128,26 @@ export function renderScoreChart(container, history, finalDto, roster) {
   container.innerHTML = `${svg}<div class="score-chart-legend">${legende}</div>`;
 }
 
+// Défilement séquentiel des titres de fin de partie (V2, section 12.6) — même DTO host/joueurs, pas
+// de secret ici. `els` regroupe les noeuds cibles ({ panel, compteur, libelle, description, joueurs })
+// pour être réutilisable tel quel entre le panneau de contrôle (index.html) et l'écran public
+// (display.html). `index === -1` masque le panneau (défilement pas démarré ou terminé).
+export function renderTitrePanel(els, titres, index, roster) {
+  if (index < 0 || index >= titres.length) {
+    els.panel.classList.add("hidden");
+    return;
+  }
+
+  const titre = titres[index];
+  const noms = titre.playerIds.map((id) => (roster?.joueurs ?? []).find((j) => j.playerId === id)?.nom ?? id);
+
+  els.panel.classList.remove("hidden");
+  els.compteur.textContent = `Titre ${index + 1} / ${titres.length}`;
+  els.libelle.textContent = titre.libelle;
+  els.description.textContent = titre.description;
+  els.joueurs.textContent = noms.join(", ");
+}
+
 // Mémoïsation par module — host/index.html et host/display.html sont deux documents séparés (l'un
 // ouvert via window.open), donc deux instances indépendantes de ce module : pas de collision entre
 // les deux QR codes malgré la même clé de cache.

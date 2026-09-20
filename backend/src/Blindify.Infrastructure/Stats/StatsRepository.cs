@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Blindify.Domain.Statistics;
 using Blindify.Infrastructure.Configuration;
+using Blindify.Infrastructure.Persistence;
 using Microsoft.Extensions.Options;
 
 namespace Blindify.Infrastructure.Stats;
@@ -39,7 +41,46 @@ public class StatsRepository : IStatsRepository
             }
 
             entry.PlayCount++;
-            File.WriteAllText(_path, JsonSerializer.Serialize(_stats, JsonOptions));
+            AtomicJsonFile.Write(_path, _stats, JsonOptions);
+        }
+    }
+
+    public void EnregistrerResultatsRound(RoundStatsUpdate update)
+    {
+        lock (_lock)
+        {
+            if (!_stats.TryGetValue(update.TrackId, out var entry))
+            {
+                entry = new StatsEntryDto();
+                _stats[update.TrackId] = entry;
+            }
+
+            if (!entry.Reponses.TryGetValue(update.CleModeCible, out var reponseStat))
+            {
+                reponseStat = new ReponseStatDto();
+                entry.Reponses[update.CleModeCible] = reponseStat;
+            }
+
+            reponseStat.N += update.N;
+            reponseStat.Correct += update.Correct;
+            reponseStat.Absent += update.Absent;
+            reponseStat.TempsCorrectCumulMs += update.TempsCorrectCumulMs;
+            if (update.EcartCumul is not null)
+                reponseStat.EcartCumul = (reponseStat.EcartCumul ?? 0) + update.EcartCumul;
+
+            foreach (var confusion in update.Confusions)
+            {
+                if (!entry.Confusions.TryGetValue(confusion.TrackId, out var confusionStat))
+                {
+                    confusionStat = new ConfusionStatDto();
+                    entry.Confusions[confusion.TrackId] = confusionStat;
+                }
+
+                confusionStat.Presente += confusion.Presente;
+                confusionStat.Choisi += confusion.Choisi;
+            }
+
+            AtomicJsonFile.Write(_path, _stats, JsonOptions);
         }
     }
 }

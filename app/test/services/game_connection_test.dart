@@ -18,9 +18,11 @@ import 'package:app/services/game_connection.dart';
 
 void main() {
   group('appliquerEtatCourant — resynchronisation à la reconnexion (playtest 2026-09-06)', () {
-    final round = RoundStarted(mode: RoundMode.tapeReponse, cible: RoundCible.auteur, dureeFenetreReponseMs: 20000, serieIndex: 1);
-    final bonusMise = BonusStakeOptions(paliers: [10, 20, 30, 50], dureePhaseMiseMs: 15000, serieIndex: 1);
-    final bonusQuestion = BonusQuestionStarted(dureePhaseQuestionMs: 20000, cible: RoundCible.titre, serieIndex: 1, mode: RoundMode.qcm);
+    final round = RoundStarted(
+        mode: RoundMode.tapeReponse, cible: RoundCible.auteur, roundId: 'round-1', dureeFenetreReponseMs: 20000, serieIndex: 1);
+    final bonusMise = BonusStakeOptions(paliers: [10, 20, 30, 50], roundId: 'bonus-1', dureePhaseMiseMs: 15000, serieIndex: 1);
+    final bonusQuestion = BonusQuestionStarted(
+        dureePhaseQuestionMs: 20000, cible: RoundCible.titre, roundId: 'bonus-1', serieIndex: 1, mode: RoundMode.qcm);
 
     test('etat null et actualiserEcran=true : repli sur le lobby', () {
       final game = GameConnection()..screen = AppScreen.loading;
@@ -93,6 +95,7 @@ void main() {
     Map<String, dynamic> payloadBonusQuestionStarted({required bool estCourse}) => {
           'dureePhaseQuestionMs': 20000,
           'cible': 'Titre',
+          'roundId': 'bonus-course-1',
           'serieIndex': 0,
           'mode': 'Qcm',
           'qcmOptions': null,

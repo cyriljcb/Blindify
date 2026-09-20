@@ -10,4 +10,22 @@ public class BonusAnswer
 
     /// <summary>+mise si EstCorrecte, -mise sinon — voir architecture.md section 7.</summary>
     public int Points { get; set; }
+
+    /// <summary>Voir RoundAnswer.EstAbsent — même rôle, posé par BonusRoundService.TerminerParTimeout.</summary>
+    public bool EstAbsent { get; set; }
+
+    /// <summary>Voir RoundAnswer.OptionChoisieTrackId.</summary>
+    public string? OptionChoisieTrackId { get; set; }
+
+    /// <summary>Voir RoundAnswer.OptionChoisieEstFeinte.</summary>
+    public bool OptionChoisieEstFeinte { get; set; }
+
+    /// <summary>Voir RoundAnswer.OptionChoisieEstPiege.</summary>
+    public bool OptionChoisieEstPiege { get; set; }
+
+    /// <summary>Voir RoundAnswer.TempsReponseMs.</summary>
+    public int TempsReponseMs { get; set; }
+
+    /// <summary>Voir RoundAnswer.EcartAnnee.</summary>
+    public int? EcartAnnee { get; set; }
 }

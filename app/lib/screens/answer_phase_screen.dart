@@ -166,6 +166,7 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
               mode: round.mode,
               cible: round.cible,
               qcmOptions: round.qcmOptions,
+              anneeOptions: round.anneeOptions,
               disabled: disabled,
               onSubmit: game.submitAnswer,
             ),
@@ -211,6 +212,8 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
               RoundCible.auteur =>
                 "Le morceau (ralenti) est joué côté host — écoute et trouve l'artiste. Un seul essai.",
               RoundCible.titre => 'Le morceau (ralenti) est joué côté host — écoute et tape le titre. Un seul essai.',
+              RoundCible.annee =>
+                "Le morceau (ralenti) est joué côté host — écoute et trouve l'année de sortie. Un seul essai.",
             },
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
@@ -227,6 +230,7 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
               mode: question.mode,
               cible: question.cible,
               qcmOptions: question.qcmOptions,
+              anneeOptions: question.anneeOptions,
               disabled: disabled,
               onSubmit: game.submitBonusAnswer,
             ),
@@ -236,13 +240,23 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
     );
   }
 
+  // Cible Année (V2, section 12.5) traitée à part de préférence au switch sur mode ci-dessous :
+  // en Qcm les options sont des années (anneeOptions), pas des morceaux (qcmOptions) — jamais en
+  // PremiereLettre (le serveur bascule alors en TapeReponse, voir RoundService.DemarrerRound).
   Widget _buildAnswerArea({
     required RoundMode mode,
     required RoundCible cible,
     required List<QcmOption>? qcmOptions,
+    required List<String>? anneeOptions,
     required bool disabled,
     required Future<void> Function(String) onSubmit,
   }) {
+    if (cible == RoundCible.annee) {
+      return mode == RoundMode.qcm
+          ? _AnneeQcmAnswers(anneeOptions: anneeOptions ?? [], disabled: disabled, onSubmit: onSubmit)
+          : _AnneeInput(controller: _reponseController, disabled: disabled, onSubmit: onSubmit);
+    }
+
     return switch (mode) {
       RoundMode.qcm => _QcmAnswers(qcmOptions: qcmOptions ?? [], cible: cible, disabled: disabled, onSubmit: onSubmit),
       RoundMode.premiereLettre => _LetterAnswer(disabled: disabled, onSubmit: onSubmit),
@@ -294,6 +308,9 @@ class _QcmAnswers extends StatelessWidget {
           RoundCible.titre => option.title,
           RoundCible.auteur => option.artist.split(',').first.trim(),
           RoundCible.film => option.film,
+          // Jamais atteint en pratique (cible Année routée vers _AnneeQcmAnswers, voir
+          // _buildAnswerArea) — présent pour l'exhaustivité du switch.
+          RoundCible.annee => option.title,
         };
         return _AnswerTile(label: label, index: index, onPressed: disabled ? null : () => onSubmit(option.trackId));
       },
@@ -447,6 +464,63 @@ class _LetterAnswer extends StatelessWidget {
   }
 }
 
+/// Cible Année en mode Qcm (V2, section 12.5) — mêmes tuiles que _QcmAnswers, mais les options sont
+/// de simples années en texte (anneeOptions), pas des morceaux : pas de champ à choisir selon la
+/// cible, la valeur affichée EST la réponse à soumettre.
+class _AnneeQcmAnswers extends StatelessWidget {
+  const _AnneeQcmAnswers({required this.anneeOptions, required this.disabled, required this.onSubmit});
+
+  final List<String> anneeOptions;
+  final bool disabled;
+  final Future<void> Function(String) onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return FillHeightList(
+      itemCount: anneeOptions.length,
+      itemBuilder: (context, index) {
+        final annee = anneeOptions[index];
+        return _AnswerTile(label: annee, index: index, onPressed: disabled ? null : () => onSubmit(annee));
+      },
+    );
+  }
+}
+
+/// Cible Année en mode saisie (V2, section 12.5) — clavier numérique plutôt que le clavier texte
+/// complet de _TextAnswer, pour une réponse qui n'est jamais qu'un nombre à 4 chiffres.
+class _AnneeInput extends StatelessWidget {
+  const _AnneeInput({required this.controller, required this.disabled, required this.onSubmit});
+
+  final TextEditingController controller;
+  final bool disabled;
+  final Future<void> Function(String) onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        TextField(
+          controller: controller,
+          enabled: !disabled,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          maxLength: 4,
+          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
+          decoration: const InputDecoration(labelText: 'Année (ex. 1986)', counterText: ''),
+          onSubmitted: disabled ? null : (value) => onSubmit(value.trim()),
+        ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: disabled ? null : () => onSubmit(controller.text.trim()),
+          child: const Text('Valider'),
+        ),
+      ],
+    );
+  }
+}
+
 class _TextAnswer extends StatelessWidget {
   const _TextAnswer({required this.controller, required this.disabled, required this.cible, required this.onSubmit});
 
@@ -461,6 +535,9 @@ class _TextAnswer extends StatelessWidget {
       RoundCible.titre => 'Titre du morceau',
       RoundCible.auteur => "Nom de l'artiste",
       RoundCible.film => 'Film Disney',
+      // Jamais atteint en pratique (cible Année routée vers _AnneeInput, voir _buildAnswerArea) —
+      // présent pour l'exhaustivité du switch.
+      RoundCible.annee => 'Année',
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

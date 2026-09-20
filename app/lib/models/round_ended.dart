@@ -4,6 +4,7 @@ class RoundResultEntry {
     this.reponse,
     this.estCorrecte,
     required this.points,
+    this.ecartAnnee,
   });
 
   final String playerId;
@@ -11,11 +12,15 @@ class RoundResultEntry {
   final bool? estCorrecte;
   final int points;
 
+  /// Écart en années (V2, section 12.5) — uniquement pour la cible Année en mode saisie.
+  final int? ecartAnnee;
+
   factory RoundResultEntry.fromJson(Map<String, dynamic> json) => RoundResultEntry(
         playerId: json['playerId'] as String,
         reponse: json['reponse'] as String?,
         estCorrecte: json['estCorrecte'] as bool?,
         points: json['points'] as int,
+        ecartAnnee: json['ecartAnnee'] as int?,
       );
 }
 
@@ -28,6 +33,7 @@ class RoundEnded {
     required this.cible,
     required this.film,
     required this.resultats,
+    this.annee,
   });
 
   final String trackId;
@@ -45,6 +51,10 @@ class RoundEnded {
 
   final List<RoundResultEntry> resultats;
 
+  /// Année réelle de sortie du morceau (V2, section 12.5) — pertinente seulement si `cible ==
+  /// 'Annee'`, jamais transmise avant le reveal (voir RoundEndedDto côté backend).
+  final int? annee;
+
   factory RoundEnded.fromJson(Map<String, dynamic> json) => RoundEnded(
         trackId: json['trackId'] as String,
         title: json['title'] as String,
@@ -55,5 +65,6 @@ class RoundEnded {
         resultats: (json['resultats'] as List<dynamic>)
             .map((e) => RoundResultEntry.fromJson(e as Map<String, dynamic>))
             .toList(),
+        annee: json['annee'] as int?,
       );
 }

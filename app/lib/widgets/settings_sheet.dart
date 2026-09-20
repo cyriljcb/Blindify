@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../services/apk_update.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
+import 'signalement_dialog.dart';
 
 /// Réglages accessibles en permanence (icône engrenage dans l'en-tête, voir main.dart) —
 /// retour utilisateur (2026-08-29) : la connexion automatique au démarrage (voir
@@ -217,6 +218,45 @@ class _AdminSection extends StatelessWidget {
               label: const Text('Terminer la partie'),
               style: OutlinedButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
             ),
+            const Divider(height: 24),
+            Text('Morceaux joués dans cette partie', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 4),
+            if (game.morceauxJoues.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'Aucun morceau révélé pour l\'instant.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              )
+            else
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 220),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: game.morceauxJoues.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final morceau = game.morceauxJoues[game.morceauxJoues.length - 1 - index]; // plus récent d'abord
+                    return ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(morceau.titre, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(morceau.artiste, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.flag_outlined),
+                        tooltip: 'Signaler ce morceau',
+                        onPressed: () async {
+                          final message = await showSignalementDialog(context, game, morceau);
+                          if (message != null && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
           ],
         ],
       ],

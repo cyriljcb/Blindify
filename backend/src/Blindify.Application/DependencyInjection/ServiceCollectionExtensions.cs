@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IBonusScoringService, BonusScoringService>();
         services.AddSingleton<IAnswerMatcher, AnswerMatcher>();
         services.AddSingleton<IQcmGenerator, QcmGenerator>();
+        services.AddSingleton<IAnneeQcmGenerator, AnneeQcmGenerator>();
         services.AddSingleton<IRoundService, RoundService>();
         services.AddSingleton<IBonusRoundService, BonusRoundService>();
         services.AddSingleton<IGameCodeGenerator, GameCodeGenerator>();

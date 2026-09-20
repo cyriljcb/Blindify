@@ -47,6 +47,13 @@
       </div>
     </div>
 
+    <!-- Signalement en direct (V2, section 12.4) — hors des écrans (comme #game-controls) pour
+         rester disponible quel que soit l'écran affiché, dès qu'un morceau a été révélé. -->
+    <details id="flags-panel" class="flags-panel hidden">
+      <summary>Signaler un morceau (<span id="flags-count">0</span> joué(s) dans cette partie)</summary>
+      <ul id="flags-list" class="flags-list"></ul>
+    </details>
+
     <!-- Écran 1 : connexion au serveur -->
     <section id="screen-connect" class="screen">
       <h2>Connexion au serveur</h2>
@@ -231,6 +238,17 @@
       <ol id="final-scores" class="score-list score-list--final"></ol>
       <h3>Qui menait quand</h3>
       <div id="score-chart" class="score-chart"></div>
+
+      <div id="titre-panel" class="titre-panel hidden">
+        <p id="titre-compteur" class="titre-panel__compteur"></p>
+        <h3 id="titre-libelle"></h3>
+        <p id="titre-description"></p>
+        <p id="titre-joueurs" class="titre-panel__joueurs"></p>
+        <div class="actions">
+          <button id="btn-titre-suivant">Titre suivant</button>
+        </div>
+      </div>
+
       <div class="actions">
         <button id="btn-rejouer">Rejouer avec le même groupe</button>
       </div>

@@ -36,6 +36,7 @@ export async function demarrerConnexion(timeoutMs = null) {
 
 export const invoke = {
   createGame: (payload) => connection.invoke("CreateGame", payload),
+  rejoinAsHost: (code, hostSecret) => connection.invoke("RejoinAsHost", code, hostSecret),
   configurerPartie: (payload) => connection.invoke("ConfigurerPartie", payload),
   annoncerSerieCourante: () => connection.invoke("AnnoncerSerieCourante"),
   startRound: () => connection.invoke("StartRound"),
@@ -47,4 +48,8 @@ export const invoke = {
   resumeGame: () => connection.invoke("ResumeGame"),
   endGame: () => connection.invoke("EndGame"),
   rejouerPartie: () => connection.invoke("RejouerPartie"),
+  // V2, section 12.4 — commentaire: null si vide, jamais une chaîne vide (SignalementRequestDto.Commentaire
+  // reste optionnel côté contrat).
+  signalerMorceau: (trackId, raison, commentaire) =>
+    connection.invoke("SignalerMorceau", { trackId, raison, commentaire: commentaire || null }),
 };

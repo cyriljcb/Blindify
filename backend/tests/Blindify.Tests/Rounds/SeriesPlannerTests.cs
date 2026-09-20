@@ -46,40 +46,43 @@ public class SeriesPlannerTests
     }
 
     [Fact]
-    public void PaliersPourSerie_UneSeuleSerie_GardeLaBaseTelleQuelle()
-    {
-        var paliers = SeriesPlanner.PaliersPourSerie(0, 1);
-
-        Assert.Equal(new[] { 10, 20, 30, 50 }, paliers);
-    }
-
-    [Fact]
     public void PaliersPourSerie_PremiereSerie_EstToujoursLaBase()
     {
-        var paliers = SeriesPlanner.PaliersPourSerie(0, 10);
+        var paliers = SeriesPlanner.PaliersPourSerie(0, facteurProgression: 1.6);
 
         Assert.Equal(new[] { 10, 20, 30, 50 }, paliers);
     }
 
     [Fact]
-    public void PaliersPourSerie_DerniereSerie_AtteintExactementLePlafond()
+    public void PaliersPourSerie_RatioConstant_IndependantDuNombreDeSeries()
     {
-        // architecture.md section 7 : avec 10 séries, la dernière (index 9) doit atteindre
-        // exactement [600, 1200, 1800, 3000].
-        var paliers = SeriesPlanner.PaliersPourSerie(9, 10);
+        // V2 : contrairement à l'ancien calcul (qui visait 3000 pts à la DERNIÈRE série, donc dépendait
+        // du nombre total de séries), le ratio est désormais constant — la série d'index 2 donne le
+        // même résultat que la partie compte 3 séries ou 20.
+        var paliersAvecPeuDeSeries = SeriesPlanner.PaliersPourSerie(2, facteurProgression: 1.6);
+        var paliersAvecBeaucoupDeSeries = SeriesPlanner.PaliersPourSerie(2, facteurProgression: 1.6);
 
-        Assert.Equal(new[] { 600, 1200, 1800, 3000 }, paliers);
+        Assert.Equal(paliersAvecPeuDeSeries, paliersAvecBeaucoupDeSeries);
+    }
+
+    [Fact]
+    public void PaliersPourSerie_AppliqueLeRatioALaPuissanceDeLIndex()
+    {
+        var paliers = SeriesPlanner.PaliersPourSerie(2, facteurProgression: 2.0);
+
+        // facteur = 2.0^2 = 4 -> base [10,20,30,50] * 4
+        Assert.Equal(new[] { 40, 80, 120, 200 }, paliers);
     }
 
     [Fact]
     public void PaliersPourSerie_ProgressionCroissante_EntreSeries()
     {
-        var premiere = SeriesPlanner.PaliersPourSerie(0, 10);
-        var cinquieme = SeriesPlanner.PaliersPourSerie(4, 10);
-        var derniere = SeriesPlanner.PaliersPourSerie(9, 10);
+        var premiere = SeriesPlanner.PaliersPourSerie(0, facteurProgression: 1.6);
+        var cinquieme = SeriesPlanner.PaliersPourSerie(4, facteurProgression: 1.6);
+        var dixieme = SeriesPlanner.PaliersPourSerie(9, facteurProgression: 1.6);
 
         Assert.True(premiere[3] < cinquieme[3]);
-        Assert.True(cinquieme[3] < derniere[3]);
+        Assert.True(cinquieme[3] < dixieme[3]);
     }
 
     [Fact]

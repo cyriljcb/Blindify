@@ -54,6 +54,8 @@ export function syncDisplay(state) {
     reveal: state.currentRevealInfo,
     bonus: state.currentBonusInfo,
     scores: state.currentScoresInfo,
+    titres: state.currentTitresInfo,
+    titreIndexAffiche: state.titreIndexAffiche,
     serieIntro: state.currentSerieIntroInfo,
     // Uniquement pertinent (et présent) au moment du GameEnded — voir renderScoreChart, partagé
     // avec l'écran public pour un rendu identique du graphique.

@@ -13,8 +13,9 @@ public interface IBonusRoundService
     void DemarrerPhaseMise(BonusRound bonusRound, DateTimeOffset maintenant);
 
     /// <summary>Retourne false si la mise est invalide (partie en pause, phase question déjà démarrée,
-    /// ou joueur a déjà misé).</summary>
-    bool EnregistrerMise(GameSession session, BonusRound bonusRound, string playerId, int palierIndex);
+    /// joueur a déjà misé, ou roundId ne correspond plus au BonusRound courant — V2, voir
+    /// BonusRound.Id).</summary>
+    bool EnregistrerMise(GameSession session, BonusRound bonusRound, string playerId, Guid roundId, int palierIndex);
 
     /// <summary>Applique le palier "safe" par défaut à tout joueur n'ayant pas misé dans le délai.</summary>
     void AppliquerPaliersParDefaut(GameSession session, BonusRound bonusRound);
@@ -23,10 +24,11 @@ public interface IBonusRoundService
 
     /// <summary>
     /// Soumet la réponse d'un joueur (correspondance texte, comme en mode TapeReponse). Retourne null si
-    /// invalide (partie en pause, phase question pas démarrée, joueur a déjà répondu ou n'a pas misé).
+    /// invalide (partie en pause, phase question pas démarrée, joueur a déjà répondu, n'a pas misé, ou
+    /// roundId ne correspond plus au BonusRound courant — V2).
     /// </summary>
     /// <param name="resolveTrack">Voir IRoundService.SoumettreReponse — même repli en mode Qcm.</param>
-    BonusAnswer? SoumettreReponse(GameSession session, BonusRound bonusRound, SeriesConfig config, Track track, string playerId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null);
+    BonusAnswer? SoumettreReponse(GameSession session, BonusRound bonusRound, SeriesConfig config, Track track, string playerId, Guid roundId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null);
 
     /// <summary>Absence de réponse en fin de phase question → traitée comme une réponse fausse (perte de la mise).</summary>
     void TerminerParTimeout(GameSession session, BonusRound bonusRound, SeriesConfig config);

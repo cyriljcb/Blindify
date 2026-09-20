@@ -13,6 +13,8 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
 {
     public readonly string TracksPath = Path.Combine(Path.GetTempPath(), $"blindify-it-tracks-{Guid.NewGuid()}.json");
     public readonly string StatsPath = Path.Combine(Path.GetTempPath(), $"blindify-it-stats-{Guid.NewGuid()}.json");
+    public readonly string FlagsPath = Path.Combine(Path.GetTempPath(), $"blindify-it-flags-{Guid.NewGuid()}.json");
+    public readonly string FlagsResolutionsPath = Path.Combine(Path.GetTempPath(), $"blindify-it-flags-resolutions-{Guid.NewGuid()}.json");
     public readonly string RootPath = Path.Combine(Path.GetTempPath(), $"blindify-it-data-{Guid.NewGuid()}");
 
     public GameHubTestFactory()
@@ -38,6 +40,8 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
             {
                 ["Data:TracksPath"] = TracksPath,
                 ["Data:StatsPath"] = StatsPath,
+                ["Data:FlagsPath"] = FlagsPath,
+                ["Data:FlagsResolutionsPath"] = FlagsResolutionsPath,
                 ["Data:RootPath"] = RootPath,
                 // Vide explicitement : sinon hérite de la vraie valeur de appsettings.Development.json
                 // (environnement de test "Development" par défaut), qui pointe vers le vrai dossier
@@ -50,10 +54,25 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
         });
     }
 
-    /// <summary>Connexion configurée avec le même protocole JSON (enums en string) que le serveur.</summary>
-    public HubConnection CreateHubConnection() =>
-        new HubConnectionBuilder()
-            .WithUrl(new Uri(Server.BaseAddress, "/hubs/game"), options =>
+    /// <summary>Connexion configurée avec le même protocole JSON (enums en string) que le serveur.
+    /// code/playerId (V2) : posés en query string de l'URL du hub, exactement comme le fait le client
+    /// Flutter dès que le code de partie est connu — permet à GameHub.OnConnectedAsync de rattacher
+    /// automatiquement le joueur à sa reconnexion, voir GameHub.ReconnexionAutomatique_*Tests.</summary>
+    public HubConnection CreateHubConnection(string? code = null, string? playerId = null)
+    {
+        var chemin = "/hubs/game";
+        if (code is not null || playerId is not null)
+        {
+            var query = string.Join("&", new[]
+            {
+                code is not null ? $"code={Uri.EscapeDataString(code)}" : null,
+                playerId is not null ? $"playerId={Uri.EscapeDataString(playerId)}" : null
+            }.Where(p => p is not null));
+            chemin += $"?{query}";
+        }
+
+        return new HubConnectionBuilder()
+            .WithUrl(new Uri(Server.BaseAddress, chemin), options =>
             {
                 options.HttpMessageHandlerFactory = _ => Server.CreateHandler();
                 options.Transports = HttpTransportType.LongPolling;
@@ -64,12 +83,15 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
                     options.PayloadSerializerOptions.Converters.Add(converter);
             })
             .Build();
+    }
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
         if (File.Exists(TracksPath)) File.Delete(TracksPath);
         if (File.Exists(StatsPath)) File.Delete(StatsPath);
+        if (File.Exists(FlagsPath)) File.Delete(FlagsPath);
+        if (File.Exists(FlagsResolutionsPath)) File.Delete(FlagsResolutionsPath);
         if (Directory.Exists(RootPath)) Directory.Delete(RootPath, recursive: true);
     }
 }

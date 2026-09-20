@@ -4,12 +4,18 @@
 class BonusStakeOptions {
   BonusStakeOptions({
     required this.paliers,
+    required this.roundId,
     required this.dureePhaseMiseMs,
     required this.serieIndex,
     this.tempsEcouleMs = 0,
   });
 
   final List<int> paliers;
+
+  /// Identité du BonusRound (V2), stable entre la phase mise et la phase question — à renvoyer
+  /// dans SelectStake/SubmitBonusAnswer. Voir RoundStarted.roundId.
+  final String roundId;
+
   final int dureePhaseMiseMs;
 
   /// 0-based — voir RoundStarted.serieIndex.
@@ -21,6 +27,7 @@ class BonusStakeOptions {
 
   factory BonusStakeOptions.fromJson(Map<String, dynamic> json) => BonusStakeOptions(
         paliers: (json['paliers'] as List<dynamic>).map((e) => e as int).toList(),
+        roundId: json['roundId'] as String,
         dureePhaseMiseMs: json['dureePhaseMiseMs'] as int,
         serieIndex: json['serieIndex'] as int,
         tempsEcouleMs: json['tempsEcouleMs'] as int? ?? 0,

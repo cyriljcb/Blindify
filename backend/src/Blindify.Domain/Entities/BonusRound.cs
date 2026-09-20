@@ -6,11 +6,14 @@ namespace Blindify.Domain.Entities;
 /// viennent de SeriesConfig.PaliersDeMise, pas dupliqués ici.</summary>
 public class BonusRound
 {
+    /// <summary>Voir Round.Id — même rôle pour SelectStake/SubmitBonusAnswer.</summary>
+    public Guid Id { get; set; } = Guid.NewGuid();
+
     public required string TrackId { get; set; }
 
-    /// <summary>Toujours Titre, sauf morceau "disney" (Film) — pas de tirage Auteur ici, contrairement
-    /// au round classique : la question bonus demande toujours le morceau lui-même, jamais un
-    /// artiste crédité (voir BonusRoundService.CreerBonusRound).</summary>
+    /// <summary>Tirée via RoundService.ChoisirCible, la même logique pondérée que pour un round
+    /// classique (Titre/Auteur/Année, forcée Film pour "disney") — voir BonusRoundService.CreerBonusRound.
+    /// Le défaut Titre ci-dessous n'est qu'une valeur d'initialisation, jamais la valeur réelle en jeu.</summary>
     public RoundCible Cible { get; set; } = RoundCible.Titre;
 
     /// <summary>Tirée au hasard comme pour un round classique (retour utilisateur 2026-08-27 : la
@@ -19,6 +22,15 @@ public class BonusRound
 
     /// <summary>Les 4 IDs de morceaux proposés (Mode Qcm uniquement), générés à la création du bonus round — voir Round.QcmOptionTrackIds.</summary>
     public List<string>? QcmOptionTrackIds { get; set; }
+
+    /// <summary>Voir Round.Options — construit une seule fois au démarrage de la phase question
+    /// (BonusTimerCoordinator.DiffuserDebutPhaseQuestionAsync), pas à la création du BonusRound
+    /// (les feintes ne sont appliquées qu'à la diffusion, voir ce même commentaire historique
+    /// plus bas dans ce fichier).</summary>
+    public List<RoundOption>? Options { get; set; }
+
+    /// <summary>Voir Round.AnneeOptions — même construction, au démarrage de la phase question.</summary>
+    public List<int>? AnneeOptions { get; set; }
 
     /// <summary>"Course" (Mode Qcm uniquement, voir GameConfig.ProbabiliteBonusCourse) : le premier
     /// joueur à répondre — juste ou faux — décide seul du sort de sa mise ; tant qu'aucune réponse

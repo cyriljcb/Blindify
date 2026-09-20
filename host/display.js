@@ -12,7 +12,7 @@
 // récepteur de ~250 lignes.
 
 import { escapeHtml, libelleReveal } from "./shared/format.js";
-import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode } from "./shared/components.js";
+import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode, renderTitrePanel } from "./shared/components.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -30,6 +30,8 @@ const state = {
   reveal: {},
   bonus: {},
   scores: null,
+  titres: [],
+  titreIndexAffiche: -1,
   serieIntro: {},
   scoreHistory: [],
   // {playerId, tempsEcouleMs}[], dans l'ordre d'arrivée — jamais l'exactitude de la réponse (voir
@@ -356,6 +358,18 @@ function render() {
         renderScoreList(el("final-scores"), state.scores, roster());
         renderScoreChart(el("score-chart"), state.scoreHistory, state.scores, roster());
       }
+      renderTitrePanel(
+        {
+          panel: el("titre-panel"),
+          compteur: el("titre-compteur"),
+          libelle: el("titre-libelle"),
+          description: el("titre-description"),
+          joueurs: el("titre-joueurs"),
+        },
+        state.titres,
+        state.titreIndexAffiche,
+        roster()
+      );
       showScreen("screen-ended");
       stopLocalTimer(null);
       break;
@@ -382,6 +396,8 @@ function appliquerEtat(msg) {
   state.reveal = msg.reveal ?? {};
   state.bonus = msg.bonus ?? {};
   state.scores = msg.scores ?? null;
+  state.titres = msg.titres ?? [];
+  state.titreIndexAffiche = msg.titreIndexAffiche ?? -1;
   state.serieIntro = msg.serieIntro ?? {};
   state.scoreHistory = msg.scoreHistory ?? [];
 

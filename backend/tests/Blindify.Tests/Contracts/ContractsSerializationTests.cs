@@ -63,7 +63,7 @@ public class ContractsSerializationTests
             Config: null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"nombreSeries":3,"nombreRoundsClassiques":8,"dureeFenetreReponseMs":20000,"themesVivier":["rock","pop"],"config":null,"pointsMax":100,"pointsMin":20,"penaliteMauvaiseReponseRatio":0.5,"penaliteAbsenceReponse":-5,"dureePhaseMiseMs":15000,"dureePhaseQuestionMs":20000}""",
+            """{"nombreSeries":3,"nombreRoundsClassiques":8,"dureeFenetreReponseMs":20000,"themesVivier":["rock","pop"],"config":null,"pointsMax":100,"pointsMin":20,"penaliteMauvaiseReponseRatio":0.5,"penaliteAbsenceReponse":-2,"dureePhaseMiseMs":15000,"dureePhaseQuestionMs":20000}""",
             json);
     }
 
@@ -104,22 +104,24 @@ public class ContractsSerializationTests
     [Fact]
     public void EtatCourantJoueurDto_Golden_RoundClassique()
     {
-        var round = new RoundStartedForPlayersDto(RoundMode.TapeReponse, RoundCible.Auteur, 20000, 2, null, TempsEcouleMs: 4200);
+        var roundId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var round = new RoundStartedForPlayersDto(RoundMode.TapeReponse, RoundCible.Auteur, roundId, 20000, 2, null, TempsEcouleMs: 4200);
         var dto = new EtatCourantJoueurDto(PhaseJoueur.RoundClassique, false, true, round, null, null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"phase":"RoundClassique","enPause":false,"dejaRepondu":true,"round":{"mode":"TapeReponse","cible":"Auteur","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":4200},"bonusMise":null,"bonusQuestion":null}""",
+            """{"phase":"RoundClassique","enPause":false,"dejaRepondu":true,"round":{"mode":"TapeReponse","cible":"Auteur","roundId":"00000000-0000-0000-0000-000000000001","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":4200,"anneeOptions":null},"bonusMise":null,"bonusQuestion":null}""",
             json);
     }
 
     [Fact]
     public void EtatCourantJoueurDto_Golden_BonusMise()
     {
-        var bonusMise = new BonusStakeOptionsDto([10, 20, 30, 50], 15000, 0, TempsEcouleMs: 3000);
+        var roundId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+        var bonusMise = new BonusStakeOptionsDto([10, 20, 30, 50], roundId, 15000, 0, TempsEcouleMs: 3000);
         var dto = new EtatCourantJoueurDto(PhaseJoueur.BonusMise, true, false, null, bonusMise, null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"phase":"BonusMise","enPause":true,"dejaRepondu":false,"round":null,"bonusMise":{"paliers":[10,20,30,50],"dureePhaseMiseMs":15000,"serieIndex":0,"tempsEcouleMs":3000},"bonusQuestion":null}""",
+            """{"phase":"BonusMise","enPause":true,"dejaRepondu":false,"round":null,"bonusMise":{"paliers":[10,20,30,50],"roundId":"00000000-0000-0000-0000-000000000002","dureePhaseMiseMs":15000,"serieIndex":0,"tempsEcouleMs":3000},"bonusQuestion":null}""",
             json);
     }
 
@@ -167,27 +169,30 @@ public class ContractsSerializationTests
     [Fact]
     public void RoundStartedForHostDto_Golden()
     {
-        var dto = new RoundStartedForHostDto(RoundMode.Qcm, RoundCible.Titre, "t1", "audio/t1.mp3", 30000, 20000,
+        var roundId = Guid.Parse("00000000-0000-0000-0000-000000000003");
+        var dto = new RoundStartedForHostDto(RoundMode.Qcm, RoundCible.Titre, roundId, "t1", "audio/t1.mp3", 30000, 20000,
             [new QcmOptionDto("t1", "Under the Sea", "Samuel E. Wright", "La Petite Sirene")]);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"mode":"Qcm","cible":"Titre","trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"dureeFenetreReponseMs":20000,"qcmOptions":[{"trackId":"t1","title":"Under the Sea","artist":"Samuel E. Wright","film":"La Petite Sirene"}]}""",
+            """{"mode":"Qcm","cible":"Titre","roundId":"00000000-0000-0000-0000-000000000003","trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"dureeFenetreReponseMs":20000,"qcmOptions":[{"trackId":"t1","title":"Under the Sea","artist":"Samuel E. Wright","film":"La Petite Sirene"}],"anneeOptions":null}""",
             json);
     }
 
     [Fact]
     public void RoundStartedForPlayersDto_Golden()
     {
-        var dto = new RoundStartedForPlayersDto(RoundMode.TapeReponse, RoundCible.Auteur, 20000, 2, null, TempsEcouleMs: 0);
+        var roundId = Guid.Parse("00000000-0000-0000-0000-000000000004");
+        var dto = new RoundStartedForPlayersDto(RoundMode.TapeReponse, RoundCible.Auteur, roundId, 20000, 2, null, TempsEcouleMs: 0);
         var json = Serialize(dto);
-        Assert.Equal("""{"mode":"TapeReponse","cible":"Auteur","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":0}""", json);
+        Assert.Equal("""{"mode":"TapeReponse","cible":"Auteur","roundId":"00000000-0000-0000-0000-000000000004","dureeFenetreReponseMs":20000,"serieIndex":2,"qcmOptions":null,"tempsEcouleMs":0,"anneeOptions":null}""", json);
     }
 
     [Fact]
     public void SubmitAnswerRequestDto_Golden()
     {
-        var json = Serialize(new SubmitAnswerRequestDto("Let It Go"));
-        Assert.Equal("""{"reponse":"Let It Go"}""", json);
+        var roundId = Guid.Parse("00000000-0000-0000-0000-000000000005");
+        var json = Serialize(new SubmitAnswerRequestDto(roundId, "Let It Go"));
+        Assert.Equal("""{"roundId":"00000000-0000-0000-0000-000000000005","reponse":"Let It Go"}""", json);
     }
 
     [Fact]
@@ -201,7 +206,7 @@ public class ContractsSerializationTests
     public void RoundResultEntryDto_Golden()
     {
         var json = Serialize(new RoundResultEntryDto("player-1", "Let It Go", true, 85));
-        Assert.Equal("""{"playerId":"player-1","reponse":"Let It Go","estCorrecte":true,"points":85}""", json);
+        Assert.Equal("""{"playerId":"player-1","reponse":"Let It Go","estCorrecte":true,"points":85,"ecartAnnee":null}""", json);
     }
 
     [Fact]
@@ -211,7 +216,7 @@ public class ContractsSerializationTests
             [new RoundResultEntryDto("player-1", "Let It Go", true, 85)]);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"trackId":"t3","title":"Let It Go","artist":"Idina Menzel","coverPath":"covers/t3.jpg","cible":"Titre","film":"?","resultats":[{"playerId":"player-1","reponse":"Let It Go","estCorrecte":true,"points":85}]}""",
+            """{"trackId":"t3","title":"Let It Go","artist":"Idina Menzel","coverPath":"covers/t3.jpg","cible":"Titre","film":"?","resultats":[{"playerId":"player-1","reponse":"Let It Go","estCorrecte":true,"points":85,"ecartAnnee":null}],"annee":null}""",
             json);
     }
 
@@ -241,6 +246,24 @@ public class ContractsSerializationTests
             json);
     }
 
+    [Fact]
+    public void TitreDto_Golden()
+    {
+        var json = Serialize(new TitreDto("ECLAIR", "Eclair rapide", "2,4 s en moyenne", ["player-1", "player-2"]));
+        Assert.Equal("""{"code":"ECLAIR","libelle":"Eclair rapide","description":"2,4 s en moyenne","playerIds":["player-1","player-2"]}""", json);
+    }
+
+    [Fact]
+    public void GameEndedDto_Golden()
+    {
+        var score = new ScoreUpdateDto([new PlayerScoreDto("player-1", "Alice", 205, "team-1")], null);
+        var dto = new GameEndedDto(score, [new TitreDto("FIDELE", "Fidele", "A participe a toute la partie", ["player-1"])]);
+        var json = Serialize(dto);
+        Assert.Equal(
+            """{"score":{"joueurs":[{"playerId":"player-1","nom":"Alice","score":205,"teamId":"team-1"}],"equipes":null},"titres":[{"code":"FIDELE","libelle":"Fidele","description":"A participe a toute la partie","playerIds":["player-1"]}]}""",
+            json);
+    }
+
     // ----- SeriesContracts.cs -> app/lib/models/serie_annoncee.dart, host/app.js:AnnoncerSerieCourante -----
 
     [Fact]
@@ -265,41 +288,46 @@ public class ContractsSerializationTests
     [Fact]
     public void BonusStakeOptionsDto_Golden()
     {
-        var json = Serialize(new BonusStakeOptionsDto([10, 20, 30, 50], 15000, 0, TempsEcouleMs: 0));
-        Assert.Equal("""{"paliers":[10,20,30,50],"dureePhaseMiseMs":15000,"serieIndex":0,"tempsEcouleMs":0}""", json);
+        var roundId = Guid.Parse("00000000-0000-0000-0000-000000000006");
+        var json = Serialize(new BonusStakeOptionsDto([10, 20, 30, 50], roundId, 15000, 0, TempsEcouleMs: 0));
+        Assert.Equal("""{"paliers":[10,20,30,50],"roundId":"00000000-0000-0000-0000-000000000006","dureePhaseMiseMs":15000,"serieIndex":0,"tempsEcouleMs":0}""", json);
     }
 
     [Fact]
     public void SelectStakeRequestDto_Golden()
     {
-        var json = Serialize(new SelectStakeRequestDto(3));
-        Assert.Equal("""{"palierIndex":3}""", json);
+        var roundId = Guid.Parse("00000000-0000-0000-0000-000000000007");
+        var json = Serialize(new SelectStakeRequestDto(roundId, 3));
+        Assert.Equal("""{"roundId":"00000000-0000-0000-0000-000000000007","palierIndex":3}""", json);
     }
 
     [Fact]
     public void BonusQuestionStartedForHostDto_Golden()
     {
-        var dto = new BonusQuestionStartedForHostDto("t1", "audio/t1.mp3", 30000, 20000, true, 0.65, RoundMode.Qcm,
+        var roundId = Guid.Parse("00000000-0000-0000-0000-000000000008");
+        var dto = new BonusQuestionStartedForHostDto("t1", "audio/t1.mp3", 30000, roundId, 20000, true, 0.65, RoundMode.Qcm,
             [new QcmOptionDto("t1", "Under the Sea", "Samuel E. Wright", "La Petite Sirene")], false);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"dureePhaseQuestionMs":20000,"ralentissementActive":true,"facteurRalentissement":0.65,"mode":"Qcm","qcmOptions":[{"trackId":"t1","title":"Under the Sea","artist":"Samuel E. Wright","film":"La Petite Sirene"}],"estCourse":false}""",
+            """{"trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"roundId":"00000000-0000-0000-0000-000000000008","dureePhaseQuestionMs":20000,"ralentissementActive":true,"facteurRalentissement":0.65,"mode":"Qcm","qcmOptions":[{"trackId":"t1","title":"Under the Sea","artist":"Samuel E. Wright","film":"La Petite Sirene"}],"estCourse":false,"anneeOptions":null}""",
             json);
     }
 
     [Fact]
     public void BonusQuestionStartedForPlayersDto_Golden()
     {
-        var dto = new BonusQuestionStartedForPlayersDto(20000, RoundCible.Film, 0, RoundMode.PremiereLettre, null, true, TempsEcouleMs: 0);
+        var roundId = Guid.Parse("00000000-0000-0000-0000-000000000009");
+        var dto = new BonusQuestionStartedForPlayersDto(roundId, 20000, RoundCible.Film, 0, RoundMode.PremiereLettre, null, true, TempsEcouleMs: 0);
         var json = Serialize(dto);
-        Assert.Equal("""{"dureePhaseQuestionMs":20000,"cible":"Film","serieIndex":0,"mode":"PremiereLettre","qcmOptions":null,"estCourse":true,"tempsEcouleMs":0}""", json);
+        Assert.Equal("""{"roundId":"00000000-0000-0000-0000-000000000009","dureePhaseQuestionMs":20000,"cible":"Film","serieIndex":0,"mode":"PremiereLettre","qcmOptions":null,"estCourse":true,"tempsEcouleMs":0,"anneeOptions":null}""", json);
     }
 
     [Fact]
     public void SubmitBonusAnswerRequestDto_Golden()
     {
-        var json = Serialize(new SubmitBonusAnswerRequestDto("Le Roi Lion"));
-        Assert.Equal("""{"reponse":"Le Roi Lion"}""", json);
+        var roundId = Guid.Parse("00000000-0000-0000-0000-00000000000a");
+        var json = Serialize(new SubmitBonusAnswerRequestDto(roundId, "Le Roi Lion"));
+        Assert.Equal("""{"roundId":"00000000-0000-0000-0000-00000000000a","reponse":"Le Roi Lion"}""", json);
     }
 
     [Fact]
@@ -313,7 +341,7 @@ public class ContractsSerializationTests
     public void BonusResultEntryDto_Golden()
     {
         var json = Serialize(new BonusResultEntryDto("player-1", 50, "Le Roi Lion", true, 50));
-        Assert.Equal("""{"playerId":"player-1","mise":50,"reponse":"Le Roi Lion","estCorrecte":true,"points":50}""", json);
+        Assert.Equal("""{"playerId":"player-1","mise":50,"reponse":"Le Roi Lion","estCorrecte":true,"points":50,"ecartAnnee":null}""", json);
     }
 
     [Fact]
@@ -323,7 +351,30 @@ public class ContractsSerializationTests
             [new BonusResultEntryDto("player-1", 50, "Le Roi Lion", true, 50)], false);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"trackId":"t2","title":"Circle of Life","artist":"Elton John","coverPath":"covers/t2.jpg","cible":"Film","film":"Le Roi Lion","resultats":[{"playerId":"player-1","mise":50,"reponse":"Le Roi Lion","estCorrecte":true,"points":50}],"estCourse":false}""",
+            """{"trackId":"t2","title":"Circle of Life","artist":"Elton John","coverPath":"covers/t2.jpg","cible":"Film","film":"Le Roi Lion","resultats":[{"playerId":"player-1","mise":50,"reponse":"Le Roi Lion","estCorrecte":true,"points":50,"ecartAnnee":null}],"estCourse":false,"annee":null}""",
             json);
+    }
+
+    // ----- FlagContracts.cs -> app (réglages admin), host/app.js (V2, section 12.4) -----
+
+    [Fact]
+    public void SignalementRequestDto_Golden()
+    {
+        var json = Serialize(new SignalementRequestDto("t1", RaisonSignalement.MauvaiseVersion, "version live"));
+        Assert.Equal("""{"trackId":"t1","raison":"MauvaiseVersion","commentaire":"version live"}""", json);
+    }
+
+    [Fact]
+    public void SignalementResultDto_Golden()
+    {
+        var json = Serialize(new SignalementResultDto("flag-1", false));
+        Assert.Equal("""{"flagId":"flag-1","dejaSignale":false}""", json);
+    }
+
+    [Fact]
+    public void MorceauSignaleDto_Golden()
+    {
+        var json = Serialize(new MorceauSignaleDto("t1", "Circle of Life", "Elton John", RaisonSignalement.AudioDefectueux));
+        Assert.Equal("""{"trackId":"t1","titre":"Circle of Life","artiste":"Elton John","raison":"AudioDefectueux"}""", json);
     }
 }

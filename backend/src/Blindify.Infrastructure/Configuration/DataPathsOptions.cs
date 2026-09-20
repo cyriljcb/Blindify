@@ -10,6 +10,15 @@ public class DataPathsOptions
 
     public required string TracksPath { get; set; }
     public required string StatsPath { get; set; }
+
+    /// <summary>V2, section 12.4 — écrit UNIQUEMENT par le backend (FlagsRepository.Ajouter), jamais par
+    /// les scripts (voir CLAUDE.md).</summary>
+    public required string FlagsPath { get; set; }
+
+    /// <summary>V2, section 12.4 — écrit UNIQUEMENT par data/scripts/import_flag_resolutions.py, jamais
+    /// par le backend (lecture seule, chargé une fois au démarrage comme tracks.json).</summary>
+    public required string FlagsResolutionsPath { get; set; }
+
     public string? AudioPath { get; set; }
     public string? CoversPath { get; set; }
 

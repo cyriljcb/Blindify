@@ -3,8 +3,10 @@ using Blindify.Api.Contracts;
 using Blindify.Application.Bonus;
 using Blindify.Application.Rounds;
 using Blindify.Application.Sessions;
+using Blindify.Application.Stats;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
+using Blindify.Infrastructure.Stats;
 using Blindify.Infrastructure.Tracks;
 using Microsoft.AspNetCore.SignalR;
 
@@ -18,7 +20,8 @@ public class BonusTimerCoordinator(
     IHubContext<GameHub> hubContext,
     IGameSessionStore sessionStore,
     IBonusRoundService bonusRoundService,
-    ITracksRepository tracksRepository)
+    ITracksRepository tracksRepository,
+    IStatsRepository statsRepository)
 {
     private const int IntervalleVerificationMs = 250;
 
@@ -109,30 +112,38 @@ public class BonusTimerCoordinator(
         // Même construction que GameHub.StartRound pour les rounds classiques — Mode Qcm tiré au
         // hasard côté BonusRoundService.CreerBonusRound, feintes appliquées ici au moment de la
         // diffusion (retour utilisateur 2026-08-27 : QCM/Première lettre aussi en question bonus).
-        var qcmOptions = GameHub.ConstruireQcmOptions(bonusRound.QcmOptionTrackIds, track, bonusRound.Cible, session.Config, tracksRepository);
+        var (qcmOptions, roundOptions) = GameHub.ConstruireQcmOptions(bonusRound.QcmOptionTrackIds, track, bonusRound.Cible, session.Config, tracksRepository);
+        bonusRound.Options = roundOptions;
+        var anneeOptions = bonusRound.AnneeOptions?.Select(a => a.ToString()).ToList();
 
         if (session.HostConnectionId is not null)
         {
             await hubContext.Clients.Client(session.HostConnectionId).SendAsync("BonusQuestionStarted",
-                new BonusQuestionStartedForHostDto(track.Id, track.FilePath, track.RefrainStartMs, config.DureePhaseQuestionMs, session.Config.RalentissementBonusActive, session.Config.FacteurRalentissementBonus, bonusRound.Mode, qcmOptions, bonusRound.EstCourse));
+                new BonusQuestionStartedForHostDto(track.Id, track.FilePath, track.RefrainStartMs, bonusRound.Id, config.DureePhaseQuestionMs, session.Config.RalentissementBonusActive, session.Config.FacteurRalentissementBonus, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, anneeOptions));
         }
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
         await hubContext.Clients.Clients(joueursConnectes).SendAsync("BonusQuestionStarted",
-            new BonusQuestionStartedForPlayersDto(config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, TempsEcouleMs: 0));
+            new BonusQuestionStartedForPlayersDto(bonusRound.Id, config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, TempsEcouleMs: 0, AnneeOptions: anneeOptions));
     }
 
     private async Task DiffuserResultatAsync(GameSession session, BonusRound bonusRound)
     {
         var track = tracksRepository.GetById(bonusRound.TrackId);
 
+        // V2 (socle statistiques) — après TerminerParTimeout (appelé par l'appelant juste avant),
+        // donc Reponses contient déjà les entrées synthétiques EstAbsent pour les non-répondants.
+        // Ne tient pas compte d'un ValidateAnswerManually ultérieur (round classique uniquement,
+        // pas applicable au bonus de toute façon) — limitation assumée, voir RoundStatsAggregator.
+        statsRepository.EnregistrerResultatsRound(RoundStatsAggregator.PourBonus(bonusRound));
+
         var resultats = bonusRound.Reponses
-            .Select(r => new BonusResultEntryDto(r.PlayerId, Math.Abs(r.Points), r.Reponse, r.EstCorrecte, r.Points))
+            .Select(r => new BonusResultEntryDto(r.PlayerId, Math.Abs(r.Points), r.Reponse, r.EstCorrecte, r.Points, r.EcartAnnee))
             .ToList();
         var film = track is not null ? FilmNameResolver.Resoudre(track) : "?";
 
         await hubContext.Clients.Group(session.Id)
-            .SendAsync("BonusResult", new BonusResultDto(bonusRound.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, bonusRound.Cible, film, resultats, bonusRound.EstCourse));
+            .SendAsync("BonusResult", new BonusResultDto(bonusRound.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, bonusRound.Cible, film, resultats, bonusRound.EstCourse, track?.Year));
 
         await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
     }

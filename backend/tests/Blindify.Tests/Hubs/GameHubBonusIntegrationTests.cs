@@ -73,7 +73,7 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
 
         // Alice choisit explicitement le palier "risqué" (index 3, valeur 50). Bob ne mise pas :
         // il doit recevoir le palier "safe" (index 0, valeur 10) par défaut à l'expiration de la phase mise.
-        var miseAcceptee = await _alice.InvokeAsync<bool>("SelectStake", new SelectStakeRequestDto(3));
+        var miseAcceptee = await _alice.InvokeAsync<bool>("SelectStake", new SelectStakeRequestDto(stakeOptions!.RoundId, 3));
         Assert.True(miseAcceptee);
 
         var questionHost = await AvecTimeout(questionStartedHostTcs.Task, TimeSpan.FromSeconds(5));
@@ -108,7 +108,7 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
                 ? artistesConnus[questionHost.TrackId]
                 : titresConnus[questionHost.TrackId];
 
-        var reponseAlice = await _alice.InvokeAsync<BonusAnswerResultDto>("SubmitBonusAnswer", new SubmitBonusAnswerRequestDto(bonneReponse));
+        var reponseAlice = await _alice.InvokeAsync<BonusAnswerResultDto>("SubmitBonusAnswer", new SubmitBonusAnswerRequestDto(questionPlayer.RoundId, bonneReponse));
         Assert.True(reponseAlice.EstCorrecte);
         Assert.Equal(50, reponseAlice.Points);
 

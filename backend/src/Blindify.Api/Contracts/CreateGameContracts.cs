@@ -37,6 +37,6 @@ public record ConfigurerPartieRequestDto(
     int PointsMax = 100,
     int PointsMin = 20,
     double PenaliteMauvaiseReponseRatio = 0.5,
-    int PenaliteAbsenceReponse = -5,
+    int PenaliteAbsenceReponse = -2,
     int DureePhaseMiseMs = 15000,
     int DureePhaseQuestionMs = 20000);

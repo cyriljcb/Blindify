@@ -28,6 +28,12 @@ public record EtatCourantJoueurDto(
 /// retombe alors sur le lobby en attendant la prochaine diffusion serveur, comportement inchangé.</summary>
 public record JoinGameResultDto(bool Success, string? ErrorMessage, int Score, string? TeamId, List<TeamDto> Teams, List<PlayerSummaryDto> Joueurs, EtatCourantJoueurDto? EtatCourant);
 
+/// <summary>Envoyé (V2) au joueur automatiquement rattaché à sa partie via GameHub.OnConnectedAsync
+/// (reconnexion via ?code&playerId dans l'URL du hub) — remplace l'obligation de rappeler JoinGame après
+/// chaque reconnexion transport SignalR. Contenu volontairement réduit par rapport à JoinGameResultDto :
+/// pas de roster/teams à renvoyer, déjà connus du client depuis le join initial.</summary>
+public record EtatCourantConnexionDto(int Score, string? TeamId, EtatCourantJoueurDto? EtatCourant);
+
 public record PlayerJoinedDto(string PlayerId, string Nom);
 
 public record PlayerConnectionChangedDto(string PlayerId, bool EstConnecte);

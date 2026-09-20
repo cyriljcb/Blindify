@@ -30,9 +30,14 @@ public interface IRoundService
 
     /// <summary>
     /// Soumet la réponse d'un joueur. Retourne null si la soumission est invalide (partie en pause,
-    /// round pas démarré, joueur a déjà répondu) — le serveur ne fait pas confiance à l'UI client.
-    /// Applique les points au score du joueur.
+    /// round pas démarré, joueur a déjà répondu, ou roundId ne correspond plus au round courant — V2,
+    /// voir Round.Id) — le serveur ne fait pas confiance à l'UI client. Applique les points au score du
+    /// joueur.
     /// </summary>
+    /// <param name="roundId">
+    /// Identité du round telle que renvoyée par RoundStartedForPlayersDto — une soumission dont le
+    /// roundId ne correspond pas à round.Id est ignorée (round déjà terminé/suivant démarré entre-temps).
+    /// </param>
     /// <param name="resolveTrack">
     /// Résout un TrackId en Track, utilisé uniquement en mode Qcm pour retomber sur une comparaison
     /// par libellé affiché (voir RoundService.EstQcmEquivalent) quand le filet de sécurité de
@@ -42,7 +47,7 @@ public interface IRoundService
     /// Optionnel (null = comparaison stricte par TrackId uniquement) pour ne pas casser les appels
     /// existants qui n'ont pas besoin de cette résolution.
     /// </param>
-    RoundAnswer? SoumettreReponse(GameSession session, Round round, SeriesConfig seriesConfig, Track track, string playerId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null);
+    RoundAnswer? SoumettreReponse(GameSession session, Round round, SeriesConfig seriesConfig, Track track, string playerId, Guid roundId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null);
 
     /// <summary>Applique la pénalité fixe d'absence de réponse à tous les joueurs n'ayant pas répondu.</summary>
     void TerminerParTimeout(GameSession session, Round round, SeriesConfig config);
