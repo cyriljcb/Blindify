@@ -160,6 +160,11 @@
       <!-- Refonte UI (lot 1) : qui a répondu et en combien de temps, jamais juste/faux ni les
            scores — le host joue souvent. Le classement reste accessible via « Tableau général » (L). -->
       <div id="round-answers" class="answers-live"></div>
+      <div class="actions">
+        <!-- Actif dès que tous les joueurs connectés ont répondu (voir render.js:renderRound) —
+             sinon le round va jusqu'au bout du chrono. Voir GameHub.RevelerMaintenant. -->
+        <button id="btn-reveler" data-kbd="Espace" disabled>Révéler maintenant</button>
+      </div>
       <p id="round-error" class="error"></p>
     </section>
 

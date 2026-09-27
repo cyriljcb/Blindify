@@ -525,6 +525,16 @@ el("btn-open-display").addEventListener("click", () => displayBridge.openDisplay
 
 el("btn-reecouter").addEventListener("click", () => audio.reecouterDepuisDebut());
 
+el("btn-reveler").addEventListener("click", async () => {
+  el("round-error").textContent = "";
+  try {
+    await transport.invoke.revelerMaintenant();
+  } catch (err) {
+    console.error(err);
+    el("round-error").textContent = "Erreur : " + (err.message || err);
+  }
+});
+
 // ----- Raccourcis clavier (refonte UI, lot 1) -----
 // Espace : action suivante de l'écran courant · P : pause/reprise · L : tableau général ·
 // R : réécouter. Rappelés à côté de chaque bouton (attribut data-kbd, voir style.css). Déclenchent
@@ -533,6 +543,7 @@ el("btn-reecouter").addEventListener("click", () => audio.reecouterDepuisDebut()
 const ACTION_SUIVANTE_PAR_ECRAN = {
   lobby: "btn-start-round",
   "serie-intro": "btn-start-serie",
+  round: "btn-reveler",
   "round-ended": "btn-next-round",
   "bonus-result": "btn-end-now",
 };

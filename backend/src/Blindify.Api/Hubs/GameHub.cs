@@ -211,6 +211,32 @@ public class GameHub(
         timerCoordinator.DemarrerSurveillance(session.Id, serie.Config);
     }
 
+    /// <summary>Retour utilisateur (2026-09-27, bouton « Révéler maintenant » du host) — termine le
+    /// round classique courant avant la fin du chrono, une fois que tous les joueurs connectés ont
+    /// répondu. Host uniquement. Les joueurs déconnectés sont traités comme à l'échéance normale
+    /// (pénalité d'absence). Refusé en pause, hors round, ou tant qu'un joueur connecté n'a pas
+    /// répondu — pour ne jamais priver quelqu'un du temps de réponse qu'il lui restait.</summary>
+    public async Task RevelerMaintenant()
+    {
+        var session = ResoudreSessionHost();
+        SeriesConfig config;
+
+        lock (session.Lock)
+        {
+            if (session.EnPause) throw new HubException("Partie en pause.");
+            var round = session.RoundCourant();
+            if (round?.DebutRound is null) throw new HubException("Aucun round en cours.");
+
+            var enAttente = session.Players.Count(p => p.EstConnecte && round.Reponses.All(r => r.PlayerId != p.PlayerId));
+            if (enAttente > 0)
+                throw new HubException($"{enAttente} joueur(s) n'ont pas encore répondu.");
+
+            config = session.SerieCourante().Config;
+        }
+
+        await timerCoordinator.TerminerMaintenantAsync(session, config);
+    }
+
     public async Task StartBonusRound()
     {
         var session = ResoudreSessionHost();

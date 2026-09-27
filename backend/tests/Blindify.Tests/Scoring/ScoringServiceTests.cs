@@ -90,10 +90,24 @@ public class ScoringServiceTests
         Assert.Equal(pointsAttendus, _service.PointsAnneeApproximative(pointsEnJeu: 100, ecartAnnee: ecart, Config()));
     }
 
-    [Fact]
-    public void PointsAnneeApproximative_EcartAuDelaDeLaTolerance_PenaliteHabituelle()
+    // Retour utilisateur (2026-09-27) : au-delà de la tolérance, la pénalité grandit avec l'écart
+    // (ToleranceAnnee=3, EcartAnneePenaliteMax=12, PenaliteAnneeMaxRatio=1.0 par défaut) — réponse
+    // attendue 2000 : 1995 coûte 17, 1990 coûte 58, 1985 et avant coûtent 100.
+    [Theory]
+    [InlineData(4, -8)]    // round(100 * 1/12)
+    [InlineData(5, -17)]   // round(100 * 2/12)
+    [InlineData(10, -58)]  // round(100 * 7/12)
+    [InlineData(15, -100)] // plafond atteint
+    [InlineData(20, -100)] // plafonné
+    public void PointsAnneeApproximative_EcartAuDelaDeLaTolerance_PenaliteProportionnelleALEcart(int ecart, int pointsAttendus)
     {
-        // ToleranceAnnee=3 (défaut) : écart 4 -> pénalité classique, pas de dégressivité.
-        Assert.Equal(-50, _service.PointsAnneeApproximative(pointsEnJeu: 100, ecartAnnee: 4, Config()));
+        Assert.Equal(pointsAttendus, _service.PointsAnneeApproximative(pointsEnJeu: 100, ecartAnnee: ecart, Config()));
+    }
+
+    [Fact]
+    public void PointsAnneeApproximative_PenaliteSuitLesPointsEnJeu()
+    {
+        // Réponse lente (pointsEnJeu=40) : même proportion, sur une base plus petite.
+        Assert.Equal(-40, _service.PointsAnneeApproximative(pointsEnJeu: 40, ecartAnnee: 30, Config()));
     }
 }

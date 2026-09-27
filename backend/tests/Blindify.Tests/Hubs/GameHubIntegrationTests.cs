@@ -285,6 +285,44 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     }
 
     [Fact]
+    public async Task RevelerMaintenant_TantQuUnJoueurNaPasRepondu_EstRefuse()
+    {
+        RoundStartedForPlayersDto? roundStarted = null;
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", p => roundStarted = p);
+
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStarted is not null);
+
+        var erreur = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync("RevelerMaintenant"));
+        Assert.Contains("pas encore répondu", erreur.Message);
+    }
+
+    [Fact]
+    public async Task RevelerMaintenant_ToutLeMondeARepondu_TermineLeRoundUneSeuleFois()
+    {
+        RoundStartedForPlayersDto? roundStarted = null;
+        var roundsEnded = 0;
+        _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", p => roundStarted = p);
+        _hostConnection.On<RoundEndedDto>("RoundEnded", _ => Interlocked.Increment(ref roundsEnded));
+
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => roundStarted is not null);
+
+        await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStarted!.RoundId, "peu importe"));
+        await _hostConnection.InvokeAsync("RevelerMaintenant");
+        await AttendreAsync(() => roundsEnded > 0);
+
+        // Laisse passer l'échéance naturelle du chrono (800 ms) : le minuteur ne doit pas diffuser
+        // un second RoundEnded pour ce round déjà révélé.
+        await Task.Delay(1500);
+        Assert.Equal(1, roundsEnded);
+    }
+
+    [Fact]
     public async Task FermerSalon_ParUnJoueur_EstRefuse()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);

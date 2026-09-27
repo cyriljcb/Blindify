@@ -24,6 +24,10 @@ public class ScoringService : IScoringService
         if (ecartAnnee == 0) return PointsBonneReponse(pointsEnJeu);
         if (ecartAnnee <= config.ToleranceAnnee)
             return (int)Math.Round(pointsEnJeu * (1 - (double)ecartAnnee / (config.ToleranceAnnee + 1)));
-        return PointsMauvaiseReponse(pointsEnJeu, config);
+
+        // Au-delà de la tolérance : pénalité proportionnelle à l'écart, plafonnée (retour utilisateur
+        // 2026-09-27 — répondre 1980 pour 2000 doit coûter bien plus que 1995).
+        var fraction = Math.Min(1.0, (double)(ecartAnnee - config.ToleranceAnnee) / Math.Max(1, config.EcartAnneePenaliteMax));
+        return -(int)Math.Round(pointsEnJeu * config.PenaliteAnneeMaxRatio * fraction);
     }
 }

@@ -256,6 +256,9 @@ function renderRound(state) {
   const { mode, cible, serieLabel } = state.currentRoundInfo;
   el("round-mode-label").textContent = `${libelleMode(mode)} — trouver ${libelleCible(cible)}${serieLabel ?? ""}`;
   renderAnswersLive(el("round-answers"), state);
+  const connectes = state.players.filter((p) => p.estConnecte);
+  const tousOntRepondu = connectes.length > 0 && connectes.every((p) => state.repondants.some((r) => r.playerId === p.playerId));
+  el("btn-reveler").disabled = !tousOntRepondu || state.jeuEnPause;
 }
 
 function renderRoundEnded(state) {

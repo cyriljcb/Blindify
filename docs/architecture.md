@@ -319,10 +319,10 @@ Pas de morceaux à deviner (contrairement aux autres cibles) : le joueur doit tr
 écart = |réponse − année|
 écart = 0                    → +pointsEnJeu
 1 ≤ écart ≤ ToleranceAnnee     → +round(pointsEnJeu × (1 − écart / (ToleranceAnnee + 1)))
-écart > ToleranceAnnee       → pénalité de mauvaise réponse habituelle
+écart > ToleranceAnnee       → −round(pointsEnJeu × PenaliteAnneeMaxRatio × min(1, (écart − ToleranceAnnee) / EcartAnneePenaliteMax))
 ```
 
-  `SeriesConfig.ToleranceAnnee` (3 par défaut). Une saisie non numérique est traitée comme une mauvaise réponse classique (pas d'écart calculable). `RoundAnswer.EcartAnnee`/`BonusAnswer.EcartAnnee` retiennent l'écart pour les statistiques de réponse (section 12.1) et le reveal (`RoundEnded`/`BonusResult` gagnent un champ `EcartAnnee` par joueur).
+  `SeriesConfig.ToleranceAnnee` (3 par défaut), `EcartAnneePenaliteMax` (12) et `PenaliteAnneeMaxRatio` (1.0). Retour utilisateur (2026-09-27) : au-delà de la tolérance, la pénalité était fixe (celle d'une mauvaise réponse classique), si bien qu'une réponse à 4 ans et une à 20 ans coûtaient pareil. Elle grandit désormais avec l'écart et plafonne à −100 % de pointsEnJeu à 15 ans d'écart. Exemple, réponse attendue 2000, pointsEnJeu = 100 : 1998 → +50, 1995 → −17, 1990 → −58, 1985 et avant → −100. Le QCM Année reste juste/faux (choix utilisateur), la question bonus reste tout ou rien. Une saisie non numérique est traitée comme une mauvaise réponse classique (pas d'écart calculable). `RoundAnswer.EcartAnnee`/`BonusAnswer.EcartAnnee` retiennent l'écart pour les statistiques de réponse (section 12.1) et le reveal (`RoundEnded`/`BonusResult` gagnent un champ `EcartAnnee` par joueur).
 - **Question bonus** : pas de dégressivité — la mise est gagnée en entier si `écart ≤ SeriesConfig.ToleranceAnneeBonus` (1 par défaut), perdue en entier sinon (mode QCM : comparaison stricte du texte de l'année).
 - **Reveal** : `RoundEndedDto`/`BonusResultDto` gagnent un champ `Annee` (nullable, `Track.Year` tel quel) — sans lui, le host/l'écran public n'auraient aucun moyen de savoir quelle était la bonne année (jamais transmise avant le reveal).
 - Pré-requis catalogue : les années de réédition faussent la cible Année — lancer `audit_reissue_years.py`/`apply_reissue_years.py` (section 3bis) sur le catalogue avant de l'activer en partie réelle.
@@ -441,6 +441,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 | `PauseGame()` / `ResumeGame()` | Gèle/reprend la partie en cours |
 | `ValidateAnswerManually(playerId, correct)` | Override manuel pour les réponses texte ambiguës |
 | `NextRound()` | Passe au round suivant |
+| `RevelerMaintenant()` | (2026-09-27) Termine le round classique courant avant la fin du chrono — refusé tant qu'un joueur connecté n'a pas répondu, en pause ou hors round. Mêmes effets qu'une fin naturelle (absents pénalisés, `RoundEnded` + `ScoreUpdate`), diffusés une seule fois même si le chrono expire au même instant (`RoundTimerCoordinator.TerminerMaintenantAsync`). Bouton « Révéler maintenant » (Espace) du panneau host. |
 | `EndGame()` | Termine la partie |
 | `RejouerPartie()` | Uniquement si la partie est `Terminée` : relance une nouvelle manche avec le même code et les mêmes joueurs — mêmes configs/modes de série qu'à la création mais nouvelle sélection de morceaux, scores remis à zéro, session repassée en `Lobby`. Évite aux joueurs de retaper le code entre deux manches. |
 | `FermerSalon()` | (2026-09-27) Pendant de `RejouerPartie` : ferme définitivement le salon (dans n'importe quel état), diffuse `SalonFerme` aux joueurs, dissocie toutes les connexions et retire la session du store. Le host enchaîne sur `CreateGame` pour obtenir un **nouveau code** — utile quand une partie du groupe arrête de jouer. Un rejoin avec l'ancien code répond ensuite « Partie introuvable ». |
@@ -517,6 +518,7 @@ Tous ces éléments sont des paramètres de partie/série, pas des valeurs figé
 | Mode équipe | Partie | Activé/désactivé, voir section 8 |
 | Poids de tirage des cibles (`PoidsCibleTitre`/`PoidsCibleAuteur`/`PoidsCibleAnnee`) | Global | 40/40/20 par défaut (V2) — voir section 6 |
 | Tolérance Année, mode saisie (`ToleranceAnnee`) | Série | 3 ans par défaut (V2) — dégressivité par proximité, voir section 6 |
+| Pénalité Année au-delà de la tolérance (`EcartAnneePenaliteMax`, `PenaliteAnneeMaxRatio`) | Série | 12 ans / 1.0 par défaut — pénalité proportionnelle à l'écart, maximale (−100 % de pointsEnJeu) à 15 ans d'écart, voir section 6 |
 | Tolérance Année, question bonus (`ToleranceAnneeBonus`) | Série | 1 an par défaut (V2) — tout ou rien, pas de dégressivité |
 | Délai de grâce avant `PlayerDisconnected` (`DelaiGraceDeconnexionMs`) | Global | 5000 ms par défaut (V2) — voir section 10, "Reconnexion automatique" |
 | Exclusion des morceaux signalés (`ExclureMorceauxSignales`) | Global | `true` par défaut (V2) — voir section 4, "flags.json" |

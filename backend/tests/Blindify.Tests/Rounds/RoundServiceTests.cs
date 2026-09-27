@@ -910,7 +910,7 @@ public class RoundServiceTests
     }
 
     [Fact]
-    public void SoumettreReponse_CibleAnnee_EcartAuDelaDeLaTolerance_PenaliteHabituelle()
+    public void SoumettreReponse_CibleAnnee_EcartAuDelaDeLaTolerance_PenaliteProportionnelleALEcart()
     {
         var joueur = new Player { PlayerId = "p1", Nom = "Alice" };
         var session = NouvelleSession(joueur);
@@ -921,7 +921,7 @@ public class RoundServiceTests
 
         Assert.False(reponse!.EstCorrecte);
         Assert.Equal(10, reponse.EcartAnnee);
-        Assert.Equal(-50, reponse.Points); // pénalité habituelle : -round(100 * 0.5)
+        Assert.Equal(-58, reponse.Points); // écart 10 : -round(100 * (10 - 3) / 12), voir ScoringService
     }
 
     [Fact]

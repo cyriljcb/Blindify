@@ -22,7 +22,9 @@ public interface IScoringService
 
     /// <summary>Scoring à la proximité pour la cible Année en mode saisie (V2, section 12.5) — écart
     /// nul : plein pointsEnJeu ; écart entre 1 et ToleranceAnnee : dégressif linéaire ; au-delà :
-    /// pénalité de mauvaise réponse habituelle (PointsMauvaiseReponse). Ne s'applique jamais au mode
-    /// Qcm (comparaison stricte via un TrackId... ici un texte d'année, pas de dégressivité).</summary>
+    /// pénalité proportionnelle à l'écart, jusqu'à PenaliteAnneeMaxRatio × pointsEnJeu atteint à
+    /// ToleranceAnnee + EcartAnneePenaliteMax années (retour utilisateur 2026-09-27). Ne s'applique
+    /// jamais au mode Qcm (comparaison stricte du texte d'année, juste/faux) ni à la question bonus
+    /// (tout ou rien, voir ToleranceAnneeBonus).</summary>
     int PointsAnneeApproximative(int pointsEnJeu, int ecartAnnee, SeriesConfig config);
 }

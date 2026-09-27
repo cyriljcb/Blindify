@@ -31,9 +31,19 @@ public class SeriesConfig
     public int DureePhaseQuestionMs { get; set; }
 
     /// <summary>V2, section 12.5 — écart maximal (en années) toléré en mode saisie pour la cible
-    /// Année, au-delà duquel une réponse redevient une "mauvaise réponse" classique. Voir
-    /// ScoringService.PointsAnneeApproximative.</summary>
+    /// Année : jusqu'à cet écart la réponse rapporte des points (dégressif), au-delà elle en coûte.
+    /// Voir ScoringService.PointsAnneeApproximative.</summary>
     public int ToleranceAnnee { get; set; } = 3;
+
+    /// <summary>Retour utilisateur (2026-09-27) : au-delà de ToleranceAnnee, la pénalité grandit avec
+    /// l'écart au lieu d'être fixe — elle atteint son maximum à ToleranceAnnee + EcartAnneePenaliteMax
+    /// années d'écart (15 par défaut), puis plafonne.</summary>
+    public int EcartAnneePenaliteMax { get; set; } = 12;
+
+    /// <summary>Pénalité maximale d'une réponse Année très éloignée, en fraction de pointsEnJeu
+    /// (1.0 = −100 %, soit deux fois une mauvaise réponse classique avec le ratio par défaut de 0.5).
+    /// Voir EcartAnneePenaliteMax.</summary>
+    public double PenaliteAnneeMaxRatio { get; set; } = 1.0;
 
     /// <summary>Écart maximal toléré pour la question bonus à cible Année — tout ou rien (la mise
     /// est gagnée ou perdue en entier), pas de dégressivité comme pour ToleranceAnnee.</summary>
