@@ -63,7 +63,7 @@ class _EndedScreenState extends State<EndedScreen> {
             children: [
               Row(
                 children: [
-                  const Text('🏆', style: TextStyle(fontSize: 26))
+                  const Icon(Icons.emoji_events_rounded, size: 30, color: BlindifyColors.mustard)
                       .animate()
                       .scale(begin: Offset.zero, duration: BlindifyMotion.slow, curve: BlindifyMotion.bounce),
                   const SizedBox(width: 8),
@@ -81,7 +81,13 @@ class _EndedScreenState extends State<EndedScreen> {
                       if (indexTitre == 0) {
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
-                          child: Text('🎖️ Titres de la partie', style: Theme.of(context).textTheme.titleMedium),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.military_tech_rounded, size: 22, color: BlindifyColors.mustard),
+                              const SizedBox(width: 6),
+                              Text('Titres de la partie', style: Theme.of(context).textTheme.titleMedium),
+                            ],
+                          ),
                         ).animate(delay: Duration(milliseconds: 120 * (joueurs.length + 1))).fadeIn(duration: BlindifyMotion.normal);
                       }
 

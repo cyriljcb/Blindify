@@ -18,7 +18,7 @@
        secousse de <main> pour rester visible même sur une télé qui lisse le mouvement. -->
   <div id="flash-overlay"></div>
 
-  <div id="paused-banner" class="paused-banner hidden">⏸ Partie en pause</div>
+  <div id="paused-banner" class="paused-banner hidden"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg> Partie en pause</div>
 
   <!-- V2, section 12.7 — annonce transitoire "X sort son joker" (voir display.js:"joker-utilise"),
        jamais l'effet ni la cible révélée. -->
@@ -57,7 +57,7 @@
          à gauche, la question en très gros + minuteur + options à droite. -->
     <section id="screen-round" class="screen screen--question hidden">
       <div class="question-side">
-        <div class="cover-frame cover-frame--mystere cover-frame--big"><span class="cover-placeholder">❓</span></div>
+        <div class="cover-frame cover-frame--mystere cover-frame--big cover-frame--eq"><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></div>
         <div id="round-answered" class="answered-block"></div>
       </div>
       <div class="question-main">
@@ -78,7 +78,7 @@
       <h2>Résultat</h2>
       <div class="cover-frame cover-frame--big">
         <img id="reveal-cover" class="hidden" alt="Pochette de l'album" />
-        <span id="reveal-cover-placeholder" class="cover-placeholder">🎵</span>
+        <span id="reveal-cover-placeholder" class="cover-placeholder"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M9 3v11.3A3.5 3.5 0 1 0 11 17.5V8h7V3z"/></svg></span>
       </div>
       <p class="reveal">
         <strong id="reveal-title"></strong> — <span id="reveal-artist"></span>
@@ -98,14 +98,14 @@
 
     <section id="screen-bonus-question" class="screen screen--question hidden">
       <div class="question-side">
-        <div class="cover-frame cover-frame--mystere cover-frame--big"><span class="cover-placeholder">❓</span></div>
+        <div class="cover-frame cover-frame--mystere cover-frame--big cover-frame--eq"><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></div>
         <div id="bonus-question-answered" class="answered-block"></div>
       </div>
       <div class="question-main">
         <p id="bonus-question-eyebrow" class="question-eyebrow"></p>
         <h2 id="bonus-question-question" class="question-big"></h2>
         <div id="bonus-course-banner" class="course-banner course-banner--display hidden">
-          <span class="course-banner__icon" aria-hidden="true">🏁</span>
+          <span class="course-banner__icon" aria-hidden="true"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M5 21V4h11l-1.5 3.5L16 11H7v10z"/></svg></span>
           <div class="course-banner__text">
             <strong class="course-banner__title">Mode course</strong>
             <span class="course-banner__desc">Le premier qui répond décide — juste, il rafle la mise ; faux, il la perd.</span>
@@ -126,7 +126,7 @@
       <h2 id="bonus-result-title">Résultat de la question bonus</h2>
       <div class="cover-frame cover-frame--big">
         <img id="bonus-reveal-cover" class="hidden" alt="Pochette de l'album" />
-        <span id="bonus-reveal-cover-placeholder" class="cover-placeholder">🎵</span>
+        <span id="bonus-reveal-cover-placeholder" class="cover-placeholder"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M9 3v11.3A3.5 3.5 0 1 0 11 17.5V8h7V3z"/></svg></span>
       </div>
       <p class="reveal">
         <strong id="bonus-reveal-title"></strong> — <span id="bonus-reveal-artist"></span>

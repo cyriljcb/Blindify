@@ -20,6 +20,7 @@ import 'screens/round_ended_screen.dart';
 import 'screens/serie_intro_screen.dart';
 import 'services/game_connection.dart';
 import 'theme.dart';
+import 'widgets/player_avatar.dart';
 import 'widgets/settings_sheet.dart';
 import 'widgets/update_banner.dart';
 
@@ -66,6 +67,7 @@ class _RootScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final game = context.watch<GameConnection>();
+    final phaseDeJeu = const {AppScreen.round, AppScreen.bonusStake, AppScreen.bonusQuestion}.contains(game.screen);
 
     final Widget body = switch (game.screen) {
       AppScreen.loading => const LoadingScreen(),
@@ -97,10 +99,12 @@ class _RootScreen extends StatelessWidget {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                padding: EdgeInsets.fromLTRB(phaseDeJeu ? 12 : 20, phaseDeJeu ? 6 : 12, phaseDeJeu ? 12 : 20, 4),
                 child: Row(
                   children: [
-                    Text(
+                    // Refonte UI (lot 2) : pendant les phases de jeu, l'en-tête laisse la place au
+                    // joueur lui-même (avatar, pseudo, score — jamais son rang, choix utilisateur).
+                    if (phaseDeJeu) const Expanded(child: _BandeauJoueur()) else Text(
                       'BLINDIFY',
                       style: TextStyle(
                         fontFamily: GoogleFonts.anton().fontFamily,
@@ -115,7 +119,7 @@ class _RootScreen extends StatelessWidget {
                         .animate()
                         .fadeIn(duration: BlindifyMotion.normal)
                         .slideX(begin: -0.2, curve: BlindifyMotion.pop),
-                    const Spacer(),
+                    if (!phaseDeJeu) const Spacer(),
                     IconButton(
                       onPressed: () => showSettingsSheet(context),
                       icon: const Icon(Icons.settings_rounded, color: BlindifyColors.ink),
@@ -134,7 +138,7 @@ class _RootScreen extends StatelessWidget {
                 child: Stack(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(phaseDeJeu ? 12 : 16),
                       // Fade + léger zoom-in + glissement vertical (au lieu d'un simple fondu) — retour
                       // utilisateur : l'app manquait de dynamisme, chaque écran doit "arriver" plutôt
                       // que de simplement apparaître. Le nouvel écran survient toujours par-dessus
@@ -207,5 +211,32 @@ class _BandeauReconnexion extends StatelessWidget {
         ],
       ),
     ).animate().fadeIn(duration: BlindifyMotion.fast).slideY(begin: -0.4, curve: BlindifyMotion.pop);
+  }
+}
+
+/// En-tête compact des phases de jeu (refonte UI, lot 2) : qui je suis et mon score. Jamais le
+/// rang — le classement n'apparaît sur le téléphone qu'à la moitié des séries ou à la demande
+/// du host (choix utilisateur, voir la revue UX du 2026-09-27).
+class _BandeauJoueur extends StatelessWidget {
+  const _BandeauJoueur();
+
+  @override
+  Widget build(BuildContext context) {
+    final game = context.watch<GameConnection>();
+    final nom = game.nom ?? '';
+    return Row(
+      children: [
+        PlayerAvatar(id: game.playerId ?? '', nom: nom, size: 30),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(nom, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+        ),
+        const Spacer(),
+        Text(
+          '${game.score} pts',
+          style: GoogleFonts.spaceMono(fontWeight: FontWeight.w700, fontSize: 15, color: BlindifyColors.ink),
+        ),
+      ],
+    );
   }
 }

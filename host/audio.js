@@ -10,15 +10,36 @@ const manualPlayBtn = el("btn-manual-play");
 
 let fadeIntervalId = null;
 
+// Refonte UI (lot 2) — volume du lecteur maison : le volume effectif est le produit du niveau de
+// fondu (0 → 1, piloté par les transitions ci-dessous) et du volume principal choisi par le host
+// (curseur « Vol. »), pour que les fondus ne l'écrasent jamais.
+const VOLUME_STORAGE_KEY = "blindify_volume_host";
+let niveauFondu = 1;
+let volumeMaitre = lireVolumeMaitre();
+
+function lireVolumeMaitre() {
+  try {
+    const v = parseFloat(localStorage.getItem(VOLUME_STORAGE_KEY));
+    return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1;
+  } catch {
+    return 1;
+  }
+}
+
+function definirNiveauFondu(niveau) {
+  niveauFondu = Math.min(1, Math.max(0, niveau));
+  audioEl.volume = niveauFondu * volumeMaitre;
+}
+
 // Fondu de volume — évite les coupures sèches entre la découverte et le reveal, ou entre
 // deux morceaux qui s'enchaînent automatiquement.
 export function fadeAudioVolume(cible, dureeMs, onDone) {
   clearInterval(fadeIntervalId);
-  const depart = audioEl.volume;
+  const depart = niveauFondu;
   const debutTs = performance.now();
   fadeIntervalId = setInterval(() => {
     const t = Math.min(1, (performance.now() - debutTs) / dureeMs);
-    audioEl.volume = depart + (cible - depart) * t;
+    definirNiveauFondu(depart + (cible - depart) * t);
     if (t >= 1) {
       clearInterval(fadeIntervalId);
       fadeIntervalId = null;
@@ -46,7 +67,7 @@ export function playAudio(serverBaseUrl, filePath, playbackRate = 1) {
     // à 1 au chargement, ce qui annulait silencieusement le ralentissement de la question bonus.
     audioEl.playbackRate = playbackRate;
     manualPlayBtn.classList.add("hidden");
-    audioEl.volume = 0;
+    definirNiveauFondu(0);
     lancerLecture();
     fadeAudioVolume(1, 450);
   };
@@ -85,9 +106,9 @@ export function resumeAudio(serverBaseUrl, filePath, positionMs, enPause) {
     audioEl.currentTime = positionMs / 1000;
     if (enPause) {
       audioEl.pause();
-      audioEl.volume = 1;
+      definirNiveauFondu(1);
     } else {
-      audioEl.volume = 0;
+      definirNiveauFondu(0);
       lancerLecture();
       fadeAudioVolume(1, 450);
     }
@@ -119,3 +140,73 @@ export function reecouterDepuisDebut() {
     fadeAudioVolume(1, 350);
   });
 }
+
+// ----- Lecteur maison (refonte UI, lot 2) -----
+// Remplace les contrôles natifs du navigateur : lecture/pause de la musique seule (sans mettre la
+// partie en pause), progression cliquable avec le repère du refrain, volume principal. Jamais le
+// titre du morceau : le host joue souvent.
+
+const playBtn = el("btn-lecteur-play");
+const progressionEl = el("lecteur-progression");
+const rempliEl = el("lecteur-rempli");
+const refrainEl = el("lecteur-refrain");
+const tempsEl = el("lecteur-temps");
+const volumeEl = el("lecteur-volume");
+let refrainMs = null;
+
+function formaterTemps(secondes) {
+  if (!Number.isFinite(secondes) || secondes < 0) return "0:00";
+  const s = Math.floor(secondes);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function majLecteur() {
+  const duree = audioEl.duration;
+  const ratio = Number.isFinite(duree) && duree > 0 ? audioEl.currentTime / duree : 0;
+  rempliEl.style.width = `${Math.min(100, ratio * 100)}%`;
+  tempsEl.textContent = `${formaterTemps(audioEl.currentTime)} / ${formaterTemps(duree)}`;
+  playBtn.textContent = audioEl.paused ? "▶" : "❚❚";
+  const refrainVisible = refrainMs !== null && Number.isFinite(duree) && duree > 0;
+  refrainEl.classList.toggle("hidden", !refrainVisible);
+  if (refrainVisible) refrainEl.style.left = `${Math.min(100, (refrainMs / 1000 / duree) * 100)}%`;
+}
+
+// Appelé par main.js à chaque nouveau morceau (round ou question bonus) — null si le refrain n'est
+// pas connu pour ce morceau.
+export function definirRepereRefrain(ms) {
+  refrainMs = ms ?? null;
+  majLecteur();
+}
+
+playBtn.addEventListener("click", () => {
+  if (!audioEl.src) return;
+  if (audioEl.paused) {
+    lancerLecture();
+    fadeAudioVolume(1, 250);
+  } else {
+    pauseAudioEnDouceur();
+  }
+});
+
+progressionEl.addEventListener("click", (event) => {
+  const duree = audioEl.duration;
+  if (!Number.isFinite(duree) || duree <= 0) return;
+  const rect = progressionEl.getBoundingClientRect();
+  audioEl.currentTime = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)) * duree;
+});
+
+volumeEl.value = String(volumeMaitre);
+volumeEl.addEventListener("input", () => {
+  volumeMaitre = parseFloat(volumeEl.value);
+  definirNiveauFondu(niveauFondu);
+  try {
+    localStorage.setItem(VOLUME_STORAGE_KEY, String(volumeMaitre));
+  } catch {
+    // Ignoré : le volume revient à 100 % au prochain lancement.
+  }
+});
+
+for (const evenement of ["timeupdate", "loadedmetadata", "play", "pause", "ended", "emptied"]) {
+  audioEl.addEventListener(evenement, majLecteur);
+}
+majLecteur();

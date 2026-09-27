@@ -16,36 +16,69 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Refonte UI (lot 2) : barre de régie — étape en cours (Salon › Série A › … › Fin), état de
+       l'écran public et des joueurs, et un menu « ⋯ » pour les actions rares (nouveau salon,
+       redémarrage du serveur), sorties de la vue pour ne pas être cliquées par erreur. -->
   <header>
     <h1>Blindify</h1>
+    <ol id="stepper" class="stepper hidden" aria-label="Étape de la partie"></ol>
     <div class="header-actions">
       <button id="btn-open-display" class="btn-secondary">Ouvrir l'écran public</button>
       <span id="display-indicator" class="pill pill--off">écran public : fermé</span>
+      <span id="players-indicator" class="pill pill--off hidden"></span>
       <span id="connection-indicator" class="pill pill--off">déconnecté</span>
-      <!-- Retour utilisateur : pouvoir relancer le backend (POST /api/admin/restart) sans accès
-           physique/SSH au Raspberry Pi. Volontairement discret (btn-danger) et confirmé par mot de
-           passe — voir #restart-overlay ci-dessous. -->
-      <button id="btn-open-restart" class="btn-danger">Redémarrer le serveur</button>
+      <div class="menu">
+        <button id="btn-menu" class="btn-menu" aria-haspopup="true" aria-expanded="false" aria-controls="menu-panel" title="Autres actions">⋯</button>
+        <div id="menu-panel" class="menu-panel hidden" role="menu">
+          <button id="menu-nouveau-salon" role="menuitem">Nouveau salon (nouveau code)</button>
+          <!-- Retour utilisateur : pouvoir relancer le backend (POST /api/admin/restart) sans accès
+               physique/SSH au Raspberry Pi. Confirmé par mot de passe — voir #restart-overlay. -->
+          <button id="btn-open-restart" class="menu-danger" role="menuitem">Redémarrer le serveur</button>
+        </div>
+      </div>
     </div>
   </header>
-  <p class="control-note">
-    Ce panneau est réservé à l'organisateur (commandes, scores, override) — à garder sur ton écran privé.
-    Affiche <strong>l'écran public</strong> sur le vidéoprojecteur/TV pour les joueurs : il ne montre jamais
-    les informations à deviner ni les scores en continu.
-  </p>
+  <!-- Affiché une seule fois, au premier lancement (voir main.js:afficherNoteUneFois). -->
+  <div id="control-note" class="control-note hidden">
+    <p>
+      Ce panneau est réservé à l'organisateur (commandes, override) — à garder sur ton écran privé.
+      Affiche <strong>l'écran public</strong> sur le vidéoprojecteur/TV pour les joueurs : il ne montre jamais
+      les informations à deviner ni les scores en continu.
+    </p>
+    <button id="btn-note-compris" class="btn-secondary">Compris</button>
+  </div>
 
   <main>
-    <!-- Contrôles partagés (audio + pause/tableau général) — hors des écrans pour rester
-         disponibles quel que soit l'écran affiché (découverte, reveal, bonus...). -->
+    <!-- Refonte UI (lot 2) : régie en trois zones pendant la partie — « Lecture » à gauche, l'écran
+         courant au centre, la colonne d'actions à droite (action principale toujours en haut, au
+         même endroit). #game-controls est en display: contents : ses deux panneaux sont des
+         cellules de la grille de <main> (voir style.css, body.regie). -->
     <div id="game-controls" class="hidden">
-      <audio id="player-audio" controls></audio>
-      <button id="btn-manual-play" class="hidden">Lecture bloquée par le navigateur — cliquer pour lancer</button>
-      <div class="actions">
+      <aside id="lecture-panel" class="regie-panel" aria-label="Lecture">
+        <h3 class="regie-titre">Lecture</h3>
+        <audio id="player-audio"></audio>
+        <div class="lecteur">
+          <button id="btn-lecteur-play" class="lecteur-play" title="Lecture / pause de la musique (sans mettre la partie en pause)" aria-label="Lecture ou pause de la musique">▶</button>
+          <div id="lecteur-progression" class="lecteur-progression" title="Cliquer pour se déplacer dans le morceau">
+            <div id="lecteur-rempli" class="lecteur-rempli"></div>
+            <div id="lecteur-refrain" class="lecteur-refrain hidden" title="Refrain"></div>
+          </div>
+        </div>
+        <div class="lecteur-infos">
+          <span id="lecteur-temps" class="lecteur-temps">0:00 / 0:00</span>
+          <label class="lecteur-volume">Vol. <input id="lecteur-volume" type="range" min="0" max="1" step="0.05" value="1" /></label>
+        </div>
+        <p class="regie-note">Morceau masqué jusqu'au résultat.</p>
+        <button id="btn-manual-play" class="hidden">Lecture bloquée par le navigateur — cliquer pour lancer</button>
+      </aside>
+      <aside id="rail" class="regie-panel" aria-label="Actions">
+        <button id="btn-action-principale" class="btn-action-principale" data-kbd="Espace" disabled>—</button>
         <button id="btn-pause" data-kbd="P">Pause</button>
         <button id="btn-resume" class="hidden" data-kbd="P">Reprendre</button>
         <button id="btn-leaderboard" data-kbd="L">Tableau général</button>
         <button id="btn-reecouter" class="btn-secondary" data-kbd="R">Réécouter depuis le début</button>
-      </div>
+        <button id="btn-rail-terminer" class="btn-secondary btn-rail-terminer">Terminer la partie</button>
+      </aside>
     </div>
 
     <!-- Signalement en direct (V2, section 12.4) — hors des écrans (comme #game-controls) pour
@@ -111,19 +144,34 @@
           <!-- Cases générées dynamiquement depuis GET /api/tags (voir app.js:chargerTagsDisponibles) -->
         </div>
 
-        <label for="setup-nombre-series">Nombre de séries</label>
-        <input id="setup-nombre-series" type="number" min="1" value="3" />
+        <!-- Refonte UI (lot 2) : préréglages en un clic + durée estimée ; le détail des champs est
+             replié dans « Réglages avancés » (voir config.js:PRESETS). -->
+        <label>Format</label>
+        <div id="presets" class="presets">
+          <button type="button" class="preset" data-series="3" data-rounds="6" data-duree="15">Rapide<small>3 × 6</small></button>
+          <button type="button" class="preset" data-series="3" data-rounds="10" data-duree="15">Classique<small>3 × 10</small></button>
+          <button type="button" class="preset" data-series="5" data-rounds="12" data-duree="15">Marathon<small>5 × 12</small></button>
+        </div>
+        <p id="config-resume" class="config-resume"></p>
 
-        <label for="setup-nombre-rounds">Nombre de rounds par série</label>
-        <input id="setup-nombre-rounds" type="number" min="1" value="10" />
+        <details class="reglages-avances">
+          <summary>Réglages avancés</summary>
+          <div class="reglages-avances__champs">
+            <label for="setup-nombre-series">Nombre de séries</label>
+            <input id="setup-nombre-series" type="number" min="1" value="3" />
 
-        <label for="setup-duree-fenetre">Durée de la fenêtre de réponse (secondes)</label>
-        <input id="setup-duree-fenetre" type="number" min="1" value="15" />
+            <label for="setup-nombre-rounds">Nombre de rounds par série</label>
+            <input id="setup-nombre-rounds" type="number" min="1" value="10" />
 
-        <label><input id="setup-audio-continu" type="checkbox" checked /> Musique continue entre les rounds</label>
+            <label for="setup-duree-fenetre">Durée de la fenêtre de réponse (secondes)</label>
+            <input id="setup-duree-fenetre" type="number" min="1" value="15" />
 
-        <label for="setup-delai-enchainement">Délai avant le round suivant (secondes)</label>
-        <input id="setup-delai-enchainement" type="number" min="1" value="10" />
+            <label><input id="setup-audio-continu" type="checkbox" checked /> Musique continue entre les rounds</label>
+
+            <label for="setup-delai-enchainement">Délai avant le round suivant (secondes)</label>
+            <input id="setup-delai-enchainement" type="number" min="1" value="10" />
+          </div>
+        </details>
 
         <button id="btn-configurer-partie">Valider la configuration</button>
         <p id="configurer-error" class="error"></p>
@@ -146,15 +194,15 @@
       </div>
       <p id="serie-intro-note" class="reveal"></p>
       <div class="actions">
-        <button id="btn-start-serie" data-kbd="Espace">Démarrer la série</button>
+        <button id="btn-start-serie" class="action-principale" data-kbd="Espace">Démarrer la série</button>
       </div>
       <p id="serie-intro-error" class="error"></p>
     </section>
 
     <!-- Écran 4 : round en cours -->
     <section id="screen-round" class="screen hidden">
-      <h2>Round en cours — <span id="round-mode-label"></span></h2>
-      <div class="cover-frame cover-frame--mystere"><span class="cover-placeholder">❓</span></div>
+      <h2 id="round-mode-label"></h2>
+      <div class="cover-frame cover-frame--mystere"><span class="cover-placeholder"></span></div>
       <div class="timer-bar"><div id="timer-fill" class="timer-fill"></div></div>
 
       <!-- Refonte UI (lot 1) : qui a répondu et en combien de temps, jamais juste/faux ni les
@@ -163,7 +211,7 @@
       <div class="actions">
         <!-- Actif dès que tous les joueurs connectés ont répondu (voir render.js:renderRound) —
              sinon le round va jusqu'au bout du chrono. Voir GameHub.RevelerMaintenant. -->
-        <button id="btn-reveler" data-kbd="Espace" disabled>Révéler maintenant</button>
+        <button id="btn-reveler" class="action-principale" data-kbd="Espace" disabled>Révéler maintenant</button>
       </div>
       <p id="round-error" class="error"></p>
     </section>
@@ -173,7 +221,7 @@
       <h2>Résultat</h2>
       <div class="cover-frame">
         <img id="reveal-cover" class="hidden" alt="Pochette de l'album" />
-        <span id="reveal-cover-placeholder" class="cover-placeholder">🎵</span>
+        <span id="reveal-cover-placeholder" class="cover-placeholder"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M9 3v11.3A3.5 3.5 0 1 0 11 17.5V8h7V3z"/></svg></span>
       </div>
       <p class="reveal">
         <strong id="reveal-title"></strong> — <span id="reveal-artist"></span>
@@ -186,8 +234,8 @@
       </table>
       <p id="auto-next-note" class="reveal"></p>
       <div class="actions">
-        <button id="btn-next-round" data-kbd="Espace">Round suivant</button>
-        <button id="btn-end-game">Terminer la partie</button>
+        <button id="btn-next-round" class="action-principale" data-kbd="Espace">Round suivant</button>
+        <button id="btn-end-game" class="action-principale">Terminer la partie</button>
       </div>
       <p id="round-ended-note" class="error"></p>
     </section>
@@ -203,10 +251,10 @@
     <!-- Écran 7 : question bonus — phase question -->
     <section id="screen-bonus-question" class="screen hidden">
       <h2 id="bonus-question-title">Question bonus — à deviner !</h2>
-      <div class="cover-frame cover-frame--mystere"><span class="cover-placeholder">❓</span></div>
+      <div class="cover-frame cover-frame--mystere"><span class="cover-placeholder"></span></div>
       <p id="bonus-question-mode-label"></p>
       <div id="bonus-course-banner" class="course-banner hidden">
-        <span class="course-banner__icon" aria-hidden="true">🏁</span>
+        <span class="course-banner__icon" aria-hidden="true"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M5 21V4h11l-1.5 3.5L16 11H7v10z"/></svg></span>
         <div class="course-banner__text">
           <strong class="course-banner__title">Mode course</strong>
           <span class="course-banner__desc">Le premier qui répond décide — juste, il rafle la mise ; faux, il la perd.</span>
@@ -220,10 +268,10 @@
     <!-- Écran 8 : question bonus — résultat -->
     <section id="screen-bonus-result" class="screen hidden">
       <h2 id="bonus-result-title">Résultat de la question bonus</h2>
-      <p id="bonus-result-course-banner" class="course-banner hidden">🏁 Course : seul le premier qui a répondu apparaît ci-dessous — les autres récupèrent leur mise intacte.</p>
+      <p id="bonus-result-course-banner" class="course-banner hidden"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M5 21V4h11l-1.5 3.5L16 11H7v10z"/></svg> Course : seul le premier qui a répondu apparaît ci-dessous — les autres récupèrent leur mise intacte.</p>
       <div class="cover-frame">
         <img id="bonus-reveal-cover" class="hidden" alt="Pochette de l'album" />
-        <span id="bonus-reveal-cover-placeholder" class="cover-placeholder">🎵</span>
+        <span id="bonus-reveal-cover-placeholder" class="cover-placeholder"><svg class="icone" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M9 3v11.3A3.5 3.5 0 1 0 11 17.5V8h7V3z"/></svg></span>
       </div>
       <p class="reveal">
         <strong id="bonus-reveal-title"></strong> — <span id="bonus-reveal-artist"></span>
@@ -236,7 +284,7 @@
       </table>
       <p id="bonus-end-note" class="reveal"></p>
       <div class="actions">
-        <button id="btn-end-now" data-kbd="Espace">Terminer maintenant</button>
+        <button id="btn-end-now" class="action-principale" data-kbd="Espace">Terminer maintenant</button>
       </div>
     </section>
 

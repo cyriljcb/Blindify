@@ -3,15 +3,16 @@
 import { escapeHtml } from "./format.js";
 import { couleurAvatar, couleurClassement } from "./palette.js";
 
-const MEDAILLES = ["🥇", "🥈", "🥉"];
+// Refonte UI (lot 2) : pastille de rang 1/2/3 aux couleurs du podium (COULEURS_PODIUM) à la place
+// des emojis de médailles — même rendu que côté Flutter (player_avatar.dart).
+const FOND_RANG = ["var(--mustard)", "var(--ink-dim)", "var(--coral)"];
 
 // roster : { joueurs, equipes } — voir palette.js:couleurAvatar. rang (0-indexé) : si fourni et < 3,
-// affiche une médaille à la place des initiales (classement final / tableau général uniquement —
-// pas pendant un round en cours). tailleMedaille : 1.3rem par défaut (panneau de contrôle), 1.6rem
-// sur l'écran public (lu à distance) — fusion des deux versions historiquement dupliquées.
-export function avatarHtml(id, nom, rang, roster, { tailleMedaille = "1.3rem" } = {}) {
+// affiche une pastille de rang à la place des initiales (classement final / tableau général
+// uniquement — pas pendant un round en cours).
+export function avatarHtml(id, nom, rang, roster) {
   if (rang !== undefined && rang < 3) {
-    return `<span class="avatar" style="background: transparent; font-size: ${tailleMedaille};">${MEDAILLES[rang]}</span>`;
+    return `<span class="avatar avatar--rang" style="background: ${FOND_RANG[rang]};">${rang + 1}</span>`;
   }
   const initiale = escapeHtml((nom || "?").trim().slice(0, 1).toUpperCase() || "?");
   return `<span class="avatar" style="background: ${couleurAvatar(id, roster)};">${initiale}</span>`;

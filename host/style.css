@@ -406,13 +406,9 @@ button#btn-end-game { background: var(--surface-alt); color: var(--ink); }
 
 audio { width: 100%; border-radius: 4px; border: 2px solid var(--ink); }
 
-#game-controls {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 2px solid var(--border-soft);
-  width: 100%;
-  max-width: 900px;
-}
+/* Refonte UI (lot 2) : conteneur transparent — ses deux panneaux (Lecture, colonne d'actions)
+   sont placés directement dans la grille de la régie (body.regie main). */
+#game-controls { display: contents; }
 #game-controls.hidden { display: none !important; }
 
 /* ----- Signalement en direct (V2, section 12.4) ----- */
@@ -715,3 +711,215 @@ button[data-kbd]::after {
 .answer-card--done { border-color: var(--good); }
 .answer-card--done .answer-card__statut { color: var(--good); }
 .answer-card--off { opacity: 0.45; border-style: dashed; }
+
+/* Refonte UI (lot 2) — pastille de rang 1/2/3 (remplace les emojis de médailles) et icônes SVG
+   en ligne (shared/icons.js). */
+.avatar--rang {
+  color: var(--bg);
+  font-family: var(--font-display);
+  font-weight: 400;
+  border: 2px solid var(--ink);
+}
+.icone {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.15em;
+  flex: none;
+}
+
+/* ==========================================================================
+   Refonte UI (lot 2) — régie en trois zones
+   ========================================================================== */
+
+/* Pendant la partie : « Lecture » à gauche, l'écran courant au centre, les actions à droite. Hors
+   partie (connexion, création, salon, fin), la colonne unique habituelle. Repli en une colonne sur
+   écran étroit. */
+body.regie main {
+  max-width: 1320px;
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr) 250px;
+  grid-template-areas:
+    "lecture ecran rail"
+    "flags   ecran rail";
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 1.25rem 1.5rem;
+}
+body.regie #lecture-panel { grid-area: lecture; }
+body.regie #rail { grid-area: rail; position: sticky; top: 1rem; }
+body.regie main > .screen { grid-area: ecran; }
+body.regie #flags-panel { grid-area: flags; margin: 0; }
+body.regie .action-principale { display: none; }
+@media (max-width: 1100px) {
+  body.regie main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "rail" "ecran" "lecture" "flags";
+    grid-template-rows: none;
+  }
+  body.regie #rail { position: static; }
+}
+
+.regie-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  background: var(--surface);
+  border: 2px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+}
+.regie-panel button { width: 100%; }
+.regie-titre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.regie-note { margin: 0; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-dim); }
+
+.btn-action-principale {
+  padding: 1.1rem 1rem;
+  font-size: 1.05rem;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.btn-rail-terminer { margin-top: 0.6rem; color: var(--ink-dim); }
+
+/* ----- Lecteur maison ----- */
+
+.lecteur { display: flex; align-items: center; gap: 0.7rem; }
+.lecteur-play {
+  flex: none;
+  width: 2.6rem !important;
+  height: 2.6rem;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 0.9rem;
+  box-shadow: 3px 3px 0 var(--cobalt);
+  text-transform: none;
+}
+.lecteur-progression {
+  position: relative;
+  flex: 1;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--surface-alt);
+  border: 1.5px solid var(--border-soft);
+  cursor: pointer;
+}
+.lecteur-rempli { height: 100%; width: 0; border-radius: 999px; background: var(--cobalt); }
+.lecteur-refrain {
+  position: absolute;
+  top: -0.3rem;
+  width: 3px;
+  height: 1.1rem;
+  background: var(--mustard);
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+.lecteur-infos { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.lecteur-temps, .lecteur-volume {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+.lecteur-volume { display: flex; align-items: center; gap: 0.35rem; margin: 0; text-transform: none; }
+.lecteur-volume input { width: 5.5rem; accent-color: var(--cobalt); }
+
+/* ----- Barre d'étapes ----- */
+
+.stepper {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  justify-content: center;
+}
+.stepper.hidden { display: none !important; }
+.step {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 2px solid var(--border-soft);
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+.step + .step::before { content: none; }
+.step--done { color: var(--good); border-color: rgba(46, 213, 115, 0.5); }
+.step--now { color: var(--bg); background: var(--mustard); border-color: var(--mustard); }
+
+/* ----- Menu « ⋯ » ----- */
+
+.menu { position: relative; }
+.btn-menu {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  font-size: 1.2rem;
+  line-height: 1;
+  background: var(--surface-alt);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 30;
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 5px 5px 0 var(--cobalt);
+}
+.menu-panel button {
+  width: 100%;
+  text-align: left;
+  background: var(--surface-alt);
+  box-shadow: none;
+  font-size: 0.85rem;
+}
+.menu-panel .menu-danger { color: var(--coral); border-color: var(--coral); }
+
+/* ----- Avertissement du premier lancement ----- */
+
+.control-note {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.control-note p { margin: 0; max-width: 70ch; }
+
+/* ----- Préréglages de partie ----- */
+
+.presets { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.preset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 8rem;
+  background: var(--surface-alt);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.preset small { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-dim); text-transform: none; }
+.preset--actif { background: var(--mustard); color: var(--bg); }
+.preset--actif small { color: var(--bg); }
+.config-resume { margin: 0; font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink); }
+.reglages-avances summary { cursor: pointer; font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.reglages-avances__champs { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.8rem; }

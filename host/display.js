@@ -13,6 +13,7 @@
 
 import { escapeHtml, libelleReveal, questionCible, libelleMode } from "./shared/format.js";
 import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode, renderTitrePanel, formeQcmSvg } from "./shared/components.js";
+import { iconeSvg } from "./shared/icons.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -286,6 +287,8 @@ function stopLocalTimer(fillEl, secondesEl) {
 
 function render() {
   el("paused-banner").classList.toggle("hidden", !state.paused);
+  // Refonte UI (lot 2) : fige l'égaliseur de la pochette mystère pendant la pause.
+  document.body.classList.toggle("en-pause", state.paused);
 
   switch (state.screen) {
     case "lobby":
@@ -465,7 +468,7 @@ let jokerBannerTimeoutId = null;
 function afficherBanniereJoker(playerId) {
   const nom = (roster().joueurs ?? []).find((j) => j.playerId === playerId)?.nom ?? "Un joueur";
   const banner = el("joker-banner");
-  banner.textContent = `✨ ${nom} sort son joker`;
+  banner.innerHTML = `${iconeSvg("etincelle")} ${escapeHtml(nom)} sort son joker`;
   banner.classList.remove("hidden");
   if (jokerBannerTimeoutId) clearTimeout(jokerBannerTimeoutId);
   jokerBannerTimeoutId = setTimeout(() => {

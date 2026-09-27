@@ -6,7 +6,7 @@
 // fonction de rendu par écran repeint tout son contenu depuis `state`, jamais de mise à jour
 // incrémentale ciblée par événement (un seul chemin entre "l'état a changé" et "l'écran est à jour").
 
-import { escapeHtml, libelleCible, libelleMode, libelleReveal, lettreSerie } from "./shared/format.js";
+import { escapeHtml, libelleCible, libelleMode, libelleReveal, lettreSerie, questionCible } from "./shared/format.js";
 import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode, renderTitrePanel } from "./shared/components.js";
 
 const el = (id) => document.getElementById(id);
@@ -28,6 +28,7 @@ const screens = [
 
 // Écrans où le lecteur audio + pause/tableau général doivent rester visibles.
 const ECRANS_AVEC_CONTROLES = new Set([
+  "screen-serie-intro",
   "screen-round",
   "screen-round-ended",
   "screen-bonus-stake",
@@ -66,6 +67,8 @@ const RAISONS_SIGNALEMENT = [
 // section 2, inputs de configuration exclus du re-render).
 export function showScreen(id) {
   gameControlsEl.classList.toggle("hidden", !ECRANS_AVEC_CONTROLES.has(id));
+  // Refonte UI (lot 2) : mise en page « régie » en trois zones pendant la partie (style.css).
+  document.body.classList.toggle("regie", ECRANS_AVEC_CONTROLES.has(id));
 
   const actuel = screens.find((s) => !el(s).classList.contains("hidden"));
   if (actuel === id) return;
@@ -253,8 +256,9 @@ function renderAnswersLive(container, state) {
 
 function renderRound(state) {
   el("round-error").textContent = "";
-  const { mode, cible, serieLabel } = state.currentRoundInfo;
-  el("round-mode-label").textContent = `${libelleMode(mode)} — trouver ${libelleCible(cible)}${serieLabel ?? ""}`;
+  const { mode, cible } = state.currentRoundInfo;
+  // Refonte UI (lot 2) : la série et le numéro de round sont dans la barre d'étapes.
+  el("round-mode-label").textContent = `${questionCible(cible)} · ${libelleMode(mode)}`;
   renderAnswersLive(el("round-answers"), state);
   const connectes = state.players.filter((p) => p.estConnecte);
   const tousOntRepondu = connectes.length > 0 && connectes.every((p) => state.repondants.some((r) => r.playerId === p.playerId));
@@ -381,4 +385,87 @@ export function render(state) {
 
   showScreen(SCREEN_ID[state.currentScreen]);
   RENDERERS[state.currentScreen]?.(state);
+  renderRegie(state);
+}
+
+// ----- Régie (refonte UI, lot 2) -----
+
+// Action suivante de chaque écran — déclenchée par Espace (main.js) et reproduite en tête de la
+// colonne d'actions de la régie (renderRegie) : même bouton, même place, quel que soit l'écran.
+export const ACTION_SUIVANTE_PAR_ECRAN = {
+  lobby: "btn-start-round",
+  "serie-intro": "btn-start-serie",
+  round: "btn-reveler",
+  "round-ended": "btn-next-round",
+  "bonus-result": "btn-end-now",
+};
+
+// Libellé de l'action principale quand l'écran n'en a pas (mise et question bonus : la phase se
+// termine seule au bout du chrono).
+const ATTENTE_PAR_ECRAN = {
+  "bonus-stake": "Mises en cours…",
+  "bonus-question": "Question bonus en cours…",
+};
+
+function renderRegie(state) {
+  renderStepper(state);
+
+  const connectes = state.players.filter((p) => p.estConnecte).length;
+  const joueursEl = el("players-indicator");
+  joueursEl.classList.toggle("hidden", !state.gameCode);
+  joueursEl.textContent = `${connectes} joueur${connectes > 1 ? "s" : ""}`;
+  joueursEl.classList.toggle("pill--on", connectes > 0);
+  joueursEl.classList.toggle("pill--off", connectes === 0);
+
+  // Miroir de l'action principale de l'écran courant : libellé et état repris du bouton d'origine
+  // (masqué en mode régie, voir style.css .action-principale), clic relayé par main.js.
+  const principale = el("btn-action-principale");
+  const cible = el(ACTION_SUIVANTE_PAR_ECRAN[state.currentScreen] ?? "");
+  if (cible) {
+    principale.textContent = cible.textContent;
+    principale.disabled = cible.disabled;
+    principale.dataset.kbd = "Espace";
+  } else {
+    principale.textContent = ATTENTE_PAR_ECRAN[state.currentScreen] ?? "—";
+    principale.disabled = true;
+    delete principale.dataset.kbd;
+  }
+}
+
+// Salon › Série A › Série B · round 4/10 › … › Fin. serieCouranteIndex est déjà incrémenté au
+// BonusResult (voir handlers.js:onBonusResult) : sur l'écran de résultat bonus, la série en cours
+// est donc la précédente.
+function renderStepper(state) {
+  const stepper = el("stepper");
+  const visible = !!state.gameCode && !!state.currentScreen && state.nombreSeriesTotal > 0;
+  stepper.classList.toggle("hidden", !visible);
+  if (!visible) return;
+
+  const ecran = state.currentScreen;
+  const serieEnCours = ecran === "bonus-result" ? state.serieCouranteIndex - 1 : state.serieCouranteIndex;
+  const detail = {
+    "serie-intro": "annonce",
+    round: `round ${state.roundsDemarres}/${state.nombreRoundsParSerie}`,
+    "round-ended": `round ${state.roundsDemarres}/${state.nombreRoundsParSerie}`,
+    "bonus-stake": "question bonus",
+    "bonus-question": "question bonus",
+    "bonus-result": "question bonus",
+  }[ecran];
+
+  const etapes = [{ libelle: "Salon", etat: ecran === "lobby" ? "now" : "done" }];
+  for (let i = 0; i < state.nombreSeriesTotal; i++) {
+    let etat = "todo";
+    let libelle = `Série ${lettreSerie(i)}`;
+    if (ecran === "ended" || (ecran !== "lobby" && i < serieEnCours)) etat = "done";
+    else if (ecran !== "lobby" && i === serieEnCours) {
+      etat = "now";
+      if (detail) libelle += ` · ${detail}`;
+    }
+    etapes.push({ libelle, etat });
+  }
+  etapes.push({ libelle: "Fin", etat: ecran === "ended" ? "now" : "todo" });
+
+  stepper.innerHTML = etapes
+    .map((e) => `<li class="step step--${e.etat}"${e.etat === "now" ? ' aria-current="step"' : ""}>${escapeHtml(e.libelle)}${e.etat === "done" ? " ✓" : ""}</li>`)
+    .join("");
 }

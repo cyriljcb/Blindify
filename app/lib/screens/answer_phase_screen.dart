@@ -15,7 +15,6 @@ import '../theme.dart';
 import '../widgets/answer_banner.dart';
 import '../widgets/cover_art.dart';
 import '../widgets/qcm_tile.dart';
-import '../widgets/game_card.dart';
 import '../widgets/joker_button.dart';
 import '../widgets/serie_badge.dart';
 import '../widgets/timer_bar.dart';
@@ -148,6 +147,17 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
     return total > 0 ? 'Réponse verrouillée · $repondus/$total ont répondu' : 'Réponse verrouillée';
   }
 
+  /// « Série B · Rock » — le thème n'est connu que par l'annonce de série (SerieAnnoncee) ; absent
+  /// après une reconnexion en pleine série, auquel cas seule la lettre est affichée.
+  static String _libelleSerie(GameConnection game, int serieIndex) {
+    final intro = game.serieIntro;
+    final lettre = 'Série ${lettreSerie(serieIndex)}';
+    return intro != null && intro.serieIndex == serieIndex ? '$lettre · ${libelleTheme(intro.tags)}' : lettre;
+  }
+
+  // Refonte UI (lot 2) : plus de carte (bordure + ombre + marges) pendant la phase de réponse — la
+  // question et les options sont posées directement sur le fond, pour laisser un maximum de place
+  // aux tuiles (et au champ de saisie clavier ouvert). Les autres écrans gardent leur GameCard.
   Widget _buildClassique(BuildContext context, GameConnection game) {
     final round = game.currentRound;
     if (round == null) {
@@ -158,66 +168,47 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
     final disabled = game.roundAnswered || game.paused;
     final progress = round.dureeFenetreReponseMs > 0 ? _remainingMs / round.dureeFenetreReponseMs : 0.0;
 
-    return GameCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(round.mode.label, style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(height: 2),
-                    Text('Trouve ${round.cible.label} du morceau', style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: 6),
-                    SerieBadge(serieIndex: round.serieIndex),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              const MysteryCoverArt(size: 64),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _EnTeteQuestion(
+          contexte: '${_libelleSerie(game, round.serieIndex)} · ${round.mode.label}',
+          question: round.cible.question,
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: TimerBar(progress: progress, secondesRestantes: (_remainingMs / 1000).ceil())),
+            // Joker (V2, section 12.7) : jamais en bonus (cette méthode ne construit que l'écran
+            // classique), masqué dès que le joueur a répondu — mais reste visible (grisé/barré)
+            // une fois utilisé, ce n'est pas la même chose que masqué.
+            if (!game.roundAnswered && !game.paused) ...[
+              const SizedBox(width: 10),
+              JokerButton(disponible: game.jokerDisponible, onActiver: game.utiliserJoker),
             ],
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
+        if (game.roundAnswered && !game.paused) AnswerBanner(text: _texteVerrouille(game), color: BlindifyColors.good),
+        if (game.envoiReponseEchoue && !game.roundAnswered && !game.paused)
+          const AnswerBanner(text: 'Réponse non reçue par le serveur (connexion) — réessaie.', color: BlindifyColors.bad),
+        if (game.jokerErreur != null && !game.roundAnswered && !game.paused)
+          AnswerBanner(text: game.jokerErreur!, color: BlindifyColors.bad),
+        Expanded(
+          child: _buildAnswerArea(
+            mode: round.mode,
+            cible: round.cible,
+            qcmOptions: round.qcmOptions,
+            anneeOptions: round.anneeOptions,
+            disabled: disabled,
+            repondu: game.roundAnswered,
+            reponseChoisie: game.reponseChoisie,
+            onSubmit: game.submitAnswer,
+            jokerIndice: game.jokerIndiceActuel,
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: TimerBar(progress: progress, secondesRestantes: (_remainingMs / 1000).ceil())),
-              // Joker (V2, section 12.7) : jamais en bonus (cette méthode ne construit que l'écran
-              // classique), masqué dès que le joueur a répondu — mais reste visible (grisé/barré)
-              // une fois utilisé, ce n'est pas la même chose que masqué.
-              if (!game.roundAnswered && !game.paused) ...[
-                const SizedBox(width: 10),
-                JokerButton(disponible: game.jokerDisponible, onActiver: game.utiliserJoker),
-              ],
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
-          if (game.roundAnswered && !game.paused)
-            AnswerBanner(text: _texteVerrouille(game), color: BlindifyColors.good),
-          if (game.envoiReponseEchoue && !game.roundAnswered && !game.paused)
-            const AnswerBanner(text: 'Réponse non reçue par le serveur (connexion) — réessaie.', color: BlindifyColors.bad),
-          if (game.jokerErreur != null && !game.roundAnswered && !game.paused)
-            AnswerBanner(text: game.jokerErreur!, color: BlindifyColors.bad),
-          const SizedBox(height: 8),
-          Expanded(
-            child: _buildAnswerArea(
-              mode: round.mode,
-              cible: round.cible,
-              qcmOptions: round.qcmOptions,
-              anneeOptions: round.anneeOptions,
-              disabled: disabled,
-              repondu: game.roundAnswered,
-              reponseChoisie: game.reponseChoisie,
-              onSubmit: game.submitAnswer,
-              jokerIndice: game.jokerIndiceActuel,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -231,61 +222,42 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
     final disabled = game.bonusAnswered || game.paused;
     final progress = question.dureePhaseQuestionMs > 0 ? _remainingMs / question.dureePhaseQuestionMs : 0.0;
 
-    return GameCard(
-      // Bascule tout le contour/l'ombre en mustard pendant la course — l'écran d'annonce
-      // (BonusCourseIntroScreen) a déjà expliqué la règle en détail juste avant, inutile de la
-      // répéter en pavé ici (retour utilisateur : ça écrasait les boutons de réponse).
-      accentColor: question.estCourse ? BlindifyColors.mustard : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text('Question bonus', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SerieBadge(serieIndex: question.serieIndex),
-              if (question.estCourse) ...[const SizedBox(width: 8), const _CourseBadge()],
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _EnTeteQuestion(
+          contexte: 'Question bonus · ${_libelleSerie(game, question.serieIndex)} · ${question.mode.label}',
+          question: question.cible.question,
+          // Mode course : l'écran d'annonce (BonusCourseIntroScreen) a déjà détaillé la règle juste
+          // avant, un simple badge suffit ici (retour utilisateur : un pavé écrasait les boutons).
+          badge: question.estCourse ? const _CourseBadge() : null,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Morceau ralenti · un seul essai',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 12),
+        TimerBar(progress: progress, secondesRestantes: (_remainingMs / 1000).ceil()),
+        const SizedBox(height: 12),
+        if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
+        if (game.bonusAnswered && !game.paused) AnswerBanner(text: _texteVerrouille(game), color: BlindifyColors.good),
+        if (game.envoiReponseEchoue && !game.bonusAnswered && !game.paused)
+          const AnswerBanner(text: 'Réponse non reçue par le serveur (connexion) — réessaie.', color: BlindifyColors.bad),
+        Expanded(
+          child: _buildAnswerArea(
+            mode: question.mode,
+            cible: question.cible,
+            qcmOptions: question.qcmOptions,
+            anneeOptions: question.anneeOptions,
+            disabled: disabled,
+            repondu: game.bonusAnswered,
+            reponseChoisie: game.reponseChoisie,
+            onSubmit: game.submitBonusAnswer,
           ),
-          const SizedBox(height: 12),
-          const MysteryCoverArt(size: 110),
-          const SizedBox(height: 12),
-          Text(
-            switch (question.cible) {
-              RoundCible.film => 'Le morceau (ralenti) est joué côté host — écoute et trouve le film. Un seul essai.',
-              RoundCible.auteur =>
-                "Le morceau (ralenti) est joué côté host — écoute et trouve l'artiste. Un seul essai.",
-              RoundCible.titre => 'Le morceau (ralenti) est joué côté host — écoute et tape le titre. Un seul essai.',
-              RoundCible.annee =>
-                "Le morceau (ralenti) est joué côté host — écoute et trouve l'année de sortie. Un seul essai.",
-            },
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 12),
-          TimerBar(progress: progress, secondesRestantes: (_remainingMs / 1000).ceil()),
-          const SizedBox(height: 16),
-          if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
-          if (game.bonusAnswered && !game.paused)
-            AnswerBanner(text: _texteVerrouille(game), color: BlindifyColors.good),
-          if (game.envoiReponseEchoue && !game.bonusAnswered && !game.paused)
-            const AnswerBanner(text: 'Réponse non reçue par le serveur (connexion) — réessaie.', color: BlindifyColors.bad),
-          const SizedBox(height: 8),
-          Expanded(
-            child: _buildAnswerArea(
-              mode: question.mode,
-              cible: question.cible,
-              qcmOptions: question.qcmOptions,
-              anneeOptions: question.anneeOptions,
-              disabled: disabled,
-              repondu: game.bonusAnswered,
-              reponseChoisie: game.reponseChoisie,
-              onSubmit: game.submitBonusAnswer,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -360,10 +332,55 @@ class _CourseBadge extends StatelessWidget {
         border: Border.all(color: BlindifyColors.mustard, width: 2),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: const Text(
-        '🏁 Course',
-        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: BlindifyColors.mustard),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.flag_rounded, size: 14, color: BlindifyColors.mustard),
+          SizedBox(width: 4),
+          Text('Course', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: BlindifyColors.mustard)),
+        ],
       ),
+    );
+  }
+}
+
+/// En-tête de la phase de réponse (refonte UI, lot 2) : le contexte en petit (série, mode), puis
+/// la question en très gros, comme sur l'écran public.
+class _EnTeteQuestion extends StatelessWidget {
+  const _EnTeteQuestion({required this.contexte, required this.question, this.badge});
+
+  final String contexte;
+  final String question;
+  final Widget? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          contexte.toUpperCase(),
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 10.5),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                question.toUpperCase(),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontSize: 34,
+                  height: 1,
+                  shadows: const [Shadow(color: BlindifyColors.coral, offset: Offset(3, 3))],
+                ),
+              ),
+            ),
+            if (badge != null) ...[const SizedBox(width: 10), badge!],
+          ],
+        ),
+      ],
     );
   }
 }

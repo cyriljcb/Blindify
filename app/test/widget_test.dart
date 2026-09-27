@@ -13,6 +13,8 @@ void main() {
     await tester.pumpWidget(const BlindifyApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Connexion au serveur'), findsOneWidget);
+    // Refonte UI (lot 2) : le scan du QR de la TV est l'action principale du premier lancement.
+    expect(find.text('Rejoindre la partie'), findsOneWidget);
+    expect(find.text('Scanner le QR de la TV'), findsOneWidget);
   });
 }

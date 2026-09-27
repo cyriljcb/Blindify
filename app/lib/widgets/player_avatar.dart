@@ -20,11 +20,13 @@ class PlayerAvatar extends StatelessWidget {
   final String id;
   final String nom;
 
-  /// 0/1/2 -> 🥇🥈🥉 à la place des initiales (classement final / tableau général).
+  /// 0/1/2 -> pastille de rang (1/2/3, couleurs du podium) à la place des initiales (classement
+  /// final / tableau général). Refonte UI (lot 2) : remplace les emojis de médailles, rendus
+  /// différemment d'un Android à l'autre — mêmes couleurs que host/shared/palette.js:COULEURS_PODIUM.
   final int? medaille;
   final double size;
 
-  static const _medailles = ['🥇', '🥈', '🥉'];
+  static const _couleursPodium = [BlindifyColors.mustard, BlindifyColors.inkDim, BlindifyColors.coral];
 
   /// Couleur basée sur la position dans le roster (ordre d'arrivée) plutôt que sur un hash de
   /// l'id, pour garantir des couleurs distinctes entre joueurs (et entre équipes) tant que leur
@@ -46,10 +48,19 @@ class PlayerAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (medaille != null && medaille! < 3) {
-      return SizedBox(
+      return Container(
         width: size,
         height: size,
-        child: Center(child: Text(_medailles[medaille!], style: TextStyle(fontSize: size * 0.6))),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: _couleursPodium[medaille!],
+          shape: BoxShape.circle,
+          border: Border.all(color: BlindifyColors.ink, width: 2),
+        ),
+        child: Text(
+          '${medaille! + 1}',
+          style: TextStyle(color: BlindifyColors.onLight, fontWeight: FontWeight.w900, fontSize: size * 0.45),
+        ),
       );
     }
 

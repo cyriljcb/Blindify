@@ -6,7 +6,7 @@
 import { state, notify, subscribe, loadHostSession, clearHostSession } from "./state.js";
 import * as transport from "./transport.js";
 import { registerHandlers, mutations } from "./handlers.js";
-import { render, setConnected, showScreen } from "./render.js";
+import { render, setConnected, showScreen, ACTION_SUIVANTE_PAR_ECRAN } from "./render.js";
 import * as audio from "./audio.js";
 import * as timers from "./timers.js";
 import * as displayBridge from "./display-bridge.js";
@@ -116,6 +116,7 @@ function handleEvent(name, payload) {
 
     case "RoundStarted":
       audio.playAudio(state.serverBaseUrl, payload.filePath); // toujours depuis le début — le refrain n'est joué qu'au reveal
+      audio.definirRepereRefrain(state.refrainCourantMs);
       timers.startTimer(payload.dureeFenetreReponseMs, el("timer-fill"));
       displayBridge.resetPlayerAnswered();
       break;
@@ -189,6 +190,7 @@ function handleEvent(name, payload) {
       const demarrerAudioEtMinuteur = () => {
         const rate = payload.ralentissementActive ? payload.facteurRalentissement : 1;
         audio.playAudio(state.serverBaseUrl, payload.filePath, rate); // depuis le début — c'est la devinette elle-même
+        audio.definirRepereRefrain(state.refrainCourantMs);
         timers.startTimer(payload.dureePhaseQuestionMs, el("bonus-question-timer-fill"));
       };
       // Retour utilisateur : en mode course, l'audio démarrait ici immédiatement alors que l'app
@@ -488,14 +490,15 @@ el("btn-rejouer").addEventListener("click", async () => {
 // Retour utilisateur (2026-09-27) — pendant de "Rejouer" : ferme ce salon côté serveur (les joueurs
 // reviennent à l'écran « rejoindre », voir GameHub.FermerSalon) et repart sur l'écran de création
 // pour obtenir un nouveau code, typiquement quand une partie du groupe arrête de jouer.
-el("btn-nouveau-salon").addEventListener("click", async () => {
-  el("ended-error").textContent = "";
+// Accessible depuis l'écran de fin et depuis le menu « ⋯ » (refonte UI, lot 2), donc à tout moment.
+async function nouveauSalon() {
+  if (!state.gameCode) return;
   if (!window.confirm("Fermer ce salon ? Les joueurs devront rejoindre le nouveau code.")) return;
   try {
     await transport.invoke.fermerSalon();
   } catch (err) {
     console.error(err);
-    el("ended-error").textContent = "Erreur : " + (err.message || err);
+    erreurEcranCourant("Erreur : " + (err.message || err));
     return;
   }
 
@@ -519,7 +522,82 @@ el("btn-nouveau-salon").addEventListener("click", async () => {
   state.morceauxJoues = [];
   notify();
   showScreen("screen-setup");
+}
+
+el("btn-nouveau-salon").addEventListener("click", nouveauSalon);
+
+// Affiche un message dans la zone d'erreur de l'écran visible — pour les actions de la régie
+// (menu, colonne d'actions) qui ne sont rattachées à aucun écran en particulier.
+function erreurEcranCourant(message) {
+  const ecran = [...document.querySelectorAll("section.screen")].find((s) => !s.classList.contains("hidden"));
+  const zone = ecran?.querySelector(".error");
+  if (zone) zone.textContent = message;
+  else console.error(message);
+}
+
+// ----- Régie (refonte UI, lot 2) -----
+
+// Action principale de la colonne : relaie le clic au bouton d'origine de l'écran courant (masqué
+// en mode régie), avec ses gardes et ses messages d'erreur.
+el("btn-action-principale").addEventListener("click", () => {
+  const id = ACTION_SUIVANTE_PAR_ECRAN[state.currentScreen];
+  if (id) cliquerSiDisponible(id);
 });
+
+el("btn-rail-terminer").addEventListener("click", async () => {
+  if (!window.confirm("Terminer la partie maintenant ?")) return;
+  timers.annulerMinuteur("auto-next");
+  timers.annulerMinuteur("auto-fin-ou-serie-suivante");
+  try {
+    await transport.invoke.endGame();
+  } catch (err) {
+    console.error(err);
+    erreurEcranCourant("Erreur : " + (err.message || err));
+  }
+});
+
+// Menu « ⋯ » : actions rares, sorties de la vue principale.
+function fermerMenu() {
+  el("menu-panel").classList.add("hidden");
+  el("btn-menu").setAttribute("aria-expanded", "false");
+}
+
+el("btn-menu").addEventListener("click", (event) => {
+  event.stopPropagation();
+  const ouvrir = el("menu-panel").classList.contains("hidden");
+  el("menu-nouveau-salon").disabled = !state.gameCode;
+  el("menu-panel").classList.toggle("hidden", !ouvrir);
+  el("btn-menu").setAttribute("aria-expanded", String(ouvrir));
+});
+el("menu-panel").addEventListener("click", fermerMenu);
+document.addEventListener("click", (event) => {
+  if (!event.target.closest?.(".menu")) fermerMenu();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") fermerMenu();
+});
+el("menu-nouveau-salon").addEventListener("click", nouveauSalon);
+
+// Avertissement « panneau réservé à l'organisateur » : affiché au premier lancement seulement.
+const NOTE_VUE_STORAGE_KEY = "blindify_note_organisateur_vue";
+function afficherNoteUneFois() {
+  let dejaVue = false;
+  try {
+    dejaVue = localStorage.getItem(NOTE_VUE_STORAGE_KEY) === "1";
+  } catch {
+    // Stockage indisponible : on affiche la note, sans pouvoir s'en souvenir.
+  }
+  el("control-note").classList.toggle("hidden", dejaVue);
+}
+el("btn-note-compris").addEventListener("click", () => {
+  el("control-note").classList.add("hidden");
+  try {
+    localStorage.setItem(NOTE_VUE_STORAGE_KEY, "1");
+  } catch {
+    // Ignoré : la note réapparaîtra au prochain lancement.
+  }
+});
+afficherNoteUneFois();
 
 el("btn-open-display").addEventListener("click", () => displayBridge.openDisplayWindow());
 
@@ -540,14 +618,6 @@ el("btn-reveler").addEventListener("click", async () => {
 // R : réécouter. Rappelés à côté de chaque bouton (attribut data-kbd, voir style.css). Déclenchent
 // le bouton correspondant plutôt qu'une logique dupliquée : mêmes gardes (bouton masqué ou
 // désactivé = rien ne se passe), mêmes messages d'erreur.
-const ACTION_SUIVANTE_PAR_ECRAN = {
-  lobby: "btn-start-round",
-  "serie-intro": "btn-start-serie",
-  round: "btn-reveler",
-  "round-ended": "btn-next-round",
-  "bonus-result": "btn-end-now",
-};
-
 function cliquerSiDisponible(id) {
   const bouton = el(id);
   if (!bouton || bouton.disabled || bouton.closest(".hidden")) return false;

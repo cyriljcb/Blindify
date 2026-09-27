@@ -19,6 +19,21 @@ extension RoundCibleJson on RoundCible {
     throw ArgumentError('RoundCible inconnue reçue du serveur : $value');
   }
 
+  /// La question telle qu'on la pose à voix haute, affichée en très gros pendant la phase de
+  /// réponse — même formulation que l'écran public (host/shared/format.js:questionCible).
+  String get question {
+    switch (this) {
+      case RoundCible.titre:
+        return 'Quel titre ?';
+      case RoundCible.auteur:
+        return 'Qui chante ?';
+      case RoundCible.film:
+        return 'Quel film ?';
+      case RoundCible.annee:
+        return 'Quelle année ?';
+    }
+  }
+
   String get label {
     switch (this) {
       case RoundCible.titre:

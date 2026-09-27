@@ -160,3 +160,56 @@ el("btn-configurer-partie").addEventListener("click", async () => {
   }
 });
 
+
+// ----- Préréglages et durée estimée (refonte UI, lot 2) -----
+
+// Durées des phases bonus : valeurs par défaut de ConfigurerPartieRequestDto côté backend (15 s de
+// mise, 20 s de question), jamais envoyées par ce panneau. Annonce de série : DUREE_INTRO_SERIE_MS
+// (main.js). Approximation : ne compte ni les pauses ni les « Révéler maintenant ».
+const DUREE_MISE_S = 15;
+const DUREE_QUESTION_BONUS_S = 20;
+const DUREE_INTRO_SERIE_S = 5;
+
+function lireEntier(id, defaut) {
+  return Math.max(1, parseInt(el(id).value, 10) || defaut);
+}
+
+export function dureeEstimeeMinutes() {
+  const series = lireEntier("setup-nombre-series", 1);
+  const rounds = lireEntier("setup-nombre-rounds", 1);
+  const fenetre = lireEntier("setup-duree-fenetre", 15);
+  const delai = lireEntier("setup-delai-enchainement", 10);
+  const parSerie = DUREE_INTRO_SERIE_S + rounds * (fenetre + delai) + DUREE_MISE_S + DUREE_QUESTION_BONUS_S + delai;
+  return Math.max(1, Math.round((series * parSerie) / 60));
+}
+
+function majResumeConfiguration() {
+  const series = lireEntier("setup-nombre-series", 1);
+  const rounds = lireEntier("setup-nombre-rounds", 1);
+  const fenetre = lireEntier("setup-duree-fenetre", 15);
+  el("config-resume").textContent =
+    `${series} série${series > 1 ? "s" : ""} × ${rounds} rounds · ${fenetre} s par réponse · ≈ ${dureeEstimeeMinutes()} min`;
+
+  for (const bouton of el("presets").querySelectorAll(".preset")) {
+    const actif =
+      Number(bouton.dataset.series) === series &&
+      Number(bouton.dataset.rounds) === rounds &&
+      Number(bouton.dataset.duree) === fenetre;
+    bouton.classList.toggle("preset--actif", actif);
+    bouton.setAttribute("aria-pressed", String(actif));
+  }
+}
+
+el("presets").addEventListener("click", (event) => {
+  const bouton = event.target.closest(".preset");
+  if (!bouton) return;
+  el("setup-nombre-series").value = bouton.dataset.series;
+  el("setup-nombre-rounds").value = bouton.dataset.rounds;
+  el("setup-duree-fenetre").value = bouton.dataset.duree;
+  majResumeConfiguration();
+});
+
+for (const id of ["setup-nombre-series", "setup-nombre-rounds", "setup-duree-fenetre", "setup-delai-enchainement"]) {
+  el(id).addEventListener("input", majResumeConfiguration);
+}
+majResumeConfiguration();
