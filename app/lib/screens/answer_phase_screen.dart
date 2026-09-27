@@ -10,10 +10,11 @@ import '../models/round_cible.dart';
 import '../models/round_mode.dart';
 import '../motion.dart';
 import '../services/game_connection.dart';
+import '../services/haptique.dart';
 import '../theme.dart';
 import '../widgets/answer_banner.dart';
 import '../widgets/cover_art.dart';
-import '../widgets/fill_height_list.dart';
+import '../widgets/qcm_tile.dart';
 import '../widgets/game_card.dart';
 import '../widgets/joker_button.dart';
 import '../widgets/serie_badge.dart';
@@ -70,10 +71,25 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
   // dès l'échéance, attendre pile 0 perdait quasi systématiquement la course contre ce timeout.
   static const _margeAutoSubmitMs = 1000;
 
+  /// Seconde pour laquelle le dernier tic haptique a été joué — un tic par seconde sur les
+  /// [_secondesTic] dernières, tant que le joueur n'a pas répondu (refonte UI, lot 1).
+  int? _dernierTic;
+  static const _secondesTic = 3;
+
+  void _ticSiDernieresSecondes() {
+    final game = context.read<GameConnection>();
+    final dejaRepondu = _bonus ? game.bonusAnswered : game.roundAnswered;
+    final secondes = (_remainingMs / 1000).ceil();
+    if (dejaRepondu || game.paused || secondes <= 0 || secondes > _secondesTic || secondes == _dernierTic) return;
+    _dernierTic = secondes;
+    Haptique.tic();
+  }
+
   void _startTicker() {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) {
       setState(() => _remainingMs = (_remainingMs - 100).clamp(0, _remainingMs));
+      _ticSiDernieresSecondes();
       if (_remainingMs <= _margeAutoSubmitMs && !_autoSubmitDeclenche) {
         _autoSubmitDeclenche = true;
         _autoSubmitSiSaisie();
@@ -121,6 +137,15 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
   Widget build(BuildContext context) {
     final game = context.watch<GameConnection>();
     return _bonus ? _buildBonus(context, game) : _buildClassique(context, game);
+  }
+
+  /// « Réponse verrouillée · 5/8 ont répondu » — le total est le nombre de joueurs du salon, comme
+  /// sur l'écran public. Au moins 1 : le PlayerAnswered du joueur lui-même peut arriver juste après
+  /// l'accusé de sa propre réponse.
+  static String _texteVerrouille(GameConnection game) {
+    final total = game.players.length;
+    final repondus = game.repondants.length.clamp(1, total > 0 ? total : 1);
+    return total > 0 ? 'Réponse verrouillée · $repondus/$total ont répondu' : 'Réponse verrouillée';
   }
 
   Widget _buildClassique(BuildContext context, GameConnection game) {
@@ -172,7 +197,7 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
           const SizedBox(height: 16),
           if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.roundAnswered && !game.paused)
-            const AnswerBanner(text: 'Réponse envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
+            AnswerBanner(text: _texteVerrouille(game), color: BlindifyColors.good),
           if (game.envoiReponseEchoue && !game.roundAnswered && !game.paused)
             const AnswerBanner(text: 'Réponse non reçue par le serveur (connexion) — réessaie.', color: BlindifyColors.bad),
           if (game.jokerErreur != null && !game.roundAnswered && !game.paused)
@@ -185,6 +210,8 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
               qcmOptions: round.qcmOptions,
               anneeOptions: round.anneeOptions,
               disabled: disabled,
+              repondu: game.roundAnswered,
+              reponseChoisie: game.reponseChoisie,
               onSubmit: game.submitAnswer,
               jokerIndice: game.jokerIndiceActuel,
             ),
@@ -241,7 +268,7 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
           const SizedBox(height: 16),
           if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.bonusAnswered && !game.paused)
-            const AnswerBanner(text: 'Réponse envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
+            AnswerBanner(text: _texteVerrouille(game), color: BlindifyColors.good),
           if (game.envoiReponseEchoue && !game.bonusAnswered && !game.paused)
             const AnswerBanner(text: 'Réponse non reçue par le serveur (connexion) — réessaie.', color: BlindifyColors.bad),
           const SizedBox(height: 8),
@@ -252,6 +279,8 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
               qcmOptions: question.qcmOptions,
               anneeOptions: question.anneeOptions,
               disabled: disabled,
+              repondu: game.bonusAnswered,
+              reponseChoisie: game.reponseChoisie,
               onSubmit: game.submitBonusAnswer,
             ),
           ),
@@ -270,18 +299,41 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
     required List<QcmOption>? qcmOptions,
     required List<String>? anneeOptions,
     required bool disabled,
+    required bool repondu,
+    required String? reponseChoisie,
     required Future<void> Function(String) onSubmit,
     JokerIndice? jokerIndice,
   }) {
     if (cible == RoundCible.annee) {
       return mode == RoundMode.qcm
-          ? _AnneeQcmAnswers(anneeOptions: anneeOptions ?? [], disabled: disabled, onSubmit: onSubmit, optionsRetirees: jokerIndice?.optionsRetirees)
+          ? _AnneeQcmAnswers(
+              anneeOptions: anneeOptions ?? [],
+              disabled: disabled,
+              repondu: repondu,
+              reponseChoisie: reponseChoisie,
+              onSubmit: onSubmit,
+              optionsRetirees: jokerIndice?.optionsRetirees,
+            )
           : _AnneeInput(controller: _reponseController, disabled: disabled, onSubmit: onSubmit, decennie: jokerIndice?.decennie);
     }
 
     return switch (mode) {
-      RoundMode.qcm => _QcmAnswers(qcmOptions: qcmOptions ?? [], cible: cible, disabled: disabled, onSubmit: onSubmit, optionsRetirees: jokerIndice?.optionsRetirees),
-      RoundMode.premiereLettre => _LetterAnswer(disabled: disabled, onSubmit: onSubmit, tuilesRestantes: jokerIndice?.tuilesRestantes),
+      RoundMode.qcm => _QcmAnswers(
+          qcmOptions: qcmOptions ?? [],
+          cible: cible,
+          disabled: disabled,
+          repondu: repondu,
+          reponseChoisie: reponseChoisie,
+          onSubmit: onSubmit,
+          optionsRetirees: jokerIndice?.optionsRetirees,
+        ),
+      RoundMode.premiereLettre => _LetterAnswer(
+          disabled: disabled,
+          repondu: repondu,
+          reponseChoisie: reponseChoisie,
+          onSubmit: onSubmit,
+          tuilesRestantes: jokerIndice?.tuilesRestantes,
+        ),
       RoundMode.tapeReponse => _TextAnswer(
           controller: _reponseController,
           disabled: disabled,
@@ -316,12 +368,30 @@ class _CourseBadge extends StatelessWidget {
   }
 }
 
+/// État d'une tuile à partir de ce que le joueur a envoyé — la tuile choisie reste encadrée
+/// « Verrouillé », les autres s'estompent (refonte UI, lot 1). Réponse envoyée mais inconnue
+/// (reconnexion en pleine phase) : toutes estompées.
+EtatTuileQcm _etatTuile({required bool repondu, required String? reponseChoisie, required String valeur}) {
+  if (!repondu) return EtatTuileQcm.normale;
+  return reponseChoisie == valeur ? EtatTuileQcm.choisie : EtatTuileQcm.estompee;
+}
+
 class _QcmAnswers extends StatelessWidget {
-  const _QcmAnswers({required this.qcmOptions, required this.cible, required this.disabled, required this.onSubmit, this.optionsRetirees});
+  const _QcmAnswers({
+    required this.qcmOptions,
+    required this.cible,
+    required this.disabled,
+    required this.repondu,
+    required this.reponseChoisie,
+    required this.onSubmit,
+    this.optionsRetirees,
+  });
 
   final List<QcmOption> qcmOptions;
   final RoundCible cible;
   final bool disabled;
+  final bool repondu;
+  final String? reponseChoisie;
   final Future<void> Function(String) onSubmit;
 
   /// V2, section 12.7 — TrackId des options retirées par le joker (50/50), jamais la bonne réponse.
@@ -329,92 +399,44 @@ class _QcmAnswers extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final optionsAffichees = optionsRetirees == null
-        ? qcmOptions
-        : qcmOptions.where((o) => !optionsRetirees!.contains(o.trackId)).toList();
-
-    return FillHeightList(
-      itemCount: optionsAffichees.length,
-      itemBuilder: (context, index) {
-        final option = optionsAffichees[index];
-        // Un seul champ affiché par option (titre, premier auteur, ou film), pas plusieurs — un
-        // morceau à plusieurs auteurs listés en entier rend le QCM illisible.
-        final label = switch (cible) {
-          RoundCible.titre => option.title,
-          RoundCible.auteur => option.artist.split(',').first.trim(),
-          RoundCible.film => option.film,
-          // Jamais atteint en pratique (cible Année routée vers _AnneeQcmAnswers, voir
-          // _buildAnswerArea) — présent pour l'exhaustivité du switch.
-          RoundCible.annee => option.title,
-        };
-        return _AnswerTile(label: label, index: index, onPressed: disabled ? null : () => onSubmit(option.trackId));
-      },
-    );
-  }
-}
-
-/// Écrasement au press (retour tactile façon appli de quiz "arcade") + entrée décalée par index à
-/// l'apparition — retour utilisateur : les tuiles se contentaient d'un ripple Material, jugé mou.
-class _AnswerTile extends StatefulWidget {
-  const _AnswerTile({required this.label, required this.index, required this.onPressed});
-
-  final String label;
-  final int index;
-  final VoidCallback? onPressed;
-
-  @override
-  State<_AnswerTile> createState() => _AnswerTileState();
-}
-
-class _AnswerTileState extends State<_AnswerTile> {
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (widget.onPressed == null) return;
-    setState(() => _pressed = value);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _setPressed(true),
-      onTapUp: (_) => _setPressed(false),
-      onTapCancel: () => _setPressed(false),
-      onTap: widget.onPressed,
-      child: AnimatedScale(
-        scale: _pressed ? 0.94 : 1.0,
-        duration: BlindifyMotion.fast,
-        curve: Curves.easeOut,
-        child: Container(
-          width: double.infinity,
-          alignment: Alignment.center,
-          // Centré plutôt qu'un padding vertical fixe (18) : la tuile a désormais une hauteur
-          // calculée par _QcmAnswers pour remplir l'espace disponible, parfois plus serrée qu'avant
-          // — un padding fixe y déborderait, alors qu'un centrage s'adapte à toute hauteur.
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: BlindifyColors.surfaceAlt,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: BlindifyColors.ink, width: 2),
-          ),
-          child: Text(
-            widget.label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-          ),
-        ),
-      ),
-    )
-        .animate(delay: Duration(milliseconds: 60 * widget.index))
-        .fadeIn(duration: BlindifyMotion.normal)
-        .slideY(begin: 0.25, curve: BlindifyMotion.pop);
+    final tuiles = <Widget>[];
+    for (var index = 0; index < qcmOptions.length; index++) {
+      final option = qcmOptions[index];
+      if (optionsRetirees?.contains(option.trackId) ?? false) continue;
+      // Un seul champ affiché par option (titre, premier auteur, ou film), pas plusieurs — un
+      // morceau à plusieurs auteurs listés en entier rend le QCM illisible.
+      final label = switch (cible) {
+        RoundCible.titre => option.title,
+        RoundCible.auteur => option.artist.split(',').first.trim(),
+        RoundCible.film => option.film,
+        // Jamais atteint en pratique (cible Année routée vers _AnneeQcmAnswers, voir
+        // _buildAnswerArea) — présent pour l'exhaustivité du switch.
+        RoundCible.annee => option.title,
+      };
+      tuiles.add(QcmTile(
+        label: label,
+        index: index,
+        ordreApparition: tuiles.length,
+        etat: _etatTuile(repondu: repondu, reponseChoisie: reponseChoisie, valeur: option.trackId),
+        onPressed: disabled ? null : () => onSubmit(option.trackId),
+      ));
+    }
+    return GrilleQcm(tuiles: tuiles);
   }
 }
 
 class _LetterAnswer extends StatelessWidget {
-  const _LetterAnswer({required this.disabled, required this.onSubmit, this.tuilesRestantes});
+  const _LetterAnswer({
+    required this.disabled,
+    required this.repondu,
+    required this.reponseChoisie,
+    required this.onSubmit,
+    this.tuilesRestantes,
+  });
 
   final bool disabled;
+  final bool repondu;
+  final String? reponseChoisie;
   final Future<void> Function(String) onSubmit;
 
   /// V2, section 12.7 — si renseigné (joker utilisé), seules ces lettres restent affichées/
@@ -457,19 +479,27 @@ class _LetterAnswer extends StatelessWidget {
           itemCount: lettres.length,
           itemBuilder: (context, index) {
             final letter = lettres[index];
-            return Material(
-              color: BlindifyColors.surfaceAlt,
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
+            // Même logique que les tuiles QCM : lettre envoyée encadrée en blanc épais, les
+            // autres estompées une fois la réponse envoyée.
+            final etat = _etatTuile(repondu: repondu, reponseChoisie: reponseChoisie, valeur: letter);
+            final choisie = etat == EtatTuileQcm.choisie;
+            return AnimatedOpacity(
+              opacity: etat == EtatTuileQcm.estompee ? 0.3 : 1,
+              duration: BlindifyMotion.fast,
+              child: Material(
+                color: choisie ? BlindifyColors.cobalt : BlindifyColors.surfaceAlt,
                 borderRadius: BorderRadius.circular(8),
-                onTap: disabled ? null : () => onSubmit(letter),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: BlindifyColors.ink, width: 2),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: disabled ? null : () => onSubmit(letter),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: BlindifyColors.ink, width: choisie ? 4 : 2),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(letter, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(letter, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
                 ),
               ),
             );
@@ -509,10 +539,19 @@ class _LetterAnswer extends StatelessWidget {
 /// de simples années en texte (anneeOptions), pas des morceaux : pas de champ à choisir selon la
 /// cible, la valeur affichée EST la réponse à soumettre.
 class _AnneeQcmAnswers extends StatelessWidget {
-  const _AnneeQcmAnswers({required this.anneeOptions, required this.disabled, required this.onSubmit, this.optionsRetirees});
+  const _AnneeQcmAnswers({
+    required this.anneeOptions,
+    required this.disabled,
+    required this.repondu,
+    required this.reponseChoisie,
+    required this.onSubmit,
+    this.optionsRetirees,
+  });
 
   final List<String> anneeOptions;
   final bool disabled;
+  final bool repondu;
+  final String? reponseChoisie;
   final Future<void> Function(String) onSubmit;
 
   /// V2, section 12.7 — années retirées par le joker (50/50), jamais la bonne réponse.
@@ -520,15 +559,19 @@ class _AnneeQcmAnswers extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final anneesAffichees =
-        optionsRetirees == null ? anneeOptions : anneeOptions.where((a) => !optionsRetirees!.contains(a)).toList();
-    return FillHeightList(
-      itemCount: anneesAffichees.length,
-      itemBuilder: (context, index) {
-        final annee = anneesAffichees[index];
-        return _AnswerTile(label: annee, index: index, onPressed: disabled ? null : () => onSubmit(annee));
-      },
-    );
+    final tuiles = <Widget>[];
+    for (var index = 0; index < anneeOptions.length; index++) {
+      final annee = anneeOptions[index];
+      if (optionsRetirees?.contains(annee) ?? false) continue;
+      tuiles.add(QcmTile(
+        label: annee,
+        index: index,
+        ordreApparition: tuiles.length,
+        etat: _etatTuile(repondu: repondu, reponseChoisie: reponseChoisie, valeur: annee),
+        onPressed: disabled ? null : () => onSubmit(annee),
+      ));
+    }
+    return GrilleQcm(tuiles: tuiles);
   }
 }
 

@@ -166,3 +166,17 @@ export function renderJoinQrCode(container, serverUrl, code) {
   qr.make();
   container.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 4, scalable: true });
 }
+
+// Refonte UI (lot 1) — couleur + forme par position d'option QCM, identiques sur les téléphones
+// (app/lib/widgets/qcm_tile.dart:styleOptionQcm, même ordre) : corail ▲, cobalt ◆, moutarde ●,
+// vert ■. La forme garde l'information lisible sans distinguer les couleurs.
+const FORMES_QCM = [
+  '<path d="M12 2.4 22.8 21.6H1.2Z"/>',
+  '<path d="M12 0 24 12 12 24 0 12Z"/>',
+  '<circle cx="12" cy="12" r="10.6"/>',
+  '<rect x="2.4" y="2.4" width="19.2" height="19.2" rx="1.5"/>',
+];
+
+export function formeQcmSvg(index) {
+  return `<svg class="qcm-forme" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">${FORMES_QCM[index % 4]}</svg>`;
+}

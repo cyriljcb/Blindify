@@ -11,8 +11,8 @@
 // sans découpage en fichiers séparés (state.js/handlers.js/render.js), pas justifié pour un simple
 // récepteur de ~250 lignes.
 
-import { escapeHtml, libelleReveal } from "./shared/format.js";
-import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode, renderTitrePanel } from "./shared/components.js";
+import { escapeHtml, libelleReveal, questionCible, libelleMode } from "./shared/format.js";
+import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode, renderTitrePanel, formeQcmSvg } from "./shared/components.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -56,16 +56,21 @@ function libelleOptionQcm(option, cible) {
 // Options QCM sur l'écran public (retour utilisateur) — masqué pour les autres modes (première
 // lettre, tape la réponse) où round.qcmOptions est absent. Sans risque de spoil : ce sont les
 // mêmes choix déjà visibles sur le téléphone de chaque joueur, jamais la bonne réponse seule.
+// Refonte UI (lot 1) : cible Année en QCM incluse (anneeOptions, des années en texte plutôt que
+// des morceaux) — les téléphones l'affichent déjà en tuiles colorées, la TV restait vide.
 function renderQcmOptionsDisplay(container, round) {
-  const options = round?.qcmOptions;
-  if (!options || options.length === 0) {
+  const libelles =
+    round?.cible === "Annee" && round?.anneeOptions?.length
+      ? round.anneeOptions
+      : (round?.qcmOptions ?? []).map((o) => libelleOptionQcm(o, round.cible));
+  if (libelles.length === 0 || round?.mode !== "Qcm") {
     container.classList.add("hidden");
     container.innerHTML = "";
     return;
   }
   container.classList.remove("hidden");
-  container.innerHTML = options
-    .map((o) => `<li>${escapeHtml(libelleOptionQcm(o, round.cible))}</li>`)
+  container.innerHTML = libelles
+    .map((libelle, i) => `<li class="qcm-opt qcm-opt--${i % 4}">${formeQcmSvg(i)}<span>${escapeHtml(libelle)}</span></li>`)
     .join("");
 }
 
@@ -91,16 +96,6 @@ function renderPlayerList(container, joueurs) {
   }
 }
 
-function renderPlayerChips(container, joueurs) {
-  container.innerHTML = "";
-  for (const p of joueurs) {
-    const li = document.createElement("li");
-    li.className = "player-chip" + (p.estConnecte ? "" : " disconnected");
-    li.innerHTML = `${avatarHtml(p.playerId, p.nom, undefined, roster())}<span>${escapeHtml(p.nom)}</span>`;
-    container.appendChild(li);
-  }
-}
-
 // Retour utilisateur : "faux" et "pas répondu" rendaient tous les deux en rouge, impossible à
 // distinguer sur l'écran public. Round classique (RoundResultEntryDto) : estCorrecte est déjà
 // nullable côté backend — null signifie explicitement "aucune réponse enregistrée" (voir
@@ -113,47 +108,64 @@ function renderPlayerChips(container, joueurs) {
 // fiablement ce cas côté écran public, sans changer le contrat serveur.
 function statutReponse(r) {
   if (r.estCorrecte === null || r.estCorrecte === undefined) return "sans-reponse";
-  if (r.estCorrecte === false && !r.reponse) return "sans-reponse";
+  // aRepondu est calculé par le panneau de contrôle (handlers.js) : il ne transmet jamais le texte de
+  // la réponse à l'écran public. Le test historique sur r.reponse, jamais transmis, affichait donc
+  // toute mauvaise réponse comme « sans réponse » (corrigé lors de la refonte UI, lot 1).
+  if (r.estCorrecte === false && !(r.aRepondu ?? !!r.reponse)) return "sans-reponse";
   return r.estCorrecte ? "correct" : "incorrect";
 }
 
 const ICONES_STATUT = { correct: "✓", incorrect: "✗", "sans-reponse": "–" };
 
+// Refonte UI (lot 1) — « X / Y ont répondu » + avatars sous la pochette, pendant la question :
+// remplace le panneau flottant « Rapidité » et les chips de joueurs. Jamais l'exactitude de la
+// réponse (inconnue ici, voir note en tête de fichier) ; le classement de rapidité est réservé à
+// l'écran de résultat (renderResultBadges).
+function renderAnsweredBlock(container) {
+  if (!container) return;
+  const repondus = new Set(state.playersAnswered.map((p) => p.playerId));
+  const total = state.players.length;
+  const avatars = state.players
+    .map((p) => {
+      const classe = repondus.has(p.playerId) ? "answered-avatar answered-avatar--done" : "answered-avatar";
+      const titre = escapeHtml(p.nom) + (p.estConnecte ? "" : " (déconnecté)");
+      return `<span class="${classe}" title="${titre}">${avatarHtml(p.playerId, p.nom, undefined, roster())}</span>`;
+    })
+    .join("");
+  container.innerHTML = `
+    <span class="answered-label">Ont répondu</span>
+    <span class="answered-count">${state.players.filter((p) => repondus.has(p.playerId)).length}<small> / ${total}</small></span>
+    <div class="answered-avatars">${avatars}</div>`;
+}
+
+function renderAnsweredBlocks() {
+  renderAnsweredBlock(el("round-answered"));
+  renderAnsweredBlock(el("bonus-question-answered"));
+}
+
 // Résultats sans le détail des points — seulement correct/incorrect/sans réponse (voir note en
-// tête de fichier).
+// tête de fichier). Refonte UI (lot 1) : triés par ordre d'arrivée des réponses avec le temps de
+// chacun (le classement de rapidité, retiré de l'écran de question), puis ceux qui n'ont pas
+// répondu.
 function renderResultBadges(container, resultats, joueurs) {
   container.innerHTML = "";
-  for (const r of resultats) {
+  const ordre = new Map(state.playersAnswered.map((p, i) => [p.playerId, i]));
+  const tries = [...resultats].sort(
+    (a, b) => (ordre.get(a.playerId) ?? Infinity) - (ordre.get(b.playerId) ?? Infinity)
+  );
+  for (const r of tries) {
     const joueur = joueurs.find((j) => j.playerId === r.playerId);
     const nom = joueur ? joueur.nom : r.playerId;
     const statut = statutReponse(r);
+    const arrivee = state.playersAnswered.find((p) => p.playerId === r.playerId);
+    const temps = arrivee && statut !== "sans-reponse"
+      ? `<span class="result-time">${(arrivee.tempsEcouleMs / 1000).toFixed(1)} s</span>`
+      : "";
     const li = document.createElement("li");
     li.className = `result-badge result-badge--${statut}`;
-    li.innerHTML = `${avatarHtml(r.playerId, nom, undefined, roster())}<span>${escapeHtml(nom)}</span><span class="result-icon">${ICONES_STATUT[statut]}</span>`;
+    li.innerHTML = `${avatarHtml(r.playerId, nom, undefined, roster())}<span>${escapeHtml(nom)}</span>${temps}<span class="result-icon">${ICONES_STATUT[statut]}</span>`;
     container.appendChild(li);
   }
-}
-
-// Panneau flottant (voir answer-speed-panel dans display.html) — rang d'arrivée + temps, jamais
-// si la réponse était correcte (uniquement connu du backend via ScoreUpdate, jamais transmis ici).
-function renderAnswerSpeedPanel() {
-  const panel = el("answer-speed-panel");
-  const list = el("answer-speed-list");
-  if (state.playersAnswered.length === 0) {
-    panel.classList.add("hidden");
-    list.innerHTML = "";
-    return;
-  }
-
-  panel.classList.remove("hidden");
-  list.innerHTML = state.playersAnswered
-    .map(({ playerId, tempsEcouleMs }, index) => {
-      const joueur = state.players.find((p) => p.playerId === playerId);
-      const nom = joueur ? joueur.nom : "?";
-      const secondes = (tempsEcouleMs / 1000).toFixed(1);
-      return `<li><span class="answer-speed-rank">${index + 1}</span><span class="answer-speed-name">${escapeHtml(nom)}</span><span class="answer-speed-time">${secondes}s</span></li>`;
-    })
-    .join("");
 }
 
 let shakeTimeout = null;
@@ -292,10 +304,13 @@ function render() {
       break;
 
     case "round": {
-      const cibleLabel = state.round?.cible === "Titre" ? "le titre" : state.round?.cible === "Auteur" ? "l'artiste" : "le film";
-      el("round-mode-label").textContent = `${state.round?.mode ?? ""} — trouver ${cibleLabel}${state.round?.serieLabel ?? ""}`;
+      // Refonte UI (lot 1) : la question en très gros, le contexte (série, round, mode) en petit.
+      el("round-eyebrow").textContent = [state.round?.serieCourt, state.round?.roundLabel, libelleMode(state.round?.mode)]
+        .filter(Boolean)
+        .join(" · ");
+      el("round-question").textContent = questionCible(state.round?.cible);
       renderQcmOptionsDisplay(el("round-qcm-options"), state.round);
-      renderPlayerChips(el("round-players"), state.players);
+      renderAnsweredBlocks();
       showScreen("screen-round");
       if (!state.paused && state.timerEndAt !== null) startLocalTimer(el("timer-fill"), el("timer-seconds"));
       else stopLocalTimer(el("timer-fill"), el("timer-seconds"));
@@ -329,7 +344,11 @@ function render() {
     }
 
     case "bonus-question":
-      el("bonus-question-title").textContent = `Question bonus — à deviner !${state.bonus?.serieLabel ?? ""}`;
+      el("bonus-question-eyebrow").textContent = ["Question bonus", state.bonus?.serieCourt, libelleMode(state.bonus?.mode)]
+        .filter(Boolean)
+        .join(" · ");
+      el("bonus-question-question").textContent = questionCible(state.bonus?.cible);
+      renderAnsweredBlocks();
       el("bonus-ralenti-note").textContent = state.bonus?.ralenti
         ? "Morceau ralenti, un seul essai, pas de dégressivité."
         : "Un seul essai, pas de dégressivité.";
@@ -421,7 +440,7 @@ window.addEventListener("message", (event) => {
     // fausser le classement affiché.
     if (!state.playersAnswered.some((p) => p.playerId === msg.playerId)) {
       state.playersAnswered.push({ playerId: msg.playerId, tempsEcouleMs: msg.tempsEcouleMs });
-      renderAnswerSpeedPanel();
+      renderAnsweredBlocks();
     }
     // Retour utilisateur : une réponse auto-soumise à l'expiration du minuteur (mode "tape la
     // réponse", voir AnswerPhaseScreen._autoSubmitSiSaisie côté Flutter) ne mérite pas de secousse
@@ -431,7 +450,7 @@ window.addEventListener("message", (event) => {
     if (tempsRestantMs > MARGE_FIN_ROUND_MS) triggerScreenShake();
   } else if (msg.type === "player-answered-reset") {
     state.playersAnswered = [];
-    renderAnswerSpeedPanel();
+    renderAnsweredBlocks();
   } else if (msg.type === "joker-utilise") {
     afficherBanniereJoker(msg.playerId);
   }

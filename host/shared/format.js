@@ -64,3 +64,25 @@ export function libelleSerie(index, nombreSeriesTotal, tagsParSerie) {
   if (nombreSeriesTotal <= 1) return "";
   return ` (Série ${lettreSerie(index)} — ${libelleTheme(tagsParSerie[index])})`;
 }
+
+// Refonte UI (lot 1) — la question en très gros sur l'écran public, formulée comme on la pose à
+// voix haute plutôt que le mode technique (« QCM — trouver l'artiste »).
+export function questionCible(cible) {
+  if (cible === "Titre") return "Quel titre ?";
+  if (cible === "Auteur") return "Qui chante ?";
+  if (cible === "Annee") return "Quelle année ?";
+  return "Quel film ?";
+}
+
+const LIBELLES_MODE = { Qcm: "QCM", PremiereLettre: "Première lettre", TapeReponse: "Réponse libre" };
+
+export function libelleMode(mode) {
+  return LIBELLES_MODE[mode] ?? mode ?? "";
+}
+
+// « Série B · Rock » pour la ligne au-dessus de la question — vide si une seule série, comme
+// libelleSerie ci-dessus.
+export function libelleSerieCourt(index, nombreSeriesTotal, tagsParSerie) {
+  if (nombreSeriesTotal <= 1) return "";
+  return `Série ${lettreSerie(index)} · ${libelleTheme(tagsParSerie[index])}`;
+}

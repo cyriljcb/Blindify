@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
+import 'haptique.dart';
 import 'mdns_resolver.dart';
 
 import '../models/bonus_question_started.dart';
@@ -109,6 +110,16 @@ class GameConnection extends ChangeNotifier {
   /// reprises de [_invoquerAvecReprise] — l'écran de réponse le signale et rend la main au joueur
   /// pour qu'il réessaie, au lieu d'afficher "Réponse envoyée" alors que le serveur n'a rien reçu.
   bool envoiReponseEchoue = false;
+
+  /// Valeur envoyée pour la question en cours (round classique ou bonus) — l'écran de réponse
+  /// garde la tuile correspondante encadrée « Verrouillé » (refonte UI, lot 1). null après une
+  /// reconnexion en pleine phase : le serveur ne renvoie pas ce qui avait été choisi.
+  String? reponseChoisie;
+
+  /// Joueurs ayant déjà répondu à la question en cours, d'après PlayerAnswered (diffusé à tout le
+  /// groupe) — alimente « 5/8 ont répondu ». Sous-estimé après une reconnexion en pleine phase :
+  /// les réponses arrivées pendant la coupure ne sont pas rejouées.
+  final Set<String> repondants = {};
 
   /// V2, section 12.7 — un joker par joueur et par partie complète, optimiste par défaut (corrigé
   /// dès JoinGame/EtatCourant/reconnexion). jokerIndiceActuel : indice obtenu pour LE ROUND EN
@@ -452,6 +463,8 @@ class GameConnection extends ChangeNotifier {
       roundAnswered = false;
       envoiReponseEchoue = false;
       jokerErreur = null;
+      reponseChoisie = null;
+      repondants.clear();
       // V2, section 12.7 : null sur un round fraîchement diffusé (currentRound.jokerIndice l'est
       // toujours ici) — la lecture depuis l'objet plutôt qu'un null en dur garde un seul point de
       // vérité avec la branche reconnexion d'appliquerEtatCourant.
@@ -469,10 +482,19 @@ class GameConnection extends ChangeNotifier {
       notifyListeners();
     });
 
+    // Diffusé à tout le groupe (pas seulement à l'écran public) — ne porte ni la réponse ni son
+    // exactitude, voir PlayerAnsweredDto côté backend.
+    hub.on('PlayerAnswered', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      if (repondants.add(data['playerId'] as String)) notifyListeners();
+    });
+
     hub.on('RoundEnded', (args) {
       final data = args![0] as Map<String, dynamic>;
       lastRoundResult = RoundEnded.fromJson(data);
       _ajouterMorceauJoue(lastRoundResult!.trackId, lastRoundResult!.title, lastRoundResult!.artist);
+      final mien = lastRoundResult!.resultats.where((r) => r.playerId == playerId).firstOrNull;
+      if (mien != null) _vibrerResultat(mien.estCorrecte == true);
       screen = AppScreen.roundEnded;
       notifyListeners();
     });
@@ -562,6 +584,8 @@ class GameConnection extends ChangeNotifier {
     serieIntro = null;
     currentRound = null;
     roundAnswered = false;
+    reponseChoisie = null;
+    repondants.clear();
     envoiReponseEchoue = false;
     jokerErreur = null;
     jokerDisponible = true;
@@ -586,6 +610,8 @@ class GameConnection extends ChangeNotifier {
   void onBonusQuestionStarted(Map<String, dynamic> data) {
     bonusQuestion = BonusQuestionStarted.fromJson(data);
     bonusAnswered = false;
+    reponseChoisie = null;
+    repondants.clear();
     envoiReponseEchoue = false;
     _introCourseTimer?.cancel();
 
@@ -610,8 +636,21 @@ class GameConnection extends ChangeNotifier {
     _introCourseTimer?.cancel();
     lastBonusResult = BonusResult.fromJson(data);
     _ajouterMorceauJoue(lastBonusResult!.trackId, lastBonusResult!.title, lastBonusResult!.artist);
+    // Absent des résultats en mode course quand un autre joueur a répondu en premier : aucune
+    // vibration dans ce cas, la mise est simplement récupérée.
+    final mien = lastBonusResult!.resultats.where((r) => r.playerId == playerId).firstOrNull;
+    if (mien != null) _vibrerResultat(mien.estCorrecte);
     screen = AppScreen.bonusResult;
     notifyListeners();
+  }
+
+  /// Double impulsion si juste, vibration longue si faux ou sans réponse.
+  void _vibrerResultat(bool correct) {
+    if (correct) {
+      unawaited(Haptique.bonneReponse());
+    } else {
+      Haptique.erreur();
+    }
   }
 
   void _ajouterMorceauJoue(String trackId, String titre, String artiste) {
@@ -782,6 +821,8 @@ class GameConnection extends ChangeNotifier {
     }
 
     paused = etat.enPause;
+    reponseChoisie = null;
+    repondants.clear();
 
     switch (etat.phase) {
       case PhaseJoueur.roundClassique:
@@ -913,6 +954,8 @@ class GameConnection extends ChangeNotifier {
 
     roundAnswered = true;
     envoiReponseEchoue = false;
+    reponseChoisie = reponse;
+    Haptique.validation();
     notifyListeners();
 
     final roundId = currentRound?.roundId;
@@ -928,6 +971,7 @@ class GameConnection extends ChangeNotifier {
       // laisser "Réponse envoyée" affiché alors que le serveur n'a rien reçu.
       if (currentRound?.roundId == roundId) {
         roundAnswered = false;
+        reponseChoisie = null;
         envoiReponseEchoue = true;
         notifyListeners();
       }
@@ -1013,6 +1057,7 @@ class GameConnection extends ChangeNotifier {
 
     bonusPalierSelectionne = palierIndex;
     bonusStakeEnvoyee = true;
+    Haptique.validation();
     notifyListeners();
 
     final roundId = bonusStakeOptions?.roundId;
@@ -1037,6 +1082,8 @@ class GameConnection extends ChangeNotifier {
 
     bonusAnswered = true;
     envoiReponseEchoue = false;
+    reponseChoisie = reponse;
+    Haptique.validation();
     notifyListeners();
 
     final roundId = bonusQuestion?.roundId;
@@ -1048,6 +1095,7 @@ class GameConnection extends ChangeNotifier {
       // Voir submitAnswer.
       if (bonusQuestion?.roundId == roundId) {
         bonusAnswered = false;
+        reponseChoisie = null;
         envoiReponseEchoue = true;
         notifyListeners();
       }

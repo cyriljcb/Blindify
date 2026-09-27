@@ -17,6 +17,10 @@ import 'package:app/models/round_started.dart';
 import 'package:app/services/game_connection.dart';
 
 void main() {
+  // Requis par les retours haptiques (Haptique, canal de plateforme) déclenchés par submitAnswer/
+  // selectStake/submitBonusAnswer.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('appliquerEtatCourant — resynchronisation à la reconnexion (playtest 2026-09-06)', () {
     final round = RoundStarted(
         mode: RoundMode.tapeReponse, cible: RoundCible.auteur, roundId: 'round-1', dureeFenetreReponseMs: 20000, serieIndex: 1);
@@ -180,6 +184,16 @@ void main() {
       await game.submitAnswer('b'); // ignoré : premier envoi encore en cours
       expect(game.roundAnswered, isTrue);
       await envoi;
+    });
+
+    test('submitAnswer : la réponse choisie est mémorisée pendant l\'envoi, oubliée en cas d\'échec', () async {
+      final game = sansConnexion();
+
+      final envoi = game.submitAnswer('trackA');
+      expect(game.reponseChoisie, 'trackA'); // tuile encadrée « Verrouillé » immédiatement
+
+      await envoi;
+      expect(game.reponseChoisie, isNull); // la main est rendue : plus aucune tuile verrouillée
     });
 
     test('submitAnswer : un envoi en échec rend la main au joueur et le signale', () async {

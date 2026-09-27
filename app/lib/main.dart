@@ -116,8 +116,6 @@ class _RootScreen extends StatelessWidget {
                         .fadeIn(duration: BlindifyMotion.normal)
                         .slideX(begin: -0.2, curve: BlindifyMotion.pop),
                     const Spacer(),
-                    _ConnectionPill(connected: game.connected),
-                    const SizedBox(width: 8),
                     IconButton(
                       onPressed: () => showSettingsSheet(context),
                       icon: const Icon(Icons.settings_rounded, color: BlindifyColors.ink),
@@ -126,6 +124,11 @@ class _RootScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              // Refonte UI (lot 1) : rien quand la connexion va bien, un bandeau franc quand elle
+              // tombe — remplace la pastille « connecté » affichée en permanence. Masqué sur les
+              // écrans de chargement/connexion, où l'absence de connexion est l'état attendu.
+              if (!game.connected && game.screen != AppScreen.loading && game.screen != AppScreen.connect)
+                const _BandeauReconnexion(),
               const UpdateBanner(),
               Expanded(
                 child: Stack(
@@ -170,32 +173,39 @@ class _RootScreen extends StatelessWidget {
   }
 }
 
-class _ConnectionPill extends StatelessWidget {
-  const _ConnectionPill({required this.connected});
-
-  final bool connected;
+/// Bandeau affiché uniquement quand la connexion au serveur est perdue (refonte UI, lot 1). Le
+/// score et la partie sont conservés côté serveur (playerId stable) : le message rassure plutôt
+/// que d'inquiéter, la reconnexion étant automatique (voir GameConnection._planifierReconnexion).
+class _BandeauReconnexion extends StatelessWidget {
+  const _BandeauReconnexion();
 
   @override
   Widget build(BuildContext context) {
-    final bg = connected ? BlindifyColors.good : BlindifyColors.surfaceAlt;
-    final fg = connected ? BlindifyColors.onLight : BlindifyColors.inkDim;
-    final border = connected ? BlindifyColors.ink : BlindifyColors.borderSoft;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
-        color: bg,
-        border: Border.all(color: border, width: 2),
-        borderRadius: BorderRadius.circular(999),
+        color: BlindifyColors.mustard,
+        border: Border.all(color: BlindifyColors.ink, width: 2),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
-        connected ? 'connecté' : 'déconnecté',
-        style: GoogleFonts.spaceMono(
-          color: fg,
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-          letterSpacing: 0.6,
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox.square(
+            dimension: 14,
+            child: CircularProgressIndicator(strokeWidth: 2, color: BlindifyColors.onLight),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              'Reconnexion… ta partie est conservée',
+              style: GoogleFonts.spaceGrotesk(color: BlindifyColors.onLight, fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+          ),
+        ],
       ),
-    );
+    ).animate().fadeIn(duration: BlindifyMotion.fast).slideY(begin: -0.4, curve: BlindifyMotion.pop);
   }
 }

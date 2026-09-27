@@ -108,3 +108,14 @@ manualPlayBtn.addEventListener("click", () => {
   audioEl.play();
   manualPlayBtn.classList.add("hidden");
 });
+
+// Refonte UI (lot 1) — raccourci R / bouton « Réécouter depuis le début » du panneau host : relance
+// le morceau courant au début sans recharger la source (vitesse de la question bonus conservée).
+export function reecouterDepuisDebut() {
+  if (!audioEl.src) return;
+  fadeAudioVolume(0, 200, () => {
+    audioEl.currentTime = 0;
+    lancerLecture();
+    fadeAudioVolume(1, 350);
+  });
+}

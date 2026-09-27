@@ -24,13 +24,6 @@
        jamais l'effet ni la cible révélée. -->
   <div id="joker-banner" class="joker-banner hidden"></div>
 
-  <!-- Retour utilisateur : réaction visuelle + classement de rapidité dès qu'un joueur répond
-       (voir display.js:"player-answered") — HUD flottant plutôt que dupliqué dans chaque écran de
-       question, visible uniquement pendant "round"/"bonus-question" (voir display.js:render). -->
-  <div id="answer-speed-panel" class="answer-speed-panel hidden">
-    <h3>Rapidité</h3>
-    <ol id="answer-speed-list"></ol>
-  </div>
 
   <main>
     <!-- Écran d'attente : avant que le panneau de contrôle n'ait diffusé un état -->
@@ -60,17 +53,25 @@
       <div id="serie-intro-theme" class="serie-intro-theme serie-intro-theme--display"></div>
     </section>
 
-    <section id="screen-round" class="screen hidden">
-      <h2 id="round-mode-label"></h2>
-      <div class="cover-frame cover-frame--mystere cover-frame--big"><span class="cover-placeholder">❓</span></div>
-      <div class="timer-row">
-        <div class="timer-bar timer-bar--big"><div id="timer-fill" class="timer-fill"></div></div>
-        <span id="timer-seconds" class="timer-seconds"></span>
+    <!-- Refonte UI (lot 1) : deux colonnes sur grand écran — pochette mystère + « X/Y ont répondu »
+         à gauche, la question en très gros + minuteur + options à droite. -->
+    <section id="screen-round" class="screen screen--question hidden">
+      <div class="question-side">
+        <div class="cover-frame cover-frame--mystere cover-frame--big"><span class="cover-placeholder">❓</span></div>
+        <div id="round-answered" class="answered-block"></div>
       </div>
-      <!-- Options QCM (retour utilisateur) — vide/masqué pour les autres modes (première lettre,
-           tape la réponse), voir display.js:renderQcmOptionsDisplay. -->
-      <ul id="round-qcm-options" class="qcm-options-display hidden"></ul>
-      <ul id="round-players" class="player-chips"></ul>
+      <div class="question-main">
+        <p id="round-eyebrow" class="question-eyebrow"></p>
+        <h2 id="round-question" class="question-big"></h2>
+        <div class="timer-row">
+          <div class="timer-bar timer-bar--big"><div id="timer-fill" class="timer-fill"></div></div>
+          <span id="timer-seconds" class="timer-seconds"></span>
+        </div>
+        <!-- Options QCM — mêmes couleurs/formes et même disposition 2×2 que sur les téléphones
+             (app/lib/widgets/qcm_tile.dart). Masqué pour les autres modes, voir
+             display.js:renderQcmOptionsDisplay. -->
+        <ul id="round-qcm-options" class="qcm-options-display hidden"></ul>
+      </div>
     </section>
 
     <section id="screen-round-ended" class="screen hidden">
@@ -95,24 +96,30 @@
       <ul id="bonus-paliers" class="score-list score-list--display"></ul>
     </section>
 
-    <section id="screen-bonus-question" class="screen hidden">
-      <h2 id="bonus-question-title">Question bonus — à deviner !</h2>
-      <div id="bonus-course-banner" class="course-banner course-banner--display hidden">
-        <span class="course-banner__icon" aria-hidden="true">🏁</span>
-        <div class="course-banner__text">
-          <strong class="course-banner__title">Mode course</strong>
-          <span class="course-banner__desc">Le premier qui répond décide — juste, il rafle la mise ; faux, il la perd.</span>
+    <section id="screen-bonus-question" class="screen screen--question hidden">
+      <div class="question-side">
+        <div class="cover-frame cover-frame--mystere cover-frame--big"><span class="cover-placeholder">❓</span></div>
+        <div id="bonus-question-answered" class="answered-block"></div>
+      </div>
+      <div class="question-main">
+        <p id="bonus-question-eyebrow" class="question-eyebrow"></p>
+        <h2 id="bonus-question-question" class="question-big"></h2>
+        <div id="bonus-course-banner" class="course-banner course-banner--display hidden">
+          <span class="course-banner__icon" aria-hidden="true">🏁</span>
+          <div class="course-banner__text">
+            <strong class="course-banner__title">Mode course</strong>
+            <span class="course-banner__desc">Le premier qui répond décide — juste, il rafle la mise ; faux, il la perd.</span>
+          </div>
         </div>
+        <p id="bonus-ralenti-note" class="reveal"></p>
+        <div class="timer-row">
+          <div class="timer-bar timer-bar--big"><div id="bonus-question-timer-fill" class="timer-fill"></div></div>
+          <span id="bonus-question-timer-seconds" class="timer-seconds"></span>
+        </div>
+        <!-- Options QCM (retour utilisateur 2026-08-27 : Mode tiré aléatoirement comme un round
+             classique) — vide/masqué pour les autres modes, voir display.js:renderQcmOptionsDisplay. -->
+        <ul id="bonus-question-qcm-options" class="qcm-options-display hidden"></ul>
       </div>
-      <div class="cover-frame cover-frame--mystere cover-frame--big"><span class="cover-placeholder">❓</span></div>
-      <p id="bonus-ralenti-note" class="reveal"></p>
-      <div class="timer-row">
-        <div class="timer-bar timer-bar--big"><div id="bonus-question-timer-fill" class="timer-fill"></div></div>
-        <span id="bonus-question-timer-seconds" class="timer-seconds"></span>
-      </div>
-      <!-- Options QCM (retour utilisateur 2026-08-27 : Mode tiré aléatoirement comme un round
-           classique) — vide/masqué pour les autres modes, voir display.js:renderQcmOptionsDisplay. -->
-      <ul id="bonus-question-qcm-options" class="qcm-options-display hidden"></ul>
     </section>
 
     <section id="screen-bonus-result" class="screen hidden">

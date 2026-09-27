@@ -41,9 +41,10 @@
       <audio id="player-audio" controls></audio>
       <button id="btn-manual-play" class="hidden">Lecture bloquée par le navigateur — cliquer pour lancer</button>
       <div class="actions">
-        <button id="btn-pause">Pause</button>
-        <button id="btn-resume" class="hidden">Reprendre</button>
-        <button id="btn-leaderboard">Tableau général</button>
+        <button id="btn-pause" data-kbd="P">Pause</button>
+        <button id="btn-resume" class="hidden" data-kbd="P">Reprendre</button>
+        <button id="btn-leaderboard" data-kbd="L">Tableau général</button>
+        <button id="btn-reecouter" class="btn-secondary" data-kbd="R">Réécouter depuis le début</button>
       </div>
     </div>
 
@@ -130,7 +131,7 @@
       </div>
 
       <div class="actions">
-        <button id="btn-start-round" disabled>Démarrer la partie</button>
+        <button id="btn-start-round" disabled data-kbd="Espace">Démarrer la partie</button>
       </div>
       <p id="lobby-error" class="error"></p>
     </section>
@@ -145,7 +146,7 @@
       </div>
       <p id="serie-intro-note" class="reveal"></p>
       <div class="actions">
-        <button id="btn-start-serie">Démarrer la série</button>
+        <button id="btn-start-serie" data-kbd="Espace">Démarrer la série</button>
       </div>
       <p id="serie-intro-error" class="error"></p>
     </section>
@@ -156,8 +157,9 @@
       <div class="cover-frame cover-frame--mystere"><span class="cover-placeholder">❓</span></div>
       <div class="timer-bar"><div id="timer-fill" class="timer-fill"></div></div>
 
-      <h3>Scores</h3>
-      <ul id="round-scores" class="score-list"></ul>
+      <!-- Refonte UI (lot 1) : qui a répondu et en combien de temps, jamais juste/faux ni les
+           scores — le host joue souvent. Le classement reste accessible via « Tableau général » (L). -->
+      <div id="round-answers" class="answers-live"></div>
       <p id="round-error" class="error"></p>
     </section>
 
@@ -179,7 +181,7 @@
       </table>
       <p id="auto-next-note" class="reveal"></p>
       <div class="actions">
-        <button id="btn-next-round">Round suivant</button>
+        <button id="btn-next-round" data-kbd="Espace">Round suivant</button>
         <button id="btn-end-game">Terminer la partie</button>
       </div>
       <p id="round-ended-note" class="error"></p>
@@ -207,6 +209,7 @@
       </div>
       <p>Morceau ralenti, un seul essai, pas de dégressivité.</p>
       <div class="timer-bar"><div id="bonus-question-timer-fill" class="timer-fill"></div></div>
+      <div id="bonus-question-answers" class="answers-live"></div>
     </section>
 
     <!-- Écran 8 : question bonus — résultat -->
@@ -228,7 +231,7 @@
       </table>
       <p id="bonus-end-note" class="reveal"></p>
       <div class="actions">
-        <button id="btn-end-now">Terminer maintenant</button>
+        <button id="btn-end-now" data-kbd="Espace">Terminer maintenant</button>
       </div>
     </section>
 

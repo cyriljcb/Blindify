@@ -6,7 +6,7 @@
 // fonction de rendu par écran repeint tout son contenu depuis `state`, jamais de mise à jour
 // incrémentale ciblée par événement (un seul chemin entre "l'état a changé" et "l'écran est à jour").
 
-import { escapeHtml, libelleCible, libelleReveal, lettreSerie } from "./shared/format.js";
+import { escapeHtml, libelleCible, libelleMode, libelleReveal, lettreSerie } from "./shared/format.js";
 import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode, renderTitrePanel } from "./shared/components.js";
 
 const el = (id) => document.getElementById(id);
@@ -231,11 +231,31 @@ function renderSerieIntro(state) {
   el("serie-intro-error").textContent = "";
 }
 
+// Refonte UI (lot 1) — « 5/8 ont répondu » + grille des joueurs avec leur temps de réponse.
+// Uniquement « a répondu » / « réfléchit » / « déconnecté », jamais juste ou faux ni les scores :
+// le host joue souvent (voir la revue UX).
+function renderAnswersLive(container, state) {
+  const temps = new Map(state.repondants.map((r) => [r.playerId, r.tempsEcouleMs]));
+  const cartes = state.players
+    .map((p) => {
+      const t = temps.get(p.playerId);
+      const joker = state.jokersRound.includes(p.playerId) ? " · joker" : "";
+      const etat = t !== undefined ? "done" : p.estConnecte ? "wait" : "off";
+      const statut =
+        etat === "done" ? `✓ ${(t / 1000).toFixed(1)} s${joker}` : etat === "wait" ? `réfléchit…${joker}` : "déconnecté";
+      return `<li class="answer-card answer-card--${etat}">${avatarHtml(p.playerId, p.nom, undefined, roster(state))}<div><div class="answer-card__nom">${escapeHtml(p.nom)}</div><div class="answer-card__statut">${statut}</div></div></li>`;
+    })
+    .join("");
+  container.innerHTML = `
+    <p class="answers-live__compteur"><strong>${state.players.filter((p) => temps.has(p.playerId)).length}</strong><span> / ${state.players.length}</span> ont répondu</p>
+    <ul class="answers-live__grille">${cartes}</ul>`;
+}
+
 function renderRound(state) {
   el("round-error").textContent = "";
   const { mode, cible, serieLabel } = state.currentRoundInfo;
-  el("round-mode-label").textContent = `${mode} — trouver ${libelleCible(cible)}${serieLabel ?? ""}`;
-  renderScoreList(el("round-scores"), state.dernierScoreDto ?? { joueurs: [] }, roster(state));
+  el("round-mode-label").textContent = `${libelleMode(mode)} — trouver ${libelleCible(cible)}${serieLabel ?? ""}`;
+  renderAnswersLive(el("round-answers"), state);
 }
 
 function renderRoundEnded(state) {
@@ -255,9 +275,10 @@ function renderBonusStake(state) {
 function renderBonusQuestion(state) {
   el("bonus-question-title").textContent = `Question bonus — à deviner !${state.currentBonusInfo.serieLabel ?? ""}`;
   const { mode, cible, estCourse } = state.currentBonusInfo;
-  el("bonus-question-mode-label").textContent = `${mode} — trouver ${libelleCible(cible)}`;
+  el("bonus-question-mode-label").textContent = `${libelleMode(mode)} — trouver ${libelleCible(cible)}`;
   el("bonus-course-banner").classList.toggle("hidden", !estCourse);
   el("screen-bonus-question").classList.toggle("screen--course", !!estCourse);
+  renderAnswersLive(el("bonus-question-answers"), state);
 }
 
 function renderBonusResult(state) {

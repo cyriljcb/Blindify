@@ -165,32 +165,6 @@ main {
   padding: 0.85rem 1.2rem;
 }
 
-/* ----- Chips de joueurs pendant un round (pas de score affiché) ----- */
-
-.player-chips {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.6rem;
-}
-.player-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--surface-alt);
-  border: 2px solid var(--ink);
-  border-radius: 999px;
-  padding: 0.4rem 0.9rem 0.4rem 0.4rem;
-  font-family: var(--font-body);
-  font-size: 0.95rem;
-}
-.player-chip.disconnected {
-  opacity: 0.45;
-}
-
 /* ----- Options QCM (retour utilisateur) : mêmes choix que sur le téléphone des joueurs, en
    grand pour être lisibles depuis le fond de la salle — jamais la bonne réponse seule en avant. */
 
@@ -296,61 +270,139 @@ main.screen-shake {
   100% { opacity: 0; }
 }
 
-.answer-speed-panel {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 15;
-  min-width: 220px;
-  background: var(--surface);
-  border: 3px solid var(--ink);
-  border-radius: var(--radius);
-  box-shadow: 6px 6px 0 var(--cobalt);
-  padding: 0.9rem 1.1rem;
+/* ==========================================================================
+   Refonte UI (lot 1) — écrans de question
+   ========================================================================== */
+
+/* Deux colonnes sur grand écran : pochette + « X / Y ont répondu » à gauche, question + minuteur +
+   options à droite. Repli en une colonne centrée sous 1000px (fenêtre réduite, petit projecteur). */
+.screen--question {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 2rem;
 }
-.answer-speed-panel h3 {
-  margin: 0 0 0.5rem;
+.question-side,
+.question-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  min-width: 0;
+}
+@media (min-width: 1000px) {
+  .screen--question {
+    grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.6fr);
+    align-items: start;
+    text-align: left;
+    gap: 3rem;
+  }
+  .question-main { align-items: stretch; }
+  .question-main .timer-row { width: 100%; }
+  .question-main .timer-bar--big { flex: 1; width: auto; }
+  .screen--question .cover-frame--big { width: min(340px, 100%); }
+}
+
+.question-eyebrow {
+  margin: 0;
   font-family: var(--font-mono);
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-dim);
 }
-.answer-speed-panel ol {
-  list-style: none;
+.question-eyebrow:empty { display: none; }
+
+.screen .question-big {
   margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-.answer-speed-panel li {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  font-family: var(--font-body);
-  font-size: 1rem;
-  animation: answer-speed-pop 260ms ease-out;
-}
-.answer-speed-panel .answer-speed-rank {
   font-family: var(--font-display);
   font-weight: 400;
-  color: var(--mustard);
-  min-width: 1.4em;
+  text-transform: uppercase;
+  font-size: clamp(3rem, 6vw, 5.6rem);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-shadow: 5px 5px 0 var(--coral);
 }
-.answer-speed-panel .answer-speed-name {
-  flex: 1;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+/* ----- « X / Y ont répondu » + avatars ----- */
+
+.answered-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }
-.answer-speed-panel .answer-speed-time {
+@media (min-width: 1000px) {
+  .answered-block { align-items: flex-start; align-self: stretch; }
+}
+.answered-label {
   font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.answered-count {
+  font-family: var(--font-display);
+  font-size: 3.2rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.answered-count small { font-size: 2rem; color: var(--ink-dim); }
+.answered-avatars { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.answered-avatar .avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1rem;
+  opacity: 0.3;
+  filter: grayscale(1);
+  outline: 2px dashed var(--ink-dim);
+  outline-offset: 2px;
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+.answered-avatar--done .avatar {
+  opacity: 1;
+  filter: none;
+  outline: 2px solid var(--ink);
+  animation: answered-pop 320ms cubic-bezier(.34, 1.56, .64, 1);
+}
+@keyframes answered-pop {
+  from { transform: scale(0.6); }
+  to { transform: scale(1); }
+}
+
+/* ----- Options QCM : mêmes couleurs + formes que les téléphones (qcm_tile.dart) ----- */
+
+.qcm-options-display .qcm-opt {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
+  font-size: clamp(1.3rem, 1.6vw + 0.6rem, 2rem);
+  padding: 1.1rem 1.4rem;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.qcm-options-display .qcm-opt .qcm-forme { width: 2rem; height: 2rem; flex: none; }
+.qcm-options-display .qcm-opt--0 { background: var(--coral); color: var(--ink); }
+.qcm-options-display .qcm-opt--1 { background: var(--cobalt); color: var(--ink); }
+.qcm-options-display .qcm-opt--2 { background: var(--mustard); color: var(--bg); }
+.qcm-options-display .qcm-opt--3 { background: var(--good); color: var(--bg); }
+@media (min-width: 1000px) {
+  .question-main .qcm-options-display { max-width: none; }
+}
+
+/* ----- Résultat : temps de réponse de chacun (le classement de rapidité, retiré de la question) */
+
+.result-time {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
   color: var(--ink-dim);
   font-variant-numeric: tabular-nums;
 }
-@keyframes answer-speed-pop {
-  from { opacity: 0; transform: translateX(12px); }
-  to { opacity: 1; transform: translateX(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .answered-avatar--done .avatar { animation: none; }
 }

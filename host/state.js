@@ -45,6 +45,13 @@ export const state = {
   dernierScoreDto: null,
   historiqueLabelEnAttente: null, // label du prochain ScoreUpdate à enregistrer
 
+  // ----- Réponses en direct (refonte UI, lot 1) -----
+  // {playerId, tempsEcouleMs}[] dans l'ordre d'arrivée pour la question en cours (round ou bonus),
+  // d'après PlayerAnswered — jamais l'exactitude (le host joue souvent, voir la revue UX). Vidé à
+  // chaque RoundStarted/BonusQuestionStarted.
+  repondants: [],
+  jokersRound: [], // playerId ayant sorti leur joker sur ce round
+
   // ----- Pause -----
   jeuEnPause: false,
 

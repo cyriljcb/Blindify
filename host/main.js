@@ -135,7 +135,8 @@ function handleEvent(name, payload) {
 
     case "RoundEnded":
       timers.stopTimer();
-      displayBridge.resetPlayerAnswered();
+      // Pas de resetPlayerAnswered ici (refonte UI, lot 1) : l'écran public en a besoin pour trier
+      // les résultats par rapidité ; vidé au prochain RoundStarted/BonusQuestionStarted.
       // Au reveal (tout le monde a répondu) : on saute au refrain si on en connaît un pour ce
       // morceau, sinon on retombe sur le comportement "musique continue" habituel.
       if (state.refrainCourantMs !== null) {
@@ -207,7 +208,6 @@ function handleEvent(name, payload) {
     case "BonusResult":
       timers.annulerMinuteur("bonus-course-intro");
       timers.stopTimer();
-      displayBridge.resetPlayerAnswered();
       audio.remettreVitesseNormale(); // remis à la vitesse normale pour la suite (fin de partie, replay...)
       if (state.refrainCourantMs !== null) {
         audio.jouerRefrain(state.refrainCourantMs);
@@ -522,6 +522,65 @@ el("btn-nouveau-salon").addEventListener("click", async () => {
 });
 
 el("btn-open-display").addEventListener("click", () => displayBridge.openDisplayWindow());
+
+el("btn-reecouter").addEventListener("click", () => audio.reecouterDepuisDebut());
+
+// ----- Raccourcis clavier (refonte UI, lot 1) -----
+// Espace : action suivante de l'écran courant · P : pause/reprise · L : tableau général ·
+// R : réécouter. Rappelés à côté de chaque bouton (attribut data-kbd, voir style.css). Déclenchent
+// le bouton correspondant plutôt qu'une logique dupliquée : mêmes gardes (bouton masqué ou
+// désactivé = rien ne se passe), mêmes messages d'erreur.
+const ACTION_SUIVANTE_PAR_ECRAN = {
+  lobby: "btn-start-round",
+  "serie-intro": "btn-start-serie",
+  "round-ended": "btn-next-round",
+  "bonus-result": "btn-end-now",
+};
+
+function cliquerSiDisponible(id) {
+  const bouton = el(id);
+  if (!bouton || bouton.disabled || bouton.closest(".hidden")) return false;
+  bouton.click();
+  return true;
+}
+
+function estChampDeSaisie(cible) {
+  return cible instanceof HTMLElement && (cible.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(cible.tagName));
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
+  if (estChampDeSaisie(event.target)) return;
+  // Aucun raccourci tant que l'overlay de redémarrage du serveur est ouvert (saisie du mot de passe).
+  if (!el("restart-overlay")?.classList.contains("hidden")) return;
+
+  if (event.code === "Space") {
+    // Toujours bloqué, même sans action : sinon Espace « clique » aussi le bouton qui a le focus
+    // (le dernier cliqué à la souris), en plus de l'action du raccourci.
+    event.preventDefault();
+    const id = ACTION_SUIVANTE_PAR_ECRAN[state.currentScreen];
+    if (id) cliquerSiDisponible(id);
+    return;
+  }
+
+  switch (event.key.toLowerCase()) {
+    case "p":
+      if (!cliquerSiDisponible("btn-pause")) cliquerSiDisponible("btn-resume");
+      break;
+    case "l":
+      cliquerSiDisponible("btn-leaderboard");
+      break;
+    case "r":
+      cliquerSiDisponible("btn-reecouter");
+      break;
+  }
+});
+
+// Le navigateur active un bouton focalisé au relâchement d'Espace : bloqué aussi, pour la même
+// raison que ci-dessus.
+document.addEventListener("keyup", (event) => {
+  if (event.code === "Space" && !estChampDeSaisie(event.target)) event.preventDefault();
+});
 
 // ----- Signalement en direct (V2, section 12.4) -----
 // Délégation d'événement : les lignes de #flags-list sont générées dynamiquement (render.js), on ne

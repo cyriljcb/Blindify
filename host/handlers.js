@@ -6,7 +6,7 @@
 // appelle ces fonctions puis notify() lui-même. handlers.js reste le seul fichier qui connaît le
 // vocabulaire serveur (noms d'événements, formes de payload).
 
-import { libelleSerie, libelleTheme, lettreSerie } from "./shared/format.js";
+import { libelleSerie, libelleSerieCourt, libelleTheme, lettreSerie } from "./shared/format.js";
 
 // Signalement en direct (V2, section 12.4) — alimente state.morceauxJoues depuis RoundEnded/BonusResult,
 // jamais avant le reveal. Dédoublonné par trackId (peu probable qu'un même morceau repasse dans la même
@@ -47,6 +47,8 @@ export function onSerieAnnoncee(state, { serieIndex, tags }) {
 }
 
 export function onRoundStarted(state, payload) {
+  state.repondants = [];
+  state.jokersRound = [];
   state.dernierModeRound = payload.mode;
   state.refrainCourantMs = payload.refrainStartMs ?? null;
   state.roundsDemarres++;
@@ -58,7 +60,11 @@ export function onRoundStarted(state, payload) {
     mode: payload.mode,
     cible: payload.cible,
     serieLabel: libelleSerie(state.serieCouranteIndex, state.nombreSeriesTotal, state.tagsParSerieCourante),
+    // Refonte UI (lot 1) — contexte affiché en petit au-dessus de la question sur l'écran public.
+    serieCourt: libelleSerieCourt(state.serieCouranteIndex, state.nombreSeriesTotal, state.tagsParSerieCourante),
+    roundLabel: state.nombreRoundsParSerie > 0 ? `Round ${state.roundsDemarres}/${state.nombreRoundsParSerie}` : "",
     qcmOptions: payload.qcmOptions,
+    anneeOptions: payload.anneeOptions,
   };
 }
 
@@ -86,8 +92,19 @@ export function onRoundEnded(state, payload) {
     cible: payload.cible,
     film: payload.film,
     coverPath: payload.coverPath,
-    resultats: state.dernierResultats.map((r) => ({ playerId: r.playerId, estCorrecte: r.estCorrecte })),
+    resultats: state.dernierResultats.map((r) => ({ playerId: r.playerId, estCorrecte: r.estCorrecte, aRepondu: !!r.reponse })),
   };
+}
+
+// Refonte UI (lot 1) — suivi des réponses en direct sur le panneau host. Ignore un doublon (un seul
+// essai par joueur côté serveur, mais un message retardé ne doit pas fausser le compteur).
+export function onPlayerAnswered(state, { playerId, tempsEcouleMs }) {
+  if (state.repondants.some((r) => r.playerId === playerId)) return;
+  state.repondants.push({ playerId, tempsEcouleMs });
+}
+
+export function onJokerUtilise(state, { playerId }) {
+  if (!state.jokersRound.includes(playerId)) state.jokersRound.push(playerId);
 }
 
 export function onGamePaused(state) {
@@ -114,6 +131,8 @@ export function onGameEnded(state, dto) {
 }
 
 export function onGameRestarted(state) {
+  state.repondants = [];
+  state.jokersRound = [];
   state.roundsDemarres = 0;
   state.serieCouranteIndex = 0;
   state.scoreHistory = [];
@@ -143,6 +162,8 @@ export function onBonusStakeOptions(state, payload) {
 }
 
 export function onBonusQuestionStarted(state, payload) {
+  state.repondants = [];
+  state.jokersRound = [];
   // Seul le host reçoit filePath/refrainStartMs/ralentissement (jamais envoyés aux joueurs).
   state.refrainCourantMs = payload.refrainStartMs ?? null;
   state.currentScreen = "bonus-question";
@@ -156,6 +177,8 @@ export function onBonusQuestionStarted(state, payload) {
     mode: payload.mode,
     cible: payload.cible,
     qcmOptions: payload.qcmOptions,
+    anneeOptions: payload.anneeOptions,
+    serieCourt: libelleSerieCourt(state.serieCouranteIndex, state.nombreSeriesTotal, state.tagsParSerieCourante),
     estCourse: payload.estCourse,
   };
 }
@@ -184,7 +207,7 @@ export function onBonusResult(state, payload) {
     film: payload.film,
     coverPath: payload.coverPath,
     serieLabel: labelSerieTerminee,
-    resultats: payload.resultats.map((r) => ({ playerId: r.playerId, estCorrecte: r.estCorrecte })),
+    resultats: payload.resultats.map((r) => ({ playerId: r.playerId, estCorrecte: r.estCorrecte, aRepondu: !!r.reponse })),
   };
 }
 
@@ -228,6 +251,8 @@ export const mutations = {
   PlayerTeamChanged: onPlayerTeamChanged,
   SerieAnnoncee: onSerieAnnoncee,
   RoundStarted: onRoundStarted,
+  PlayerAnswered: onPlayerAnswered,
+  JokerUtilise: onJokerUtilise,
   ScoreUpdate: onScoreUpdate,
   RoundEnded: onRoundEnded,
   GamePaused: onGamePaused,

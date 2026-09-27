@@ -648,3 +648,70 @@ td.incorrect { color: var(--coral); font-weight: 700; }
   overflow-y: auto;
   box-shadow: 8px 8px 0 var(--cobalt);
 }
+
+/* ==========================================================================
+   Refonte UI (lot 1) — panneau host
+   ========================================================================== */
+
+/* Rappel du raccourci clavier à côté du libellé (data-kbd, voir main.js) — en pseudo-élément pour
+   survivre aux changements de libellé faits par render.js (ex. btn-end-now). */
+button[data-kbd]::after {
+  content: attr(data-kbd);
+  display: inline-block;
+  margin-left: 0.6rem;
+  padding: 0 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  vertical-align: 0.1em;
+  border: 1.5px solid currentColor;
+  border-bottom-width: 3px;
+  border-radius: 4px;
+  opacity: 0.75;
+}
+
+/* Réponses en direct : qui a répondu et en combien de temps, jamais juste/faux. */
+.answers-live { display: flex; flex-direction: column; gap: 0.75rem; }
+.answers-live__compteur {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+.answers-live__compteur strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2.4rem;
+  letter-spacing: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.answers-live__compteur span { font-family: var(--font-display); font-size: 1.5rem; letter-spacing: 0; }
+.answers-live__grille {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.5rem;
+}
+.answer-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border: 2px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+}
+.answer-card > div { min-width: 0; }
+.answer-card__nom { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.answer-card__statut { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-dim); }
+.answer-card--done { border-color: var(--good); }
+.answer-card--done .answer-card__statut { color: var(--good); }
+.answer-card--off { opacity: 0.45; border-style: dashed; }
