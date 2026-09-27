@@ -42,7 +42,7 @@ class UpdateBanner extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () => ouvrirMiseAJourApk(game.serverUrl ?? ''),
+            onPressed: () => ouvrirMiseAJourApk(game.urlTelechargementApk, version: game.updateVersionDistante),
             style: TextButton.styleFrom(
               foregroundColor: BlindifyColors.onLight,
               backgroundColor: BlindifyColors.mustard,

@@ -55,13 +55,22 @@ class LobbyScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
+          // Retour utilisateur (2026-09-27) : "je ne sais même pas comment je suis censé l'utiliser" —
+          // l'ancien libellé ne disait ni où trouver le joker ni ce qu'il fait.
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.auto_awesome_rounded, size: 16, color: BlindifyColors.mustard),
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(Icons.auto_awesome_rounded, size: 16, color: BlindifyColors.mustard),
+              ),
               const SizedBox(width: 6),
-              Text(
-                '1 joker pour la partie',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: BlindifyColors.inkDim),
+              Expanded(
+                child: Text(
+                  '1 joker pour la partie : pendant un round, touche « Joker » à côté du chrono '
+                  'puis confirme — il élimine des mauvaises réponses ou donne un indice.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: BlindifyColors.inkDim),
+                ),
               ),
             ],
           ),

@@ -104,7 +104,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) ...[
               const SizedBox(height: 16),
               OutlinedButton.icon(
-                onPressed: () => ouvrirMiseAJourApk(_urlController.text),
+                onPressed: () => ouvrirMiseAJourApk(_urlController.text, version: game.updateVersionDistante),
                 icon: Icon(
                   Icons.system_update_alt_rounded,
                   size: 18,

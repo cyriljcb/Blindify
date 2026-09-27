@@ -175,6 +175,8 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
             const AnswerBanner(text: 'Réponse envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
           if (game.envoiReponseEchoue && !game.roundAnswered && !game.paused)
             const AnswerBanner(text: 'Réponse non reçue par le serveur (connexion) — réessaie.', color: BlindifyColors.bad),
+          if (game.jokerErreur != null && !game.roundAnswered && !game.paused)
+            AnswerBanner(text: game.jokerErreur!, color: BlindifyColors.bad),
           const SizedBox(height: 8),
           Expanded(
             child: _buildAnswerArea(

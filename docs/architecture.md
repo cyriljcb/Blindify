@@ -363,9 +363,11 @@ Domaine et stats : `Player.JokerUtilise` (remis à `false` par `RejouerPartie`),
 réponses avec joker sont exclues de `Reponses`/`Confusions` dans `stats.json` (section 4), pour ne pas fausser
 la mesure de difficulté réelle du morceau.
 
-Flutter : petit bouton rond (`JokerButton`) dans la barre du haut à côté du timer, contour moutarde si
-disponible, grisé/barré si utilisé, masqué en bonus et une fois répondu. Appui long (~0,6 s, anneau qui se
-remplit) déclenche l'effet sur place, pas de boîte de dialogue. Mention « 1 joker pour la partie » au lobby.
+Flutter : bouton libellé « Joker » (`JokerButton`) à côté du timer, contour moutarde si disponible,
+« Joker utilisé » grisé/barré ensuite, masqué en bonus et une fois répondu. Premier appui → « Confirmer ? »
+(3 s), second appui → effet sur place, pas de boîte de dialogue. Un refus serveur ou un échec réseau est
+affiché en bandeau sur l'écran de réponse. Le lobby explique où le trouver et ce qu'il fait. (Retour
+utilisateur 2026-09-27 : l'ancien geste — icône seule, appui long ~1,1 s en pratique — n'était jamais découvert.)
 
 ## 7. Question bonus (fin de série)
 

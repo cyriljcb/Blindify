@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
@@ -154,9 +155,39 @@ class GameConnection extends ChangeNotifier {
   String? updateVersionDistante;
   bool updateBannerFermee = false;
 
+  /// Version dont la bannière a été fermée — une vérification ultérieure qui retrouve la même
+  /// version ne la réaffiche pas (sinon la vérification périodique la ferait réapparaître en boucle),
+  /// mais une version plus récente encore la réaffiche.
+  String? _versionBanniereFermee;
+
   void fermerBanniereMiseAJour() {
     updateBannerFermee = true;
+    _versionBanniereFermee = updateVersionDistante;
     notifyListeners();
+  }
+
+  /// Adresse à utiliser pour télécharger l'APK — l'IP résolue plutôt que le nom `.local` saisi :
+  /// le navigateur Android, comme les sockets de l'app, ne résout pas le mDNS (voir resolveMdnsHost),
+  /// le téléchargement échouait donc quand le serveur avait été saisi sous la forme `pi.local`.
+  String get urlTelechargementApk => _resolvedUrl ?? serverUrl ?? '';
+
+  static const _intervalleVerificationMiseAJour = Duration(minutes: 3);
+  Timer? _verificationMiseAJourTimer;
+  AppLifecycleListener? _cycleDeVie;
+
+  /// Retour utilisateur (2026-09-27, "la notification de mise à jour ne fonctionne pas bien") : la
+  /// vérification n'avait lieu qu'à [connect], donc une fois par lancement de l'app. Le cas typique
+  /// — app déjà ouverte pendant un déploiement, le backend redémarre et SignalR se reconnecte tout
+  /// seul (onreconnected, sans repasser par connect) — ne déclenchait jamais la bannière. Vérifie
+  /// désormais aussi à chaque reconnexion, au retour au premier plan, et périodiquement.
+  void _demarrerVerificationsMiseAJour() {
+    _verificationMiseAJourTimer ??= Timer.periodic(_intervalleVerificationMiseAJour, (_) => _verifierMiseAJour());
+    _cycleDeVie ??= AppLifecycleListener(onResume: _verifierMiseAJour);
+  }
+
+  void _verifierMiseAJour() {
+    final url = _resolvedUrl;
+    if (url != null) _verifierMiseAJourEnArrierePlan(url);
   }
 
   /// Volontairement non-bloquant (pas de await côté appelant) : ne doit jamais retarder la
@@ -165,12 +196,16 @@ class GameConnection extends ChangeNotifier {
   /// côté update_checker.dart (jamais d'exception propagée jusqu'ici).
   void _verifierMiseAJourEnArrierePlan(String resolvedUrl) {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    _demarrerVerificationsMiseAJour();
     unawaited(() async {
       final resultat = await verifierMiseAJourDisponible(resolvedUrl);
+      // Un échec réseau ponctuel ne doit pas masquer une mise à jour déjà détectée.
+      if (resultat.echec) return;
+      final changement = resultat.disponible != updateDisponible || resultat.versionDistante != updateVersionDistante;
       updateDisponible = resultat.disponible;
       updateVersionDistante = resultat.versionDistante;
-      if (resultat.disponible) updateBannerFermee = false;
-      notifyListeners();
+      if (resultat.disponible && resultat.versionDistante != _versionBanniereFermee) updateBannerFermee = false;
+      if (changement) notifyListeners();
     }());
   }
 
@@ -339,6 +374,9 @@ class GameConnection extends ChangeNotifier {
     hub.onreconnected(({connectionId}) async {
       connected = true;
       notifyListeners();
+      // Une reconnexion suit souvent un redémarrage du backend, donc un déploiement — voir
+      // _demarrerVerificationsMiseAJour.
+      _verifierMiseAJour();
       // Un nouveau connectionId a été émis par le serveur au reconnect : il faut rejouer JoinGame
       // avec le playerId stable pour que le serveur réassocie ce joueur existant (score, équipe)
       // ET le rajoute au groupe SignalR de la partie (voir GameHub.JoinGame, Groups.AddToGroupAsync)
@@ -413,6 +451,7 @@ class GameConnection extends ChangeNotifier {
       currentRound = RoundStarted.fromJson(data);
       roundAnswered = false;
       envoiReponseEchoue = false;
+      jokerErreur = null;
       // V2, section 12.7 : null sur un round fraîchement diffusé (currentRound.jokerIndice l'est
       // toujours ici) — la lecture depuis l'objet plutôt qu'un null en dur garde un seul point de
       // vérité avec la branche reconnexion d'appliquerEtatCourant.
@@ -524,6 +563,7 @@ class GameConnection extends ChangeNotifier {
     currentRound = null;
     roundAnswered = false;
     envoiReponseEchoue = false;
+    jokerErreur = null;
     jokerDisponible = true;
     jokerIndiceActuel = null;
     lastRoundResult = null;
@@ -939,16 +979,32 @@ class GameConnection extends ChangeNotifier {
   Future<void> utiliserJoker() async {
     if (!jokerDisponible || roundAnswered || paused || currentRound == null) return;
 
+    jokerErreur = null;
+    final roundId = currentRound!.roundId;
     try {
-      final result = await _hub!.invoke('UtiliserJoker', args: [currentRound!.roundId]);
+      // Pas de reprise automatique (contrairement à submitAnswer) : un premier appel réussi dont
+      // l'accusé se perd serait refusé au second ("déjà utilisé") et afficherait une erreur à tort.
+      final hub = await _attendreConnexion();
+      if (hub == null) throw StateError('Connexion au serveur indisponible');
+      final result = await hub.invoke('UtiliserJoker', args: [roundId]);
       jokerIndiceActuel = JokerIndice.fromJson(result as Map<String, dynamic>);
       jokerDisponible = false;
       notifyListeners();
     } catch (e) {
-      errorMessage = 'Erreur : ${e.toString()}';
-      notifyListeners();
+      // Retour utilisateur (2026-09-27) : l'échec partait dans errorMessage, jamais affiché sur
+      // l'écran de réponse — le joueur ne savait pas que son joker n'avait pas marché.
+      if (currentRound?.roundId == roundId) {
+        jokerErreur = e is StateError
+            ? 'Joker non envoyé (connexion) — réessaie.'
+            : 'Joker refusé par le serveur.';
+        notifyListeners();
+      }
     }
   }
+
+  /// Message d'échec du dernier appel à [utiliserJoker], affiché sur l'écran de réponse — remis à
+  /// null à chaque nouveau round.
+  String? jokerErreur;
 
   /// Choix du palier de mise, à l'aveugle avant de découvrir la question — un seul essai
   /// par round bonus, déjà appliqué côté serveur (voir BonusRoundService.EnregistrerMise).
@@ -1003,6 +1059,8 @@ class GameConnection extends ChangeNotifier {
     _introCourseTimer?.cancel();
     _reconnectTimer?.cancel();
     _rejoinRetryTimer?.cancel();
+    _verificationMiseAJourTimer?.cancel();
+    _cycleDeVie?.dispose();
     _hub?.stop();
     super.dispose();
   }

@@ -5,7 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 /// Résultat de la comparaison entre le build installé et le dernier build déployé côté serveur.
 class UpdateCheckResult {
-  const UpdateCheckResult({required this.disponible, this.versionDistante});
+  const UpdateCheckResult({required this.disponible, this.versionDistante, this.echec = false});
 
   final bool disponible;
 
@@ -13,7 +13,12 @@ class UpdateCheckResult {
   /// vérification a échoué.
   final String? versionDistante;
 
+  /// Vérification impossible (réseau, fichier absent/malformé) — à distinguer de "à jour" pour ne pas
+  /// masquer une mise à jour déjà détectée sur un simple échec ponctuel.
+  final bool echec;
+
   static const aucuneMiseAJour = UpdateCheckResult(disponible: false);
+  static const verificationImpossible = UpdateCheckResult(disponible: false, echec: true);
 }
 
 /// Compare le build installé (PackageInfo — reflète pubspec.yaml au moment du `flutter build apk`,
@@ -28,20 +33,20 @@ class UpdateCheckResult {
 /// fragile qu'un simple entier croissant.
 ///
 /// Best-effort : ne lève jamais d'exception (réseau coupé, JSON absent/malformé, endpoint non
-/// déployé sur un backend plus ancien...) — retombe silencieusement sur "aucune mise à jour" plutôt
+/// déployé sur un backend plus ancien...) — renvoie verificationImpossible plutôt
 /// que de perturber la connexion normale au jeu.
 Future<UpdateCheckResult> verifierMiseAJourDisponible(String serverBaseUrl) async {
   try {
     final base = serverBaseUrl.trim().replaceAll(RegExp(r'/+$'), '');
-    if (base.isEmpty) return UpdateCheckResult.aucuneMiseAJour;
+    if (base.isEmpty) return UpdateCheckResult.verificationImpossible;
 
     final reponse = await http.get(Uri.parse('$base/apk_version.json')).timeout(const Duration(seconds: 4));
-    if (reponse.statusCode != 200) return UpdateCheckResult.aucuneMiseAJour;
+    if (reponse.statusCode != 200) return UpdateCheckResult.verificationImpossible;
 
     final data = jsonDecode(reponse.body) as Map<String, dynamic>;
     final buildDistant = data['buildNumber'] as int?;
     final versionDistante = data['versionName'] as String?;
-    if (buildDistant == null) return UpdateCheckResult.aucuneMiseAJour;
+    if (buildDistant == null) return UpdateCheckResult.verificationImpossible;
 
     final infoInstalle = await PackageInfo.fromPlatform();
     final buildInstalle = int.tryParse(infoInstalle.buildNumber) ?? 0;
@@ -51,6 +56,6 @@ Future<UpdateCheckResult> verifierMiseAJourDisponible(String serverBaseUrl) asyn
     }
     return UpdateCheckResult.aucuneMiseAJour;
   } catch (_) {
-    return UpdateCheckResult.aucuneMiseAJour;
+    return UpdateCheckResult.verificationImpossible;
   }
 }
