@@ -10,7 +10,7 @@ import { render, setConnected, showScreen, ACTION_SUIVANTE_PAR_ECRAN } from "./r
 import * as audio from "./audio.js";
 import * as timers from "./timers.js";
 import * as displayBridge from "./display-bridge.js";
-import { chargerTagsDisponibles } from "./config.js";
+import { chargerTagsDisponibles, chargerPresets } from "./config.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -23,6 +23,7 @@ if ("wakeLock" in navigator) {
 
 subscribe(render);
 subscribe(displayBridge.syncDisplay);
+subscribe(publierEtatRegieSiChange);
 
 // ----- Connexion -----
 
@@ -83,6 +84,7 @@ async function tenterResumeHostSession() {
     }
 
     state.currentScreen = "lobby";
+    chargerPresets();
     showScreen("screen-lobby");
     el("lobby-error").textContent =
       "Partie en cours reprise après rechargement de la page — utilise les actions ci-dessous (pause, tableau général, fin de partie) ; l'écran de round n'est pas reconstruit.";
@@ -106,6 +108,13 @@ function handleEvent(name, payload) {
 
   switch (name) {
     case "SerieAnnoncee":
+      // Refonte UI (lot 3) : le classement affiché en fin de série se referme à l'annonce de la
+      // suivante (côté téléphones, voir GameConnection : même règle).
+      timers.annulerMinuteur("classement-auto");
+      if (state.leaderboardOpen) {
+        state.leaderboardOpen = false;
+        displayBridge.sendLeaderboardHide();
+      }
       timers.minuteurAnnulable("auto-intro-serie", DUREE_INTRO_SERIE_MS, demarrerRoundApresIntro, {
         onTick: (restantMs) => {
           el("serie-intro-note").textContent = `Démarrage automatique dans ${Math.ceil(restantMs / 1000)}s...`;
@@ -216,8 +225,17 @@ function handleEvent(name, payload) {
       } else {
         audio.pauseAudioEnDouceur();
       }
+      // Refonte UI (lot 3) : classement automatique (TV + téléphones) aux séries prévues, quelques
+      // secondes après le résultat ; la série suivante attend d'autant plus longtemps.
+      const classementAuto = seriesAvecClassementAuto(state.nombreSeriesTotal).includes(state.serieCouranteIndex);
+      if (classementAuto) {
+        timers.minuteurAnnulable("classement-auto", DELAI_AVANT_CLASSEMENT_AUTO_MS, () =>
+          transport.invoke.showLeaderboard().catch((err) => console.error("Classement automatique :", err))
+        );
+      }
       if (state.serieCouranteIndex < state.nombreSeriesTotal) {
-        timers.minuteurAnnulable("auto-fin-ou-serie-suivante", delaiEnchainementMs(), avancerSerieSuivante, {
+        const delaiSerieSuivante = delaiEnchainementMs() + (classementAuto ? DUREE_CLASSEMENT_AUTO_MS : 0);
+        timers.minuteurAnnulable("auto-fin-ou-serie-suivante", delaiSerieSuivante, avancerSerieSuivante, {
           onTick: (restantMs) => {
             el("bonus-end-note").textContent = `Série suivante dans ${Math.ceil(restantMs / 1000)}s...`;
           },
@@ -241,6 +259,17 @@ function handleEvent(name, payload) {
     case "LeaderboardShown":
       displayBridge.sendLeaderboardShow(payload);
       break;
+
+    // Refonte UI (lot 3) — télécommande d'un admin (téléphone), relayée par le serveur : exécutée
+    // exactement comme le raccourci clavier correspondant.
+    case "CommandeHost":
+      if (payload.commande === "suivant") {
+        const id = ACTION_SUIVANTE_PAR_ECRAN[state.currentScreen];
+        if (id) cliquerSiDisponible(id);
+      } else if (payload.commande === "reecouter") {
+        cliquerSiDisponible("btn-reecouter");
+      }
+      break;
   }
 
   notify();
@@ -248,6 +277,21 @@ function handleEvent(name, payload) {
 
 function delaiEnchainementMs() {
   return Math.max(1, parseInt(el("setup-delai-enchainement").value, 10) || 10) * 1000;
+}
+
+// ----- Classement automatique (refonte UI, lot 3) -----
+// Choix utilisateur : moins de SEUIL_DOUBLE_CLASSEMENT séries → une fois, à la moitié ; au-delà →
+// deux fois, au tiers et aux deux tiers. Jamais après la dernière série (l'écran de fin montre déjà
+// les scores). Valeur retournée : numéros (à partir de 1) des séries après lesquelles l'afficher.
+const SEUIL_DOUBLE_CLASSEMENT = 7;
+const DELAI_AVANT_CLASSEMENT_AUTO_MS = 3000;
+const DUREE_CLASSEMENT_AUTO_MS = 10000;
+
+function seriesAvecClassementAuto(nombreSeries) {
+  const moments = nombreSeries < SEUIL_DOUBLE_CLASSEMENT
+    ? [Math.ceil(nombreSeries / 2)]
+    : [Math.round(nombreSeries / 3), Math.round((2 * nombreSeries) / 3)];
+  return [...new Set(moments)].filter((s) => s >= 1 && s < nombreSeries);
 }
 
 // ----- Enchaînement automatique -----
@@ -768,5 +812,23 @@ if (adresseAutoConnexion) {
   tenterConnexion(adresseAutoConnexion, { silencieux: true, timeoutMs: DELAI_RECONNEXION_AUTO_MS }).finally(() => {
     btnConnect.disabled = false;
     btnConnect.textContent = "Se connecter";
+  });
+}
+
+// ----- Télécommande (refonte UI, lot 3) -----
+// Publie au serveur, à chaque changement, ce que ferait « Action suivante » (libellé + disponibilité,
+// lus sur le bouton de la colonne d'actions, voir render.js:renderRegie) — relayé aux admins pour leur
+// télécommande (GameHub.PublierEtatRegie). Jamais d'information sur le morceau.
+let dernierEtatRegie = "";
+function publierEtatRegieSiChange() {
+  if (!state.gameCode || !state.currentScreen) return;
+  const bouton = el("btn-action-principale");
+  const etat = { libelleAction: bouton.textContent.trim() || "—", actionDisponible: !bouton.disabled };
+  const cle = JSON.stringify(etat);
+  if (cle === dernierEtatRegie) return;
+  dernierEtatRegie = cle;
+  transport.invoke.publierEtatRegie(etat).catch((err) => {
+    dernierEtatRegie = ""; // retenté au prochain changement d'état
+    console.error("PublierEtatRegie :", err);
   });
 }

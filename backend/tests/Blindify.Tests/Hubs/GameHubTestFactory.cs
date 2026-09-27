@@ -17,6 +17,7 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
     public readonly string StatsPath = Path.Combine(Path.GetTempPath(), $"blindify-it-stats-{Guid.NewGuid()}.json");
     public readonly string FlagsPath = Path.Combine(Path.GetTempPath(), $"blindify-it-flags-{Guid.NewGuid()}.json");
     public readonly string FlagsResolutionsPath = Path.Combine(Path.GetTempPath(), $"blindify-it-flags-resolutions-{Guid.NewGuid()}.json");
+    public readonly string PresetsPath = Path.Combine(Path.GetTempPath(), $"blindify-it-presets-{Guid.NewGuid()}.json");
     public readonly string RootPath = Path.Combine(Path.GetTempPath(), $"blindify-it-data-{Guid.NewGuid()}");
 
     public GameHubTestFactory()
@@ -56,6 +57,7 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
                 ["Data:StatsPath"] = StatsPath,
                 ["Data:FlagsPath"] = FlagsPath,
                 ["Data:FlagsResolutionsPath"] = FlagsResolutionsPath,
+                ["Data:PresetsPath"] = PresetsPath,
                 ["Data:RootPath"] = RootPath,
                 // Vide explicitement : sinon hérite de la vraie valeur de appsettings.Development.json
                 // (environnement de test "Development" par défaut), qui pointe vers le vrai dossier
@@ -106,6 +108,7 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
         if (File.Exists(StatsPath)) File.Delete(StatsPath);
         if (File.Exists(FlagsPath)) File.Delete(FlagsPath);
         if (File.Exists(FlagsResolutionsPath)) File.Delete(FlagsResolutionsPath);
+        if (File.Exists(PresetsPath)) File.Delete(PresetsPath);
         if (Directory.Exists(RootPath)) Directory.Delete(RootPath, recursive: true);
     }
 }

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../motion.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
+import '../widgets/carte_ecart.dart';
 import '../widgets/cover_art.dart';
 import '../widgets/game_card.dart';
 
@@ -109,6 +110,9 @@ class _RoundEndedScreenState extends State<RoundEndedScreen> {
                 ],
               ],
               const Spacer(),
+              // Refonte UI (lot 3) : écart avec le joueur devant (si activé pour la partie).
+              const CarteEcart(),
+              const SizedBox(height: 12),
               Text(
                 'En attente du prochain round...',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),

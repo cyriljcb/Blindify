@@ -153,6 +153,10 @@
           <button type="button" class="preset" data-series="5" data-rounds="12" data-duree="15">Marathon<small>5 × 12</small></button>
         </div>
         <p id="config-resume" class="config-resume"></p>
+        <div class="presets-actions">
+          <button type="button" id="btn-enregistrer-preset" class="btn-secondary">Enregistrer comme configuration…</button>
+          <span id="presets-note" class="presets-note"></span>
+        </div>
 
         <details class="reglages-avances">
           <summary>Réglages avancés</summary>
@@ -167,6 +171,7 @@
             <input id="setup-duree-fenetre" type="number" min="1" value="15" />
 
             <label><input id="setup-audio-continu" type="checkbox" checked /> Musique continue entre les rounds</label>
+            <label><input id="setup-afficher-ecart" type="checkbox" checked /> Montrer à chaque joueur son écart avec le joueur devant (sans nom ni place)</label>
 
             <label for="setup-delai-enchainement">Délai avant le round suivant (secondes)</label>
             <input id="setup-delai-enchainement" type="number" min="1" value="10" />

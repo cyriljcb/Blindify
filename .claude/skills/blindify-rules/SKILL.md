@@ -35,7 +35,7 @@ Deux phases, dans cet ordre strict :
 1. **Mise à l'aveugle** : le joueur choisit un palier (4 options, croissants par série via un ratio géométrique constant `GameConfig.FacteurProgressionPaliers`, 1.6 par défaut, V2) **avant** de connaître la question. Pas de choix dans le délai → palier "safe" par défaut.
 2. **Question** : morceau révélé, timer fixe **sans dégressivité**, audio ralenti par défaut (`playbackRate` réduit, paramètre désactivable). Un seul essai. Pas de réponse → traité comme faux (perte de la mise).
 
-Après la question bonus de chaque série : le tableau général **peut** s'afficher (au moins une fois par partie, pas forcément à chaque série — par défaut vers la série médiane, ou déclenché manuellement par le host).
+Après la question bonus de certaines séries, le tableau général s'affiche automatiquement (TV + téléphones) : moins de 7 séries → une fois à la moitié ; 7 ou plus → deux fois (tiers, deux tiers) ; jamais après la dernière. Le host peut aussi l'afficher à tout moment. En dehors de ces moments, un téléphone ne montre jamais le classement : seulement le score du joueur et, si `GameConfig.AfficherEcart`, l'écart avec le joueur juste devant, sans nom ni place (voir `docs/architecture.md` section 7).
 
 ## Mode équipes (optionnel)
 

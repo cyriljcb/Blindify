@@ -413,6 +413,7 @@ class GameConnection extends ChangeNotifier {
       score = etat.score;
       teamId = etat.teamId;
       jokerDisponible = etat.jokerDisponible;
+      afficherEcart = etat.afficherEcart;
       appliquerEtatCourant(etat.etatCourant, actualiserEcran: false);
       notifyListeners();
     });
@@ -453,6 +454,10 @@ class GameConnection extends ChangeNotifier {
     hub.on('SerieAnnoncee', (args) {
       final data = args![0] as Map<String, dynamic>;
       serieIntro = SerieAnnoncee.fromJson(data);
+      afficherEcart = serieIntro!.afficherEcart;
+      // Refonte UI (lot 3) : le classement affiché en fin de série se referme à l'annonce de la
+      // série suivante, comme sur la page host.
+      showLeaderboard = false;
       screen = AppScreen.serieIntro;
       notifyListeners();
     });
@@ -484,6 +489,14 @@ class GameConnection extends ChangeNotifier {
 
     // Diffusé à tout le groupe (pas seulement à l'écran public) — ne porte ni la réponse ni son
     // exactitude, voir PlayerAnsweredDto côté backend.
+    // Refonte UI (lot 3) — télécommande admin, voir regieLibelleAction.
+    hub.on('EtatRegie', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      regieLibelleAction = data['libelleAction'] as String?;
+      regieActionDisponible = data['actionDisponible'] as bool? ?? false;
+      notifyListeners();
+    });
+
     hub.on('PlayerAnswered', (args) {
       final data = args![0] as Map<String, dynamic>;
       if (repondants.add(data['playerId'] as String)) notifyListeners();
@@ -785,6 +798,7 @@ class GameConnection extends ChangeNotifier {
       teamId = joinResult.teamId;
       teams = joinResult.teams;
       jokerDisponible = joinResult.jokerDisponible;
+      afficherEcart = joinResult.afficherEcart;
       await _prefs?.setString(_prefsNom, pseudo);
       await _prefs?.setString(_prefsGameCode, code);
 
@@ -923,6 +937,55 @@ class GameConnection extends ChangeNotifier {
       adminError = 'Erreur : ${e.toString()}';
       notifyListeners();
     }
+  }
+
+  /// Refonte UI (lot 3) — télécommande : ce que ferait « Action suivante » sur la page host à cet
+  /// instant (libellé du bouton, disponible ou non), publié par le host et relayé par le serveur
+  /// aux seuls admins (voir GameHub.PublierEtatRegie). null tant que le host n'a rien publié.
+  String? regieLibelleAction;
+  bool regieActionDisponible = false;
+
+  /// Relaie une commande à la page host, qui l'exécute comme son raccourci clavier ("suivant" =
+  /// Espace, "reecouter" = R) — voir GameHub.EnvoyerCommandeHost.
+  Future<void> adminCommandeHost(String commande) async {
+    if (!isAdmin) return;
+    adminError = null;
+    try {
+      await _hub?.invoke('EnvoyerCommandeHost', args: [commande]);
+    } catch (e) {
+      adminError = 'Erreur : ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  /// Refonte UI (lot 3) — option de la partie (voir JoinResult.afficherEcart).
+  bool afficherEcart = true;
+
+  /// Écart de points avec le joueur (ou l'équipe, en mode équipe) juste devant, pour l'écran
+  /// d'attente : 0 = en tête (éventuellement à égalité), > 0 = points de retard. null si l'option
+  /// est désactivée ou si aucun score n'a encore été reçu. Jamais le nom ni la place de personne
+  /// (choix utilisateur : seul le premier sait qu'il est premier).
+  int? get ecartAvecJoueurDevant {
+    final scores = scoreUpdate;
+    if (!afficherEcart || scores == null) return null;
+
+    final equipes = scores.equipes;
+    final List<int> autres;
+    final int moi;
+    if (equipes != null && equipes.isNotEmpty && teamId != null) {
+      final monEquipe = equipes.where((e) => e.teamId == teamId).firstOrNull;
+      if (monEquipe == null) return null;
+      moi = monEquipe.score;
+      autres = equipes.where((e) => e.teamId != teamId).map((e) => e.score).toList();
+    } else {
+      final mien = scores.joueurs.where((j) => j.playerId == playerId).firstOrNull;
+      if (mien == null) return null;
+      moi = mien.score;
+      autres = scores.joueurs.where((j) => j.playerId != playerId).map((j) => j.score).toList();
+    }
+
+    final devant = autres.where((s) => s > moi);
+    return devant.isEmpty ? 0 : devant.reduce((a, b) => a < b ? a : b) - moi;
   }
 
   /// V2, section 12.4 — voir GameHub.SignalerMorceau. `trackId` doit venir de [morceauxJoues] (déjà

@@ -7,4 +7,4 @@ namespace Blindify.Api.Contracts;
 /// lui-même soumis à CreateGame). Le libellé humain ("Rock", "Aléatoire" si vide) est formaté côté
 /// client (voir host/app.js:libelleTheme et son équivalent Flutter) pour rester dans la même langue
 /// que le reste de l'UI plutôt que d'être figé côté serveur.</summary>
-public record SerieAnnonceeDto(int SerieIndex, List<string> Tags);
+public record SerieAnnonceeDto(int SerieIndex, List<string> Tags, bool AfficherEcart = true);

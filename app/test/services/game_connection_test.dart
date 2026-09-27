@@ -14,6 +14,7 @@ import 'package:app/models/etat_courant_joueur.dart';
 import 'package:app/models/round_cible.dart';
 import 'package:app/models/round_mode.dart';
 import 'package:app/models/round_started.dart';
+import 'package:app/models/score_update.dart';
 import 'package:app/services/game_connection.dart';
 
 void main() {
@@ -239,6 +240,41 @@ void main() {
       await envoi;
       expect(game.bonusAnswered, isFalse);
       expect(game.envoiReponseEchoue, isTrue);
+    });
+  });
+
+  // Refonte UI (lot 3) — écart avec le joueur devant, sans nom ni place.
+  group('ecartAvecJoueurDevant', () {
+    GameConnection partie(List<(String, int)> scores, {String moi = 'p1'}) => GameConnection()
+      ..playerId = moi
+      ..scoreUpdate = ScoreUpdate(
+        joueurs: [for (final (id, score) in scores) PlayerScore(playerId: id, nom: id, score: score)],
+      );
+
+    test('retard sur le joueur juste devant, pas sur le premier', () {
+      final game = partie([('p1', 100), ('p2', 140), ('p3', 400)]);
+      expect(game.ecartAvecJoueurDevant, 40);
+    });
+
+    test('0 quand en tête, y compris à égalité', () {
+      expect(partie([('p1', 300), ('p2', 140)]).ecartAvecJoueurDevant, 0);
+      expect(partie([('p1', 300), ('p2', 300)]).ecartAvecJoueurDevant, 0);
+    });
+
+    test('null si l\'option est désactivée pour la partie', () {
+      final game = partie([('p1', 100), ('p2', 140)])..afficherEcart = false;
+      expect(game.ecartAvecJoueurDevant, isNull);
+    });
+
+    test('en mode équipe, compare les scores des équipes', () {
+      final game = GameConnection()
+        ..playerId = 'p1'
+        ..teamId = 'rouge'
+        ..scoreUpdate = ScoreUpdate(
+          joueurs: [PlayerScore(playerId: 'p1', nom: 'p1', score: 999, teamId: 'rouge')],
+          equipes: [TeamScore(teamId: 'rouge', nom: 'Rouge', score: 200), TeamScore(teamId: 'bleu', nom: 'Bleu', score: 260)],
+        );
+      expect(game.ecartAvecJoueurDevant, 60);
     });
   });
 }

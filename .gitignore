@@ -28,6 +28,7 @@ app/**/*.freezed.dart
 data/audio/
 data/covers/
 data/stats.json
+data/presets.json
 
 # === Scripts Python (data/scripts) — exports intermédiaires, pas tracks.json ===
 data/scripts/output/

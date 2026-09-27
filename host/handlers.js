@@ -240,6 +240,7 @@ export function registerHandlers(connection, callbacks) {
   connection.on("BonusStakeOptions", (payload) => callbacks.onEvent("BonusStakeOptions", payload));
   connection.on("BonusQuestionStarted", (payload) => callbacks.onEvent("BonusQuestionStarted", payload));
   connection.on("BonusResult", (payload) => callbacks.onEvent("BonusResult", payload));
+  connection.on("CommandeHost", (payload) => callbacks.onEvent("CommandeHost", payload));
 }
 
 // Table de dispatch utilisée par main.js — associe chaque nom d'événement à sa fonction de mutation

@@ -12,6 +12,7 @@ using Blindify.Domain.Entities;
 using Blindify.Domain.Enums;
 using Blindify.Domain.Jokers;
 using Blindify.Infrastructure.Flags;
+using Blindify.Infrastructure.Presets;
 using Blindify.Infrastructure.Stats;
 using Blindify.Infrastructure.Tracks;
 using Microsoft.AspNetCore.SignalR;
@@ -32,6 +33,7 @@ public class GameHub(
     ITracksRepository tracksRepository,
     IStatsRepository statsRepository,
     IFlagsRepository flagsRepository,
+    IPresetsRepository presetsRepository,
     IJokerCoverTokenStore jokerCoverTokenStore,
     RoundTimerCoordinator timerCoordinator,
     BonusTimerCoordinator bonusTimerCoordinator,
@@ -88,6 +90,7 @@ public class GameHub(
             // Résolu AVANT la construction des séries (et non après, comme avant V2) : SeriesPlanner.
             // PaliersPourSerie a besoin de Config.FacteurProgressionPaliers pour chaque série.
             session.Config = request.Config ?? session.Config;
+            session.Config.AfficherEcart = request.AfficherEcart;
 
             var tagsParSerie = SeriesPlanner.AssignerThemesAuxSeries(request.ThemesVivier, request.NombreSeries);
             var catalogue = tracksRepository.GetAll();
@@ -287,7 +290,7 @@ public class GameHub(
             throw new HubException("Aucune série configurée — configure le blindtest (ConfigurerPartie) avant de le démarrer.");
 
         var serie = session.SerieCourante();
-        await Clients.Group(session.Id).SendAsync("SerieAnnoncee", new SerieAnnonceeDto(serie.Index, serie.Tags));
+        await Clients.Group(session.Id).SendAsync("SerieAnnoncee", new SerieAnnonceeDto(serie.Index, serie.Tags, session.Config.AfficherEcart));
     }
 
     public Task NextRound()
@@ -365,8 +368,104 @@ public class GameHub(
             return Task.FromResult(new AdminAuthResultDto(false, "Mot de passe incorrect."));
 
         var session = ResoudreSession();
-        lock (session.Lock) { session.AdminConnectionIds.Add(Context.ConnectionId); }
+        EtatRegieDto? etatRegie;
+        lock (session.Lock)
+        {
+            session.AdminConnectionIds.Add(Context.ConnectionId);
+            etatRegie = session.RegieLibelleAction is null ? null : new EtatRegieDto(session.RegieLibelleAction, session.RegieActionDisponible);
+        }
+
+        // Refonte UI (lot 3) : télécommande à jour tout de suite, sans attendre le prochain changement
+        // d'écran côté host (voir PublierEtatRegie).
+        if (etatRegie is not null) _ = Clients.Caller.SendAsync("EtatRegie", etatRegie);
         return Task.FromResult(new AdminAuthResultDto(true, null));
+    }
+
+    // ----- Configurations enregistrées (refonte UI, lot 3) -----
+
+    private const int LongueurMaxNomPreset = 40;
+
+    /// <summary>Configurations de partie enregistrées dans data/presets.json — lecture par le host ou
+    /// un admin, écriture par le host seul (choix utilisateur).</summary>
+    public Task<List<PresetDto>> ListerPresets()
+    {
+        ResoudreSessionHostOuAdmin();
+        return Task.FromResult(ListerPresetsDto());
+    }
+
+    /// <summary>Remplace une configuration existante du même nom (sans tenir compte de la casse) et
+    /// renvoie la liste à jour.</summary>
+    public Task<List<PresetDto>> EnregistrerPreset(PresetDto preset)
+    {
+        ResoudreSessionHost();
+        var nom = (preset.Nom ?? "").Trim();
+        if (nom.Length == 0 || nom.Length > LongueurMaxNomPreset)
+            throw new HubException($"Nom de configuration requis ({LongueurMaxNomPreset} caractères au plus).");
+        if (preset.NombreSeries < 1 || preset.NombreRoundsClassiques < 1 || preset.DureeFenetreReponseMs < 1000 || preset.DelaiEnchainementMs < 1000)
+            throw new HubException("Configuration invalide : séries, rounds et durées doivent être positifs.");
+
+        presetsRepository.Enregistrer(new PresetEntryDto
+        {
+            Nom = nom,
+            NombreSeries = preset.NombreSeries,
+            NombreRoundsClassiques = preset.NombreRoundsClassiques,
+            DureeFenetreReponseMs = preset.DureeFenetreReponseMs,
+            ThemesVivier = [.. preset.ThemesVivier ?? []],
+            MusiqueContinue = preset.MusiqueContinue,
+            DelaiEnchainementMs = preset.DelaiEnchainementMs,
+            AfficherEcart = preset.AfficherEcart,
+        });
+        return Task.FromResult(ListerPresetsDto());
+    }
+
+    public Task<List<PresetDto>> SupprimerPreset(string nom)
+    {
+        ResoudreSessionHost();
+        if (!presetsRepository.Supprimer(nom ?? ""))
+            throw new HubException("Configuration introuvable.");
+        return Task.FromResult(ListerPresetsDto());
+    }
+
+    private List<PresetDto> ListerPresetsDto() => presetsRepository.Lister()
+        .Select(p => new PresetDto(p.Nom, p.NombreSeries, p.NombreRoundsClassiques, p.DureeFenetreReponseMs, p.ThemesVivier, p.MusiqueContinue, p.DelaiEnchainementMs, p.AfficherEcart))
+        .ToList();
+
+    // ----- Télécommande (refonte UI, lot 3) -----
+
+    private static readonly HashSet<string> CommandesHost = ["suivant", "reecouter"];
+
+    /// <summary>Télécommande d'un admin (téléphone) : relaie la commande à la page host, qui
+    /// l'exécute comme le raccourci clavier correspondant — l'orchestration de la partie (annonce de
+    /// série, enchaînements, audio) reste en un seul endroit. Pause/reprise/tableau général passent
+    /// par leurs méthodes habituelles (PauseGame/ResumeGame/ShowLeaderboard).</summary>
+    public async Task EnvoyerCommandeHost(string commande)
+    {
+        var session = ResoudreSessionHostOuAdmin();
+        if (!CommandesHost.Contains(commande ?? ""))
+            throw new HubException("Commande inconnue.");
+
+        string? hostConnectionId;
+        lock (session.Lock) { hostConnectionId = session.HostConnectionId; }
+        if (hostConnectionId is null)
+            throw new HubException("La page host n'est pas connectée.");
+
+        await Clients.Client(hostConnectionId).SendAsync("CommandeHost", new CommandeHostDto(commande!));
+    }
+
+    /// <summary>Publié par la page host à chaque changement de son action suivante — mémorisé en
+    /// session et relayé aux admins (jamais aux joueurs).</summary>
+    public async Task PublierEtatRegie(EtatRegieDto etat)
+    {
+        var session = ResoudreSessionHost();
+        List<string> admins;
+        lock (session.Lock)
+        {
+            session.RegieLibelleAction = etat.LibelleAction;
+            session.RegieActionDisponible = etat.ActionDisponible;
+            admins = [.. session.AdminConnectionIds];
+        }
+
+        if (admins.Count > 0) await Clients.Clients(admins).SendAsync("EtatRegie", etat);
     }
 
     public async Task PauseGame()
@@ -603,7 +702,7 @@ public class GameHub(
         else
             await Clients.OthersInGroup(code).SendAsync("PlayerJoined", new PlayerJoinedDto(joueur.PlayerId, joueur.Nom));
 
-        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs, etatCourant, !joueur.JokerUtilise);
+        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs, etatCourant, !joueur.JokerUtilise, session.Config.AfficherEcart);
     }
 
     /// <summary>Rejoint (ou change) d'équipe — autorisé à tout moment, pas seulement au lobby, pour
@@ -790,7 +889,7 @@ public class GameHub(
                 EtatCourantJoueurDto? etatCourant;
                 lock (session.Lock) { etatCourant = ConstruireEtatCourantJoueur(session, playerId); }
 
-                await Clients.Caller.SendAsync("EtatCourant", new EtatCourantConnexionDto(joueur.Score, joueur.TeamId, etatCourant, !joueur.JokerUtilise));
+                await Clients.Caller.SendAsync("EtatCourant", new EtatCourantConnexionDto(joueur.Score, joueur.TeamId, etatCourant, !joueur.JokerUtilise, session.Config.AfficherEcart));
                 await Clients.OthersInGroup(code).SendAsync("PlayerReconnected", new PlayerConnectionChangedDto(playerId, true));
             }
         }

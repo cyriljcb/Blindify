@@ -19,6 +19,10 @@ public class DataPathsOptions
     /// par le backend (lecture seule, chargé une fois au démarrage comme tracks.json).</summary>
     public required string FlagsResolutionsPath { get; set; }
 
+    /// <summary>Refonte UI (lot 3) — configurations de partie enregistrées. Optionnel : repli sur
+    /// RootPath/presets.json (voir PresetsRepository).</summary>
+    public string? PresetsPath { get; set; }
+
     public string? AudioPath { get; set; }
     public string? CoversPath { get; set; }
 

@@ -49,6 +49,10 @@ export const invoke = {
   endGame: () => connection.invoke("EndGame"),
   rejouerPartie: () => connection.invoke("RejouerPartie"),
   revelerMaintenant: () => connection.invoke("RevelerMaintenant"),
+  listerPresets: () => connection.invoke("ListerPresets"),
+  enregistrerPreset: (preset) => connection.invoke("EnregistrerPreset", preset),
+  supprimerPreset: (nom) => connection.invoke("SupprimerPreset", nom),
+  publierEtatRegie: (etat) => connection.invoke("PublierEtatRegie", etat),
   fermerSalon: () => connection.invoke("FermerSalon"),
   // V2, section 12.4 — commentaire: null si vide, jamais une chaîne vide (SignalementRequestDto.Commentaire
   // reste optionnel côté contrat).

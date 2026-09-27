@@ -197,6 +197,24 @@ class _AdminSection extends StatelessWidget {
               Text(game.adminError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
           ] else ...[
+            // Refonte UI (lot 3) — télécommande : « Action suivante » et « Réécouter » sont relayées
+            // à la page host, qui les exécute comme ses raccourcis Espace / R (voir
+            // GameHub.EnvoyerCommandeHost). Le libellé est celui du bouton côté host, publié à chaque
+            // changement d'écran — le PC host doit rester ouvert, c'est lui qui joue l'audio.
+            Text('Télécommande', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: game.regieActionDisponible ? () => game.adminCommandeHost('suivant') : null,
+              icon: const Icon(Icons.skip_next_rounded, size: 20),
+              label: Text(game.regieLibelleAction ?? 'Action suivante'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => game.adminCommandeHost('reecouter'),
+              icon: const Icon(Icons.replay_rounded, size: 18),
+              label: const Text('Réécouter depuis le début'),
+            ),
+            const SizedBox(height: 8),
             // Ces actions n'ont aucun effet sur la lecture audio (qui reste exclusive au host web,
             // voir CLAUDE.md) — le serveur diffuse juste l'évènement correspondant à tout le groupe,
             // host web compris, qui réagit comme d'habitude (GameHub.ResoudreSessionHostOuAdmin).

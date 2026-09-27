@@ -84,4 +84,10 @@ public class GameConfig
     /// prochain ConfigurerPartie/RejouerPartie/StartBonusRound. Vrai par défaut : un signalement
     /// bloquant existe précisément parce que le morceau ne doit plus être joué tel quel.</summary>
     public bool ExclureMorceauxSignales { get; set; } = true;
+
+    /// <summary>Refonte UI (lot 3, 2026-09-27) — entre deux rounds, le téléphone affiche l'écart de
+    /// points avec le joueur (ou l'équipe) juste devant, sans nom ni place ; le premier voit « Tu es
+    /// en tête ». Calculé côté téléphone depuis ScoreUpdate ; ce réglage ne fait que l.activer.
+    /// Transmis aux joueurs dans SerieAnnoncee et au join (JoinGame/EtatCourant).</summary>
+    public bool AfficherEcart { get; set; } = true;
 }

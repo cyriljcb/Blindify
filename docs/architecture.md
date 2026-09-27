@@ -238,6 +238,10 @@ Même principe de séparation que `tracks.json`/`stats.json`, mais à deux fichi
 - Événement `MorceauSignale` : diffusé **uniquement** au host et aux `AdminConnectionIds` (jamais `Clients.Group`, jamais aux joueurs) — simple confirmation visuelle, envoyé même en cas de doublon.
 - Réglages admin (Flutter) et panneau host : liste « Morceaux joués dans cette partie », construite côté client (pas un DTO serveur dédié) en accumulant `RoundEnded`/`BonusResult` au fil de la partie — jamais avant le reveal, l'admin est aussi un joueur.
 - `docker-compose.yml` monte `flags.json` en `rw` et `flags_resolutions.json` en `ro`, avec le même avertissement opérationnel que `stats.json` (le fichier doit exister, même vide, avant le premier `docker compose up`).
+
+### `presets.json` — configurations de partie enregistrées (refonte UI, lot 3)
+
+`data/presets.json` (liste, écrite par le backend via `Blindify.Infrastructure.Presets.PresetsRepository`, même écriture `AtomicJsonFile` que `stats.json`/`flags.json`, jamais `tracks.json`). Une entrée par configuration nommée : `Nom`, `NombreSeries`, `NombreRoundsClassiques`, `DureeFenetreReponseMs`, `ThemesVivier`, `MusiqueContinue`, `DelaiEnchainementMs`, `AfficherEcart` — `MusiqueContinue`/`DelaiEnchainementMs` ne servent qu'à la page host (jamais transmis à `ConfigurerPartie`). Nom unique sans tenir compte de la casse (réenregistrer remplace), 40 caractères au plus. Lecture par le host ou un admin, écriture/suppression par le host seul (`ListerPresets`/`EnregistrerPreset`/`SupprimerPreset`). Monté fichier par fichier (`Data__PresetsPath=/data/presets.json`) : **le fichier doit exister sur le Pi (`echo '[]' > presets.json`) avant le `docker compose up`**, sinon Docker crée un dossier à la place. Gitignoré (état runtime).
 - Pipeline : `export_flags_csv.py [--ouverts] [--raison R] [--ids-only]` → CSV ; `import_flag_resolutions.py CHEMIN.csv [--dry-run]` reporte la colonne `resolution` (`corrige`/`ignore`/`retire`) dans `flags_resolutions.json` uniquement (jamais `tracks.json` ni `flags.json`).
 
 ## 5. Modèle de données du jeu
@@ -376,7 +380,7 @@ Mécanique en deux phases, mise choisie **à l'aveugle** avant de découvrir la 
 1. **Phase mise** — le serveur annonce les 4 paliers de la série courante (safe / moyen / moyen+ / risqué, définis dans une table de config par série, croissants jusqu'à 3000 pts en fin de partie). Chaque joueur choisit un palier via `SelectStake(index)`. Délai limite (~15s) : pas de choix → palier "safe" appliqué par défaut.
 2. **Phase question** — une fois tous les choix reçus (ou le délai passé), le morceau est révélé et un timer fixe démarre, **sans dégressivité**. Le morceau est joué **ralenti** par défaut pour complexifier la tâche (`playbackRate` réduit côté lecteur audio du host, ex. 0.8) — paramètre `ralentissementBonusActivé` (bool) désactivable, avec un facteur configurable. Un seul essai par joueur. Pas de réponse dans le temps imparti → traité comme une réponse fausse (perte de la mise).
 3. **Résultat** — réponse juste : `+mise` ; réponse fausse ou absence de réponse : `-mise`.
-4. **Tableau général** — affiché **au moins une fois par partie** (pas systématiquement à chaque série). Par défaut, déclenché automatiquement après la série médiane (`⌈nombreDeSéries / 2⌉`), et le host peut aussi le déclencher manuellement à tout moment via une commande dédiée (`ShowLeaderboard()`).
+4. **Tableau général** — affiché automatiquement par la page host (`host/main.js:seriesAvecClassementAuto`, refonte UI lot 3, règle utilisateur du 2026-09-27) : **moins de 7 séries → une fois, après la série médiane** (`⌈nombreDeSéries / 2⌉`) ; **7 séries ou plus → deux fois, après le tiers et les deux tiers** (`round(S/3)`, `round(2S/3)`). Jamais après la dernière série (l'écran de fin montre déjà les scores). Déclenché ~3 s après le résultat de la question bonus via `ShowLeaderboard()` — donc sur la TV **et** les téléphones, les deux seuls moments où un téléphone voit le classement avec l'affichage manuel du host (touche L) — et refermé à l'annonce de la série suivante (qui attend 10 s de plus). En dehors de ces moments, le téléphone ne montre que le score du joueur et, si `GameConfig.AfficherEcart`, l'écart avec le joueur (ou l'équipe) juste devant, sans nom ni place ; le premier voit « En tête ».
 
 **Enchaînement côté host (`host/`)** — comportement de la page web, pas une règle du contrat serveur : une fois la série classique **courante** épuisée, le host déclenche automatiquement `StartBonusRound()` (au lieu d'attendre une intervention) pour la question bonus de **cette** série. Après réception de `BonusResult`, deux cas : s'il reste une série suivante dans la partie, le host affiche un compte à rebours puis enchaîne automatiquement sur son premier round (`NextRound()` + `StartRound()`, bouton "Série suivante maintenant" disponible pour ne pas attendre) ; sinon (dernière série), le host affiche un compte à rebours et déclenche automatiquement `EndGame()` (bouton "Terminer maintenant"). Le host garde la main pour interrompre cet enchaînement (pause, tableau général) à tout moment.
 
@@ -437,7 +441,10 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 | `AnnoncerSerieCourante()` | Diffuse l'annonce de la série en cours (`SerieAnnoncee`, index + tags) à tous les clients (host, écran public, joueurs) — appelé par le host au même moment où il affichait déjà cet écran localement, avant le premier round de chaque série (y compris la première) |
 | `StartRound()` | Démarre un round classique, horodate `débutRound` |
 | `StartBonusRound()` | Démarre la phase de mise d'une question bonus |
-| `ShowLeaderboard()` | Déclenche manuellement l'affichage du tableau général |
+| `ShowLeaderboard()` | Déclenche l'affichage du tableau général (TV + téléphones) — manuel (touche L) ou automatique par la page host, voir section 7 |
+| `ListerPresets()` *(host ou admin)* / `EnregistrerPreset(preset)` / `SupprimerPreset(nom)` *(host)* | (lot 3) Configurations de partie enregistrées dans `data/presets.json` (voir section 4) — les trois renvoient la liste à jour |
+| `EnvoyerCommandeHost(commande)` *(host ou admin)* | (lot 3) Télécommande : relaie `suivant` ou `reecouter` à la page host (événement `CommandeHost`), qui l'exécute comme Espace / R — l'orchestration (annonce de série, enchaînements, audio) reste dans la page host. Refusé si la page host n'est pas connectée |
+| `PublierEtatRegie(etat)` *(host)* | (lot 3) Publie à chaque changement le libellé et la disponibilité de l'action suivante, mémorisés en session et relayés aux admins (`EtatRegie`) |
 | `PauseGame()` / `ResumeGame()` | Gèle/reprend la partie en cours |
 | `ValidateAnswerManually(playerId, correct)` | Override manuel pour les réponses texte ambiguës |
 | `NextRound()` | Passe au round suivant |
@@ -485,7 +492,9 @@ RoundId (V2) : `SubmitAnswer`/`SelectStake`/`SubmitBonusAnswer` reprennent le `R
 | `BonusStakeOptions` | `RoundId` (V2, identité du `BonusRound`, stable entre les deux phases), les 4 paliers de la série courante |
 | `BonusQuestionStarted` | Morceau révélé, timer fixe démarré + `refrainStartMs` (host uniquement — appliqué au `BonusResult`, pas pendant la devinette). Version joueurs inclut la cible (Titre/Film/Année). `estCourse` (Qcm uniquement, voir section 7) : révélé ici, jamais avant. `AnneeOptions` (V2) : voir `RoundStarted` |
 | `BonusResult` | Résultat de chaque joueur (mise gagnée/perdue, `EcartAnnee` si pertinent), cible, film déduit et année réelle (mêmes champs que `RoundEnded`). `estCourse` : si vrai, seul le premier répondant apparaît dans `resultats` — voir section 7 |
-| `LeaderboardShown` | Classement général, diffusé en fin de série |
+| `LeaderboardShown` | Classement général — automatique en fin de certaines séries (voir section 7) ou manuel (`ShowLeaderboard`) |
+| `CommandeHost` | (lot 3) Envoyé à la page host seule par `EnvoyerCommandeHost` : `{commande}` (`suivant` = Espace, `reecouter` = R), exécuté comme le raccourci clavier |
+| `EtatRegie` | (lot 3) Envoyé aux admins seuls : `{libelleAction, actionDisponible}` — ce que ferait « Action suivante » sur la page host, pour la télécommande. Renvoyé à l'authentification admin |
 | `GamePaused` / `GameResumed` | État de pause |
 | `GameEnded` | Scores finaux (`score`, même forme que `ScoreUpdate`) + `titres` (V2, section 12.6) — voir "Titres de fin de partie" |
 | `GameRestarted` | Diffusé après `RejouerPartie()` — ramène tous les clients à l'écran du lobby (même code, mêmes joueurs, scores à zéro) |
@@ -514,7 +523,8 @@ Tous ces éléments sont des paramètres de partie/série, pas des valeurs figé
 | Tolérance fixe zone intermédiaire (`ToleranceFixeReponseCourte`) | Global | 2 caractères d'écart par défaut, entre les deux seuils de longueur ci-dessus |
 | Probabilité de mode "course" (question bonus, Qcm uniquement) | Global | 50 % par défaut, voir section 7 |
 | Ralentissement audio (question bonus) | Global | Activé/désactivé + facteur de ralentissement (0.65 par défaut), voir section 7 |
-| Affichage du tableau général | Partie | Au moins une fois par partie, par défaut après la série médiane, déclenchable aussi manuellement par le host |
+| Affichage du tableau général | Partie | Automatique : 1 fois à la moitié (< 7 séries) ou 2 fois au tiers/deux tiers (≥ 7 séries), jamais après la dernière ; manuel à tout moment (L) — voir section 7 |
+| Écart avec le joueur devant (`AfficherEcart`) | Partie | Activé par défaut (refonte UI lot 3) — case dans les réglages avancés du host, transmis via `ConfigurerPartieRequestDto.AfficherEcart`, `SerieAnnoncee` et le join |
 | Mode équipe | Partie | Activé/désactivé, voir section 8 |
 | Poids de tirage des cibles (`PoidsCibleTitre`/`PoidsCibleAuteur`/`PoidsCibleAnnee`) | Global | 40/40/20 par défaut (V2) — voir section 6 |
 | Tolérance Année, mode saisie (`ToleranceAnnee`) | Série | 3 ans par défaut (V2) — dégressivité par proximité, voir section 6 |

@@ -86,6 +86,7 @@ function buildConfigurerPartieRequest() {
     dureeFenetreReponseMs: parseInt(el("setup-duree-fenetre").value, 10) * 1000,
     themesVivier: themesSelectionnes(),
     config: null,
+    afficherEcart: el("setup-afficher-ecart").checked,
   };
 }
 
@@ -122,6 +123,7 @@ el("btn-create-game").addEventListener("click", async () => {
     state.titreIndexAffiche = -1;
     state.morceauxJoues = [];
     notify();
+    chargerPresets();
   } catch (err) {
     console.error(err);
     errorEl.textContent = "Erreur : " + (err.message || err);
@@ -200,9 +202,19 @@ function majResumeConfiguration() {
   }
 }
 
-el("presets").addEventListener("click", (event) => {
+el("presets").addEventListener("click", async (event) => {
   const bouton = event.target.closest(".preset");
   if (!bouton) return;
+
+  // Configuration enregistrée (lot 3) : « × » la supprime, un clic ailleurs l'applique en entier.
+  if (bouton.classList.contains("preset--enregistre")) {
+    const preset = presetsEnregistres.find((p) => p.nom === bouton.dataset.nom);
+    if (!preset) return;
+    if (event.target.closest(".preset-supprimer")) await supprimerPreset(preset.nom);
+    else appliquerPresetEnregistre(preset);
+    return;
+  }
+
   el("setup-nombre-series").value = bouton.dataset.series;
   el("setup-nombre-rounds").value = bouton.dataset.rounds;
   el("setup-duree-fenetre").value = bouton.dataset.duree;
@@ -213,3 +225,97 @@ for (const id of ["setup-nombre-series", "setup-nombre-rounds", "setup-duree-fen
   el(id).addEventListener("input", majResumeConfiguration);
 }
 majResumeConfiguration();
+
+// ----- Configurations enregistrées (refonte UI, lot 3) -----
+// Stockées sur le Pi (data/presets.json, voir GameHub.ListerPresets/EnregistrerPreset/
+// SupprimerPreset) : disponibles quel que soit le PC utilisé comme host. Un clic restaure tout le
+// formulaire, y compris les réglages propres à cette page (musique continue, délai d'enchaînement).
+
+let presetsEnregistres = [];
+
+export async function chargerPresets() {
+  try {
+    presetsEnregistres = await invoke.listerPresets();
+  } catch (err) {
+    console.error("Impossible de charger les configurations enregistrées :", err);
+    presetsEnregistres = [];
+  }
+  renderPresetsEnregistres();
+}
+
+function renderPresetsEnregistres() {
+  const conteneur = el("presets");
+  conteneur.querySelectorAll(".preset--enregistre").forEach((b) => b.remove());
+  for (const p of presetsEnregistres) {
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = "preset preset--enregistre";
+    bouton.dataset.nom = p.nom;
+    // data-series/rounds/duree : même surbrillance « format actif » que les préréglages fixes.
+    bouton.dataset.series = String(p.nombreSeries);
+    bouton.dataset.rounds = String(p.nombreRoundsClassiques);
+    bouton.dataset.duree = String(Math.round(p.dureeFenetreReponseMs / 1000));
+    bouton.innerHTML =
+      `<span class="preset-nom">★ ${escapeHtml(p.nom)}</span>` +
+      `<small>${p.nombreSeries} × ${p.nombreRoundsClassiques} · ${Math.round(p.dureeFenetreReponseMs / 1000)} s</small>` +
+      `<span class="preset-supprimer" title="Supprimer cette configuration" aria-label="Supprimer ${escapeHtml(p.nom)}">×</span>`;
+    conteneur.appendChild(bouton);
+  }
+  majResumeConfiguration();
+}
+
+function appliquerPresetEnregistre(p) {
+  el("setup-nombre-series").value = p.nombreSeries;
+  el("setup-nombre-rounds").value = p.nombreRoundsClassiques;
+  el("setup-duree-fenetre").value = Math.round(p.dureeFenetreReponseMs / 1000);
+  el("setup-delai-enchainement").value = Math.round(p.delaiEnchainementMs / 1000);
+  el("setup-audio-continu").checked = p.musiqueContinue;
+  el("setup-afficher-ecart").checked = p.afficherEcart;
+
+  const themes = new Set(p.themesVivier ?? []);
+  const aleatoire = el("setup-tags-aleatoire");
+  aleatoire.checked = themes.size === 0;
+  el("setup-tags-container")
+    .querySelectorAll(".tag-tile:not(.tag-tile--random) input")
+    .forEach((input) => {
+      input.disabled = aleatoire.checked;
+      input.checked = themes.has(input.value);
+    });
+
+  el("presets-note").textContent = `« ${p.nom} » appliquée — pense à valider la configuration.`;
+  majResumeConfiguration();
+}
+
+async function supprimerPreset(nom) {
+  if (!window.confirm(`Supprimer la configuration « ${nom} » ?`)) return;
+  try {
+    presetsEnregistres = await invoke.supprimerPreset(nom);
+    el("presets-note").textContent = `« ${nom} » supprimée.`;
+    renderPresetsEnregistres();
+  } catch (err) {
+    console.error(err);
+    el("presets-note").textContent = "Erreur : " + (err.message || err);
+  }
+}
+
+el("btn-enregistrer-preset").addEventListener("click", async () => {
+  const nom = window.prompt("Nom de la configuration (ex. Soirée famille) :")?.trim();
+  if (!nom) return;
+  try {
+    presetsEnregistres = await invoke.enregistrerPreset({
+      nom,
+      nombreSeries: lireEntier("setup-nombre-series", 1),
+      nombreRoundsClassiques: lireEntier("setup-nombre-rounds", 1),
+      dureeFenetreReponseMs: lireEntier("setup-duree-fenetre", 15) * 1000,
+      themesVivier: themesSelectionnes(),
+      musiqueContinue: el("setup-audio-continu").checked,
+      delaiEnchainementMs: lireEntier("setup-delai-enchainement", 10) * 1000,
+      afficherEcart: el("setup-afficher-ecart").checked,
+    });
+    el("presets-note").textContent = `« ${nom} » enregistrée.`;
+    renderPresetsEnregistres();
+  } catch (err) {
+    console.error(err);
+    el("presets-note").textContent = "Erreur : " + (err.message || err);
+  }
+});

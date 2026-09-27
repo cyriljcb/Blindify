@@ -27,6 +27,7 @@ class JoinResult {
     required this.joueurs,
     this.etatCourant,
     this.jokerDisponible = false,
+    this.afficherEcart = true,
   });
 
   final bool success;
@@ -47,6 +48,10 @@ class JoinResult {
   /// dehors d'un round/phase bonus actif) : état permanent du joueur pour la partie entière.
   final bool jokerDisponible;
 
+  /// Refonte UI (lot 3) — option de la partie : afficher entre deux rounds l'écart avec le joueur
+  /// devant (voir GameConnection.ecartAvecJoueurDevant). Vrai si absent (serveur plus ancien).
+  final bool afficherEcart;
+
   factory JoinResult.fromJson(Map<String, dynamic> json) => JoinResult(
         success: json['success'] as bool,
         errorMessage: json['errorMessage'] as String?,
@@ -61,5 +66,6 @@ class JoinResult {
         etatCourant:
             json['etatCourant'] != null ? EtatCourantJoueur.fromJson(json['etatCourant'] as Map<String, dynamic>) : null,
         jokerDisponible: json['jokerDisponible'] as bool? ?? false,
+        afficherEcart: json['afficherEcart'] as bool? ?? true,
       );
 }

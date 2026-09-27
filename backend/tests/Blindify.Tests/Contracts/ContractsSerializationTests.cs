@@ -63,7 +63,7 @@ public class ContractsSerializationTests
             Config: null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"nombreSeries":3,"nombreRoundsClassiques":8,"dureeFenetreReponseMs":20000,"themesVivier":["rock","pop"],"config":null,"pointsMax":100,"pointsMin":20,"penaliteMauvaiseReponseRatio":0.5,"penaliteAbsenceReponse":-5,"dureePhaseMiseMs":15000,"dureePhaseQuestionMs":20000}""",
+            """{"nombreSeries":3,"nombreRoundsClassiques":8,"dureeFenetreReponseMs":20000,"themesVivier":["rock","pop"],"config":null,"pointsMax":100,"pointsMin":20,"penaliteMauvaiseReponseRatio":0.5,"penaliteAbsenceReponse":-5,"dureePhaseMiseMs":15000,"dureePhaseQuestionMs":20000,"afficherEcart":true}""",
             json);
     }
 
@@ -97,7 +97,7 @@ public class ContractsSerializationTests
             null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1"}],"etatCourant":null,"jokerDisponible":false}""",
+            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1"}],"etatCourant":null,"jokerDisponible":false,"afficherEcart":true}""",
             json);
     }
 
@@ -140,7 +140,7 @@ public class ContractsSerializationTests
     {
         var dto = new EtatCourantConnexionDto(120, "team-1", null, true);
         var json = Serialize(dto);
-        Assert.Equal("""{"score":120,"teamId":"team-1","etatCourant":null,"jokerDisponible":true}""", json);
+        Assert.Equal("""{"score":120,"teamId":"team-1","etatCourant":null,"jokerDisponible":true,"afficherEcart":true}""", json);
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public class ContractsSerializationTests
     public void SerieAnnonceeDto_Golden()
     {
         var json = Serialize(new SerieAnnonceeDto(1, ["rock", "annees-1990"]));
-        Assert.Equal("""{"serieIndex":1,"tags":["rock","annees-1990"]}""", json);
+        Assert.Equal("""{"serieIndex":1,"tags":["rock","annees-1990"],"afficherEcart":true}""", json);
     }
 
     // ----- ValidateAnswerManuallyRequestDto.cs -> host/app.js:validerManuellement -----

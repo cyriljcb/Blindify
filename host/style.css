@@ -923,3 +923,19 @@ body.regie .action-principale { display: none; }
 .config-resume { margin: 0; font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink); }
 .reglages-avances summary { cursor: pointer; font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.06em; }
 .reglages-avances__champs { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.8rem; }
+
+/* ----- Configurations enregistrées (refonte UI, lot 3) ----- */
+
+.preset--enregistre { position: relative; padding-right: 2rem; }
+.preset-nom { text-transform: none; }
+.preset-supprimer {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.45rem;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.6;
+}
+.preset-supprimer:hover { opacity: 1; color: var(--coral); }
+.presets-actions { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+.presets-note { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-dim); }

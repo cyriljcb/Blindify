@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../motion.dart';
 import '../services/game_connection.dart';
+import '../widgets/carte_ecart.dart';
 import '../widgets/game_card.dart';
 import '../widgets/serie_badge.dart';
 
@@ -38,6 +39,9 @@ class SerieIntroScreen extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 300.ms, duration: BlindifyMotion.normal).slideY(begin: 0.3),
+          // Refonte UI (lot 3) : écart avec le joueur devant (si activé pour la partie).
+          const SizedBox(height: 24),
+          const CarteEcart(),
         ],
       ),
     );

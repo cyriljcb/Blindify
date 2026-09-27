@@ -27,6 +27,13 @@ public class GameSession
     /// exclusive au host web, voir CLAUDE.md) — jamais StartRound/ConfigurerPartie/CreateGame.</summary>
     public HashSet<string> AdminConnectionIds { get; set; } = [];
 
+    /// <summary>Refonte UI (lot 3) — dernier état de régie publié par la page host (libellé de
+    /// l'action suivante et disponibilité), renvoyé à un admin dès son authentification pour que sa
+    /// télécommande soit à jour sans attendre le prochain changement. Voir GameHub.PublierEtatRegie.</summary>
+    public string? RegieLibelleAction { get; set; }
+
+    public bool RegieActionDisponible { get; set; }
+
     /// <summary>Secret opaque généré à CreateGame, distinct du code de partie (public, connu des
     /// joueurs) — exigé par RejoinAsHost pour empêcher n'importe quel client du réseau local
     /// connaissant seulement le code de prendre le contrôle host (pause, override, fin de partie).</summary>

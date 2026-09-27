@@ -1,5 +1,6 @@
 using Blindify.Infrastructure.Configuration;
 using Blindify.Infrastructure.Flags;
+using Blindify.Infrastructure.Presets;
 using Blindify.Infrastructure.Stats;
 using Blindify.Infrastructure.Tracks;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITracksRepository, TracksRepository>();
         services.AddSingleton<IStatsRepository, StatsRepository>();
         services.AddSingleton<IFlagsRepository, FlagsRepository>();
+        services.AddSingleton<IPresetsRepository, PresetsRepository>();
 
         return services;
     }
