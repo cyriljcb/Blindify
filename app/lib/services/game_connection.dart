@@ -104,6 +104,11 @@ class GameConnection extends ChangeNotifier {
   bool roundAnswered = false;
   bool paused = false;
 
+  /// Vrai quand le dernier envoi de réponse (round classique ou bonus) a échoué malgré les
+  /// reprises de [_invoquerAvecReprise] — l'écran de réponse le signale et rend la main au joueur
+  /// pour qu'il réessaie, au lieu d'afficher "Réponse envoyée" alors que le serveur n'a rien reçu.
+  bool envoiReponseEchoue = false;
+
   /// V2, section 12.7 — un joker par joueur et par partie complète, optimiste par défaut (corrigé
   /// dès JoinGame/EtatCourant/reconnexion). jokerIndiceActuel : indice obtenu pour LE ROUND EN
   /// COURS (soit via [utiliserJoker], soit déjà présent dans currentRound.jokerIndice après une
@@ -296,6 +301,12 @@ class GameConnection extends ChangeNotifier {
       }
       return true;
     } catch (e) {
+      // Retour utilisateur (2026-09-27, joueur "incapable de répondre") : un start() expiré par
+      // [timeout] n'est PAS annulé — il pouvait aboutir plus tard en arrière-plan, laissant une
+      // connexion zombie qui recevait encore les événements (questions affichées) alors que [_hub]
+      // pointait déjà sur une autre connexion, morte, utilisée pour envoyer les réponses.
+      final echoue = _hub;
+      unawaited(echoue?.stop().catchError((_) {}));
       connecting = false;
       connected = false;
       // Ne yank pas vers l'écran de connexion manuelle si une partie est en cours (gameCode connu)
@@ -401,6 +412,7 @@ class GameConnection extends ChangeNotifier {
       final data = args![0] as Map<String, dynamic>;
       currentRound = RoundStarted.fromJson(data);
       roundAnswered = false;
+      envoiReponseEchoue = false;
       // V2, section 12.7 : null sur un round fraîchement diffusé (currentRound.jokerIndice l'est
       // toujours ici) — la lecture depuis l'objet plutôt qu'un null en dur garde un seul point de
       // vérité avec la branche reconnexion d'appliquerEtatCourant.
@@ -463,25 +475,26 @@ class GameConnection extends ChangeNotifier {
     // Déclenché par le host (RejouerPartie côté serveur) — même code, mêmes joueurs,
     // scores remis à zéro côté serveur. Pas de bouton côté joueur : seul le host décide.
     hub.on('GameRestarted', (_) {
-      score = 0;
-      serieIntro = null;
-      currentRound = null;
-      roundAnswered = false;
-      jokerDisponible = true;
-      jokerIndiceActuel = null;
-      lastRoundResult = null;
-      scoreUpdate = null;
-      finalScores = null;
-      finalTitres = [];
-      morceauxJoues.clear();
-      flagError = null;
-      bonusStakeOptions = null;
-      bonusPalierSelectionne = null;
-      bonusStakeEnvoyee = false;
-      bonusQuestion = null;
-      bonusAnswered = false;
-      lastBonusResult = null;
+      _reinitialiserEtatPartie();
       screen = AppScreen.lobby;
+      notifyListeners();
+    });
+
+    // Retour utilisateur (2026-09-27) — le host a fermé ce salon pour en créer un nouveau (nouveau
+    // code, voir GameHub.FermerSalon) : l'ancien code n'existe plus côté serveur, retour à l'écran
+    // « rejoindre » en oubliant le code pour ne pas retenter un rejoin automatique dessus.
+    hub.on('SalonFerme', (_) {
+      _reinitialiserEtatPartie();
+      _rejoinRetryTimer?.cancel();
+      _rejoinRetryTimer = null;
+      _prefs?.remove(_prefsGameCode);
+      gameCode = null;
+      teamId = null;
+      teams = [];
+      players.clear();
+      showLeaderboard = false;
+      errorMessage = 'Le host a fermé le salon — rejoins le nouveau code.';
+      screen = AppScreen.join;
       notifyListeners();
     });
 
@@ -490,6 +503,7 @@ class GameConnection extends ChangeNotifier {
       bonusStakeOptions = BonusStakeOptions.fromJson(data);
       bonusPalierSelectionne = null;
       bonusStakeEnvoyee = false;
+      envoiReponseEchoue = false;
       screen = AppScreen.bonusStake;
       notifyListeners();
     });
@@ -499,12 +513,40 @@ class GameConnection extends ChangeNotifier {
     hub.on('BonusResult', (args) => onBonusResult(args![0] as Map<String, dynamic>));
   }
 
+  /// État propre à une partie, remis à zéro par GameRestarted (même salon, scores à 0 côté serveur)
+  /// et SalonFerme (salon supprimé). paused inclus : RejouerPartie remet EnPause à false côté
+  /// serveur sans diffuser GameResumed — sans ça, un joueur resté "en pause" localement ne pouvait
+  /// plus répondre à aucun round de la partie suivante.
+  void _reinitialiserEtatPartie() {
+    score = 0;
+    paused = false;
+    serieIntro = null;
+    currentRound = null;
+    roundAnswered = false;
+    envoiReponseEchoue = false;
+    jokerDisponible = true;
+    jokerIndiceActuel = null;
+    lastRoundResult = null;
+    scoreUpdate = null;
+    finalScores = null;
+    finalTitres = [];
+    morceauxJoues.clear();
+    flagError = null;
+    bonusStakeOptions = null;
+    bonusPalierSelectionne = null;
+    bonusStakeEnvoyee = false;
+    bonusQuestion = null;
+    bonusAnswered = false;
+    lastBonusResult = null;
+  }
+
   // Extraits de _registerHandlers en méthodes nommées (visibilité fichier, pas privées) pour être
   // exercables directement par des tests unitaires sans connexion SignalR réelle — voir
   // app/test/services/game_connection_test.dart et docs/refactor-decisions.md section 4.
   void onBonusQuestionStarted(Map<String, dynamic> data) {
     bonusQuestion = BonusQuestionStarted.fromJson(data);
     bonusAnswered = false;
+    envoiReponseEchoue = false;
     _introCourseTimer?.cancel();
 
     if (bonusQuestion!.estCourse) {
@@ -545,6 +587,9 @@ class GameConnection extends ChangeNotifier {
   void _planifierReconnexion() {
     if (_reconnectTimer != null || serverUrl == null) return;
     _reconnectTimer = Timer.periodic(_delaiRetryReconnexion, (_) async {
+      // Une tentative précédente encore en cours : ne pas en lancer une deuxième en parallèle, qui
+      // remplacerait [_hub] pendant que la première peut encore aboutir (voir catch de [connect]).
+      if (connecting) return;
       if (connected) {
         _reconnectTimer?.cancel();
         _reconnectTimer = null;
@@ -827,18 +872,63 @@ class GameConnection extends ChangeNotifier {
     if (roundAnswered || paused) return;
 
     roundAnswered = true;
+    envoiReponseEchoue = false;
     notifyListeners();
 
+    final roundId = currentRound?.roundId;
     try {
       // roundId omis si currentRound est encore null (ne devrait pas arriver en usage réel — cet
       // écran n'est affiché qu'après réception de RoundStarted) : le serveur traite alors la
       // soumission comme un roundId périmé et l'ignore silencieusement, plutôt que de planter.
-      await _hub?.invoke('SubmitAnswer', args: [
-        {if (currentRound != null) 'roundId': currentRound!.roundId, 'reponse': reponse}
+      await _invoquerAvecReprise('SubmitAnswer', [
+        {'roundId': ?roundId, 'reponse': reponse}
       ]);
     } catch (e) {
-      errorMessage = 'Erreur : ${e.toString()}';
-      notifyListeners();
+      // Toujours sur le même round : rendre la main au joueur pour qu'il réessaie, plutôt que de
+      // laisser "Réponse envoyée" affiché alors que le serveur n'a rien reçu.
+      if (currentRound?.roundId == roundId) {
+        roundAnswered = false;
+        envoiReponseEchoue = true;
+        notifyListeners();
+      }
+    }
+  }
+
+  static const _tentativesEnvoi = 3;
+  @visibleForTesting
+  Duration delaiAttenteConnexion = const Duration(seconds: 4);
+
+  /// Retour utilisateur (2026-09-27, joueur "incapable de répondre", pénalité d'absence à chaque
+  /// round) : l'envoi d'une réponse passait par un simple `_hub?.invoke`, qui ne faisait rien si
+  /// [_hub] était null et échouait sans rien afficher si la connexion était en pleine reconnexion.
+  /// Attend désormais que la connexion soit rétablie (borné) et retente l'appel. Une réponse déjà
+  /// reçue par le serveur mais dont l'accusé s'est perdu est simplement ignorée au second envoi
+  /// ("déjà répondu" côté serveur), donc la reprise est sans risque.
+  Future<Object?> _invoquerAvecReprise(String methode, List<Object> args) async {
+    Object? derniereErreur;
+    for (var tentative = 0; tentative < _tentativesEnvoi; tentative++) {
+      final hub = await _attendreConnexion();
+      if (hub == null) {
+        derniereErreur = StateError('Connexion au serveur indisponible');
+        continue;
+      }
+      try {
+        return await hub.invoke(methode, args: args);
+      } catch (e) {
+        derniereErreur = e;
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+    }
+    throw derniereErreur ?? StateError('Envoi impossible');
+  }
+
+  Future<HubConnection?> _attendreConnexion() async {
+    final limite = DateTime.now().add(delaiAttenteConnexion);
+    while (true) {
+      final hub = _hub;
+      if (hub != null && hub.state == HubConnectionState.Connected) return hub;
+      if (DateTime.now().isAfter(limite)) return null;
+      await Future<void>.delayed(const Duration(milliseconds: 250));
     }
   }
 
@@ -869,13 +959,20 @@ class GameConnection extends ChangeNotifier {
     bonusStakeEnvoyee = true;
     notifyListeners();
 
+    final roundId = bonusStakeOptions?.roundId;
     try {
-      await _hub?.invoke('SelectStake', args: [
-        {if (bonusStakeOptions != null) 'roundId': bonusStakeOptions!.roundId, 'palierIndex': palierIndex}
+      await _invoquerAvecReprise('SelectStake', [
+        {'roundId': ?roundId, 'palierIndex': palierIndex}
       ]);
     } catch (e) {
-      errorMessage = 'Erreur : ${e.toString()}';
-      notifyListeners();
+      // Voir submitAnswer — rend la main pour un nouveau choix plutôt que de laisser le palier
+      // "safe" par défaut s'appliquer à l'insu du joueur.
+      if (bonusStakeOptions?.roundId == roundId) {
+        bonusPalierSelectionne = null;
+        bonusStakeEnvoyee = false;
+        envoiReponseEchoue = true;
+        notifyListeners();
+      }
     }
   }
 
@@ -883,15 +980,21 @@ class GameConnection extends ChangeNotifier {
     if (bonusAnswered || paused) return;
 
     bonusAnswered = true;
+    envoiReponseEchoue = false;
     notifyListeners();
 
+    final roundId = bonusQuestion?.roundId;
     try {
-      await _hub?.invoke('SubmitBonusAnswer', args: [
-        {if (bonusQuestion != null) 'roundId': bonusQuestion!.roundId, 'reponse': reponse}
+      await _invoquerAvecReprise('SubmitBonusAnswer', [
+        {'roundId': ?roundId, 'reponse': reponse}
       ]);
     } catch (e) {
-      errorMessage = 'Erreur : ${e.toString()}';
-      notifyListeners();
+      // Voir submitAnswer.
+      if (bonusQuestion?.roundId == roundId) {
+        bonusAnswered = false;
+        envoiReponseEchoue = true;
+        notifyListeners();
+      }
     }
   }
 

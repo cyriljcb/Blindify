@@ -29,14 +29,14 @@ public class GameHub(
     IGameCodeGenerator codeGenerator,
     IRoundService roundService,
     IBonusRoundService bonusRoundService,
-    IScoringService scoringService,
     ITracksRepository tracksRepository,
     IStatsRepository statsRepository,
     IFlagsRepository flagsRepository,
     IJokerCoverTokenStore jokerCoverTokenStore,
     RoundTimerCoordinator timerCoordinator,
     BonusTimerCoordinator bonusTimerCoordinator,
-    IConfiguration configuration) : Hub
+    IConfiguration configuration,
+    ILogger<GameHub> logger) : Hub
 {
     // ----- Méthodes host -----
 
@@ -84,10 +84,6 @@ public class GameHub(
         {
             if (session.Etat != GameState.Lobby)
                 throw new HubException("La partie a déjà démarré — configuration verrouillée.");
-
-            if (!scoringService.EstPenaliteAbsenceEquitable(request.PenaliteAbsenceReponse, request.PenaliteMauvaiseReponseRatio, request.PointsMin))
-                throw new HubException(
-                    $"Pénalité d'absence ({request.PenaliteAbsenceReponse}) trop sévère par rapport à la pénalité de mauvaise réponse et à PointsMin ({request.PointsMin}) : un joueur hésitant serait mathématiquement incité à ne jamais répondre.");
 
             // Résolu AVANT la construction des séries (et non après, comme avant V2) : SeriesPlanner.
             // PaliersPourSerie a besoin de Config.FacteurProgressionPaliers pour chaque série.
@@ -398,6 +394,41 @@ public class GameHub(
         await Clients.Group(session.Id).SendAsync("GameEnded", new GameEndedDto(ScoreDtoBuilder.Construire(session), titres));
     }
 
+    /// <summary>Retour utilisateur (2026-09-27) — pendant de RejouerPartie : au lieu de relancer le
+    /// même salon (même code, mêmes joueurs), ferme définitivement celui-ci pour que le host en crée un
+    /// nouveau (CreateGame, nouveau code), typiquement quand une partie du groupe arrête de jouer.
+    /// Host uniquement, autorisé dans tout état. Diffuse SalonFerme aux joueurs (retour à l'écran
+    /// « rejoindre ») puis retire la session du store : un rejoin avec l'ancien code répond ensuite
+    /// « Partie introuvable » comme pour une partie disparue.</summary>
+    public async Task FermerSalon()
+    {
+        var session = ResoudreSessionHost();
+        List<string> connexions;
+
+        lock (session.Lock)
+        {
+            session.Etat = GameState.Termine;
+            connexions = session.Players.Select(p => p.ConnectionId).OfType<string>()
+                .Concat(session.AdminConnectionIds)
+                .Append(Context.ConnectionId)
+                .Distinct()
+                .ToList();
+        }
+
+        timerCoordinator.Annuler(session.Id);
+        bonusTimerCoordinator.Annuler(session.Id);
+
+        await Clients.OthersInGroup(session.Id).SendAsync("SalonFerme");
+
+        foreach (var connectionId in connexions)
+        {
+            sessionStore.DissocierConnexion(connectionId);
+            await Groups.RemoveFromGroupAsync(connectionId, session.Id);
+        }
+
+        sessionStore.Remove(session.Id);
+    }
+
     /// <summary>Signalement en direct (V2, section 12.4) — host ou admin authentifié uniquement,
     /// jamais les joueurs (ResoudreSessionHostOuAdmin), depuis l'écran de reveal (l'admin est aussi un
     /// joueur, afficher le morceau plus tôt lui donnerait la réponse — appliqué côté client). Vérifie
@@ -589,7 +620,15 @@ public class GameHub(
 
             reponse = roundService.SoumettreReponse(session, round, serie.Config, track, joueur.PlayerId, request.RoundId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
             if (reponse is null)
+            {
+                // Retour utilisateur (2026-09-27) : un joueur "incapable de répondre" perdait la pénalité
+                // d'absence à chaque round sans aucune trace côté serveur — le rejet reste silencieux pour
+                // le client (contrat inchangé) mais est désormais loggé avec sa raison.
+                logger.LogWarning("SubmitAnswer rejeté ({Raison}) — partie {Code}, joueur {PlayerId} ({Nom}), roundId reçu {RoundIdRecu}, round courant {RoundIdCourant}",
+                    RaisonRejet(session.EnPause, round.DebutRound is null, round.Id != request.RoundId, round.Reponses.Any(r => r.PlayerId == joueur.PlayerId)),
+                    session.Id, joueur.PlayerId, joueur.Nom, request.RoundId, round.Id);
                 return new RoundAnswerResultDto(false, 0, joueur.Score);
+            }
 
             tempsEcouleMs = round.DebutRound is null ? 0 : (int)Math.Max(0, CalculerTempsEcouleMs(session, round.DebutRound.Value, round.DureeEnPauseMs));
         }
@@ -669,7 +708,16 @@ public class GameHub(
 
             reponse = bonusRoundService.SoumettreReponse(session, bonusRound, serie.Config, track, joueur.PlayerId, request.RoundId, request.Reponse, DateTimeOffset.UtcNow, tracksRepository.GetById);
             if (reponse is null)
+            {
+                // Voir SubmitAnswer. Une course déjà tranchée par un autre joueur est un rejet normal, pas
+                // une anomalie : non loggée.
+                var dejaRepondu = bonusRound.Reponses.Any(r => r.PlayerId == joueur.PlayerId);
+                if (!(bonusRound.EstCourse && bonusRound.Reponses.Count > 0 && !dejaRepondu))
+                    logger.LogWarning("SubmitBonusAnswer rejeté ({Raison}) — partie {Code}, joueur {PlayerId} ({Nom}), roundId reçu {RoundIdRecu}, bonus courant {RoundIdCourant}",
+                        RaisonRejet(session.EnPause, bonusRound.DebutPhaseQuestion is null, bonusRound.Id != request.RoundId, dejaRepondu),
+                        session.Id, joueur.PlayerId, joueur.Nom, request.RoundId, bonusRound.Id);
                 return new BonusAnswerResultDto(false, 0, joueur.Score);
+            }
 
             tempsEcouleMs = bonusRound.DebutPhaseQuestion is null
                 ? 0
@@ -765,6 +813,13 @@ public class GameHub(
     }
 
     // ----- Aides privées -----
+
+    private static string RaisonRejet(bool enPause, bool nonDemarre, bool roundIdPerime, bool dejaRepondu) =>
+        enPause ? "partie en pause"
+        : roundIdPerime ? "roundId périmé"
+        : nonDemarre ? "phase de réponse non démarrée"
+        : dejaRepondu ? "déjà répondu"
+        : "autre";
 
     private static void ReassocierConnexion(Player joueur, string connectionId)
     {

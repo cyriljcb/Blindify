@@ -276,7 +276,7 @@ pointsEnJeu(t) = max(min, max - (tempsÉcoulé / duréeFenêtre) × (max - min))
 
 **Pourquoi une pénalité asymétrique (×0.5) plutôt que symétrique** : ne pas répondre du tout coûte déjà une pénalité fixe (étape 4), donc l'abstention n'est jamais "gratuite" — la question est seulement de savoir à partir de quel niveau de certitude tenter sa chance devient rentable. Avec une pénalité égale au gain (×1), deviner sur un QCM à 4 options sans aucun indice donne une espérance de `-0.5 × pointsEnJeu`, pire qu'une abstention trop dissuasive, donc un joueur hésitant aurait mathématiquement intérêt à ne jamais répondre — à l'encontre de l'esprit "tout le monde participe". Avec ×0.5, ce même guess à l'aveugle reste à espérance négative (`-0.125 × pointsEnJeu`, ce n'est pas un moyen de "rentabiliser le hasard pur"), mais dès que le joueur a éliminé ne serait-ce qu'une option parmi les 4 (3 candidats restants), l'espérance devient nulle, et à 2 candidats restants elle devient nettement positive (`+0.25 × pointsEnJeu`). Le rôle du ×0.5 est donc d'inciter à répondre dès qu'on a un minimum d'indice, pas de rendre le pur hasard profitable, tout en gardant un vrai coût à l'erreur.
 
-**Pénalité d'absence (V2)** : la valeur par défaut était `-5`, ce qui rendait un clic au hasard sur un QCM à 4 options *plus* rentable en espérance (`-0.125 × pointsEnJeu`, souvent moins sévère que -5 en fin de fenêtre quand pointsEnJeu ≈ PointsMin) que l'abstention elle-même — à l'encontre de la logique ci-dessus. Défaut passé à `-2`. `GameHub.ConfigurerPartie` refuse désormais (`HubException`) toute config où `PenaliteAbsenceReponse ≤ -(0.75 × PenaliteMauvaiseReponseRatio - 0.25) × PointsMin` (`IScoringService.EstPenaliteAbsenceEquitable`), pour ne pas pouvoir reproduire ce déséquilibre par une reconfiguration ultérieure.
+**Pénalité d'absence** : `-5` fixe par défaut. Brièvement passée à `-2` en V2, avec un garde-fou dans `ConfigurerPartie` qui refusait toute valeur plus sévère que l'espérance d'un clic au hasard sur un QCM à 4 options (`-0.125 × pointsEnJeu`, soit -2.5 quand pointsEnJeu ≈ PointsMin = 20). Retour utilisateur (2026-09-27) : -2 « ne fait pas pro ». Remise à `-5` et garde-fou supprimé : on assume qu'en fin de fenêtre, un clic au hasard soit légèrement plus rentable que l'abstention, ce qui reste cohérent avec l'objectif « tout le monde tente une réponse ».
 
 ### Cible de la question (titre, auteur, film ou année)
 
@@ -441,6 +441,7 @@ Activable via `modeÉquipe` sur `GameSession`. Chaque joueur est rattaché à un
 | `NextRound()` | Passe au round suivant |
 | `EndGame()` | Termine la partie |
 | `RejouerPartie()` | Uniquement si la partie est `Terminée` : relance une nouvelle manche avec le même code et les mêmes joueurs — mêmes configs/modes de série qu'à la création mais nouvelle sélection de morceaux, scores remis à zéro, session repassée en `Lobby`. Évite aux joueurs de retaper le code entre deux manches. |
+| `FermerSalon()` | (2026-09-27) Pendant de `RejouerPartie` : ferme définitivement le salon (dans n'importe quel état), diffuse `SalonFerme` aux joueurs, dissocie toutes les connexions et retire la session du store. Le host enchaîne sur `CreateGame` pour obtenir un **nouveau code** — utile quand une partie du groupe arrête de jouer. Un rejoin avec l'ancien code répond ensuite « Partie introuvable ». |
 | `AuthenticateAdmin(password)` *(host ou joueur)* | Authentifie la connexion courante comme admin (V2, `Admin:RemoteControlPassword`, distinct du `hostSecret`) — voir "Contrôle admin depuis l'app Flutter" section 2. Débloque `PauseGame`/`ResumeGame`/`ShowLeaderboard`/`EndGame`/`SignalerMorceau` en plus du host, jamais les actions ci-dessus qui restent exclusives au host web |
 | `SignalerMorceau(SignalementRequestDto)` *(host ou admin)* | V2, section 12.4 — `{ trackId, raison, commentaire? }`. Vérifie que `trackId` a bien été joué dans la session, déduplique même morceau + même raison + même partie. Retourne `{ flagId, dejaSignale }`, diffuse `MorceauSignale` au host et aux admins seulement |
 
@@ -485,6 +486,7 @@ RoundId (V2) : `SubmitAnswer`/`SelectStake`/`SubmitBonusAnswer` reprennent le `R
 | `GamePaused` / `GameResumed` | État de pause |
 | `GameEnded` | Scores finaux (`score`, même forme que `ScoreUpdate`) + `titres` (V2, section 12.6) — voir "Titres de fin de partie" |
 | `GameRestarted` | Diffusé après `RejouerPartie()` — ramène tous les clients à l'écran du lobby (même code, mêmes joueurs, scores à zéro) |
+| `SalonFerme` | (2026-09-27) Diffusé par `FermerSalon()` aux joueurs (pas au host) — l'app oublie le code de partie, remet son état à zéro et revient à l'écran « rejoindre » |
 | `MorceauSignale` *(host + admins uniquement, V2)* | `{ trackId, titre, artiste, raison }` — confirmation visuelle après `SignalerMorceau`, jamais diffusé aux joueurs |
 
 ## 11. Paramètres de configuration
@@ -499,7 +501,7 @@ Tous ces éléments sont des paramètres de partie/série, pas des valeurs figé
 | Durée de la phase question (question bonus) | Série | Pas de dégressivité, juste une limite dure |
 | Paliers de mise (4 valeurs) | Série | Calculés par le serveur, voir section 7 |
 | Facteur de progression des paliers (`FacteurProgressionPaliers`) | Global | 1.6 par défaut (V2) — ratio géométrique constant entre séries, voir section 7 |
-| Pénalité d'absence de réponse (`PenaliteAbsenceReponse`) | Série | -2 par défaut (V2, était -5) — `ConfigurerPartie` rejette une valeur trop sévère par rapport à `PenaliteMauvaiseReponseRatio`/`PointsMin`, voir section 6 |
+| Pénalité d'absence de réponse (`PenaliteAbsenceReponse`) | Série | -5 par défaut (brièvement -2 en V2, voir section 6) |
 | Probabilité d'un QCM piège réel (`trapWith`) | Global | 5 % par défaut, ajustable |
 | Probabilité d'une feinte champ croisé | Global | 10 % par défaut, ajustable |
 | Probabilité d'une feinte texte inventé (`trapTextArtist`) | Global | 5 % par défaut, ajustable, cible Auteur uniquement |

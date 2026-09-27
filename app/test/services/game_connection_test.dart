@@ -165,15 +165,29 @@ void main() {
   });
 
   group('Gardes anti-double-soumission', () {
+    // Sans hub, l'envoi échoue après les reprises (délai d'attente de connexion mis à zéro ici) :
+    // l'état "envoyé" doit être posé immédiatement, bloquer un second envoi tant que le premier est
+    // en vol, puis être annulé avec envoiReponseEchoue pour permettre de réessayer.
+    GameConnection sansConnexion() => GameConnection()..delaiAttenteConnexion = Duration.zero;
+
     test('submitAnswer : le premier appel passe roundAnswered à true, les suivants sont sans effet', () async {
-      final game = GameConnection();
+      final game = sansConnexion();
       expect(game.roundAnswered, isFalse);
 
-      await game.submitAnswer('a');
+      final envoi = game.submitAnswer('a');
       expect(game.roundAnswered, isTrue);
 
-      await game.submitAnswer('b');
+      await game.submitAnswer('b'); // ignoré : premier envoi encore en cours
       expect(game.roundAnswered, isTrue);
+      await envoi;
+    });
+
+    test('submitAnswer : un envoi en échec rend la main au joueur et le signale', () async {
+      final game = sansConnexion();
+
+      await game.submitAnswer('a');
+      expect(game.roundAnswered, isFalse);
+      expect(game.envoiReponseEchoue, isTrue);
     });
 
     test('submitAnswer : aucun effet pendant une pause', () async {
@@ -185,26 +199,32 @@ void main() {
     });
 
     test('selectStake : le premier appel passe bonusStakeEnvoyee à true et mémorise le palier', () async {
-      final game = GameConnection();
+      final game = sansConnexion();
       expect(game.bonusStakeEnvoyee, isFalse);
 
-      await game.selectStake(2);
+      final envoi = game.selectStake(2);
       expect(game.bonusStakeEnvoyee, isTrue);
       expect(game.bonusPalierSelectionne, 2);
 
       await game.selectStake(0);
       expect(game.bonusPalierSelectionne, 2); // deuxième appel ignoré, palier inchangé
+      await envoi;
+      expect(game.bonusStakeEnvoyee, isFalse); // échec : nouveau choix possible
+      expect(game.envoiReponseEchoue, isTrue);
     });
 
     test('submitBonusAnswer : le premier appel passe bonusAnswered à true, les suivants sont sans effet', () async {
-      final game = GameConnection();
+      final game = sansConnexion();
       expect(game.bonusAnswered, isFalse);
 
-      await game.submitBonusAnswer('a');
+      final envoi = game.submitBonusAnswer('a');
       expect(game.bonusAnswered, isTrue);
 
       await game.submitBonusAnswer('b');
       expect(game.bonusAnswered, isTrue);
+      await envoi;
+      expect(game.bonusAnswered, isFalse);
+      expect(game.envoiReponseEchoue, isTrue);
     });
   });
 }

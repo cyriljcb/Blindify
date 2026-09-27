@@ -48,6 +48,7 @@ export const invoke = {
   resumeGame: () => connection.invoke("ResumeGame"),
   endGame: () => connection.invoke("EndGame"),
   rejouerPartie: () => connection.invoke("RejouerPartie"),
+  fermerSalon: () => connection.invoke("FermerSalon"),
   // V2, section 12.4 — commentaire: null si vide, jamais une chaîne vide (SignalementRequestDto.Commentaire
   // reste optionnel côté contrat).
   signalerMorceau: (trackId, raison, commentaire) =>

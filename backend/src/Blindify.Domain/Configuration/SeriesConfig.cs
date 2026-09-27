@@ -18,11 +18,11 @@ public class SeriesConfig
     public double PenaliteMauvaiseReponseRatio { get; set; } = 0.5;
 
     /// <summary>Points fixes (négatifs) perdus en cas d'absence de réponse dans le délai — voir architecture.md
-    /// section 6. Retour utilisateur V2 : -5 rendait un clic au hasard sur un QCM à 4 options plus rentable
-    /// en espérance que l'abstention (-2.5 en moyenne contre -5 fixe), à l'encontre de l'esprit "tout le
-    /// monde participe". Passé à -2 ; voir IScoringService.EstPenaliteAbsenceEquitable pour la règle qui
-    /// empêche de reconfigurer une pénalité aussi déséquilibrée.</summary>
-    public int PenaliteAbsenceReponse { get; set; } = -2;
+    /// section 6. Brièvement passé à -2 en V2 (avec un garde-fou refusant toute valeur plus sévère que
+    /// l'espérance d'un clic au hasard en QCM) ; retour utilisateur (2026-09-27) : -2 ne fait pas "pro",
+    /// remis à -5 et garde-fou supprimé — on assume qu'un clic au hasard soit légèrement plus rentable
+    /// que l'abstention.</summary>
+    public int PenaliteAbsenceReponse { get; set; } = -5;
 
     /// <summary>4 paliers croissants (safe / moyen / moyen+ / risqué) — voir architecture.md section 7.</summary>
     public int[] PaliersDeMise { get; set; } = new int[4];

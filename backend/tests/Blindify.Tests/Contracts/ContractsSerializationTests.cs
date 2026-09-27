@@ -63,7 +63,7 @@ public class ContractsSerializationTests
             Config: null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"nombreSeries":3,"nombreRoundsClassiques":8,"dureeFenetreReponseMs":20000,"themesVivier":["rock","pop"],"config":null,"pointsMax":100,"pointsMin":20,"penaliteMauvaiseReponseRatio":0.5,"penaliteAbsenceReponse":-2,"dureePhaseMiseMs":15000,"dureePhaseQuestionMs":20000}""",
+            """{"nombreSeries":3,"nombreRoundsClassiques":8,"dureeFenetreReponseMs":20000,"themesVivier":["rock","pop"],"config":null,"pointsMax":100,"pointsMin":20,"penaliteMauvaiseReponseRatio":0.5,"penaliteAbsenceReponse":-5,"dureePhaseMiseMs":15000,"dureePhaseQuestionMs":20000}""",
             json);
     }
 

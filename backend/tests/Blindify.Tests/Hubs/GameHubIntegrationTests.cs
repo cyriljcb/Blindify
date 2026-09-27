@@ -259,6 +259,41 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     }
 
     [Fact]
+    public async Task FermerSalon_PrevientLesJoueursEtPermetDeRecreerUnSalonAvecUnNouveauCode()
+    {
+        var salonFermeTcs = new TaskCompletionSource();
+        _playerConnection.On("SalonFerme", () => salonFermeTcs.TrySetResult());
+
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await _hostConnection.InvokeAsync("EndGame");
+
+        await _hostConnection.InvokeAsync("FermerSalon");
+        await AttendreAsync(() => salonFermeTcs.Task.IsCompleted);
+
+        // L'ancien code n'existe plus, et la connexion joueur n'y est plus rattachée.
+        var rejoinAncien = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        Assert.False(rejoinAncien.Success);
+        await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync("StartRound"));
+
+        // Le même host recrée un salon, avec un nouveau code, que le joueur peut rejoindre.
+        var nouveau = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        Assert.NotEqual(creation.Code, nouveau.Code);
+        var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", nouveau.Code, "Alice", "player-1");
+        Assert.True(join.Success);
+        Assert.Equal(0, join.Score);
+    }
+
+    [Fact]
+    public async Task FermerSalon_ParUnJoueur_EstRefuse()
+    {
+        var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
+        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+
+        await Assert.ThrowsAsync<HubException>(() => _playerConnection.InvokeAsync("FermerSalon"));
+    }
+
+    [Fact]
     public async Task AuthenticateAdmin_MotDePasseCorrect_PermetPauseSansDelogerLeHost()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);

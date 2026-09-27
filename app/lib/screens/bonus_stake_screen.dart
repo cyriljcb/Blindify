@@ -98,6 +98,8 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
           if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.bonusStakeEnvoyee && !game.paused)
             const AnswerBanner(text: 'Mise envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
+          if (game.envoiReponseEchoue && !game.bonusStakeEnvoyee && !game.paused)
+            const AnswerBanner(text: 'Mise non reçue par le serveur (connexion) — choisis à nouveau.', color: BlindifyColors.bad),
           const SizedBox(height: 12),
           Expanded(
             child: FillHeightList(

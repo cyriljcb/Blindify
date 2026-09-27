@@ -73,26 +73,6 @@ public class ScoringServiceTests
         Assert.Equal(-5, points);
     }
 
-    [Fact]
-    public void EstPenaliteAbsenceEquitable_DefautV2_EstAcceptee()
-    {
-        // ratio=0.5, PointsMin=20 -> seuil = -(0.75*0.5-0.25)*20 = -2.5 ; -2 > -2.5 -> équitable.
-        Assert.True(_service.EstPenaliteAbsenceEquitable(penaliteAbsenceReponse: -2, penaliteMauvaiseReponseRatio: 0.5, pointsMin: 20));
-    }
-
-    [Fact]
-    public void EstPenaliteAbsenceEquitable_AncienneValeurV1_EstRejetee()
-    {
-        // -5 <= -2.5 : rendait un clic au hasard sur un QCM plus rentable que l'abstention.
-        Assert.False(_service.EstPenaliteAbsenceEquitable(penaliteAbsenceReponse: -5, penaliteMauvaiseReponseRatio: 0.5, pointsMin: 20));
-    }
-
-    [Fact]
-    public void EstPenaliteAbsenceEquitable_PenaliteNulle_EstToujoursAcceptee()
-    {
-        Assert.True(_service.EstPenaliteAbsenceEquitable(penaliteAbsenceReponse: 0, penaliteMauvaiseReponseRatio: 0.5, pointsMin: 20));
-    }
-
     // ----- V2, section 12.5 : cible Année -----
 
     [Fact]

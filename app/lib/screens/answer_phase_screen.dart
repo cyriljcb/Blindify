@@ -173,6 +173,8 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
           if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.roundAnswered && !game.paused)
             const AnswerBanner(text: 'Réponse envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
+          if (game.envoiReponseEchoue && !game.roundAnswered && !game.paused)
+            const AnswerBanner(text: 'Réponse non reçue par le serveur (connexion) — réessaie.', color: BlindifyColors.bad),
           const SizedBox(height: 8),
           Expanded(
             child: _buildAnswerArea(
@@ -238,6 +240,8 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
           if (game.paused) const AnswerBanner(text: 'Partie en pause — en attente du host.', color: BlindifyColors.warn),
           if (game.bonusAnswered && !game.paused)
             const AnswerBanner(text: 'Réponse envoyée — en attente des autres joueurs.', color: BlindifyColors.good),
+          if (game.envoiReponseEchoue && !game.bonusAnswered && !game.paused)
+            const AnswerBanner(text: 'Réponse non reçue par le serveur (connexion) — réessaie.', color: BlindifyColors.bad),
           const SizedBox(height: 8),
           Expanded(
             child: _buildAnswerArea(

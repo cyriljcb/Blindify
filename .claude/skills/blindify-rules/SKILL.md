@@ -16,7 +16,7 @@ Résumé opérationnel. Le détail complet (schémas, diagrammes, exemples JSON,
    tempsÉcoulé = (maintenant - débutRound) - duréeEnPauseMs
    pointsEnJeu = max(min, max - (tempsÉcoulé / duréeFenêtre) × (max - min))
    ```
-   Juste → `+pointsEnJeu`. Faux → `-pointsEnJeu × 0.5` (pénalité réduite pour inciter à toujours tenter une réponse plutôt qu'à s'abstenir — voir `docs/architecture.md` section 6 pour la justification). Pas de réponse en fin de round → `-2` fixe (V2, était `-5` ; `ConfigurerPartie` rejette une valeur trop sévère par rapport au ratio de pénalité et à `PointsMin`).
+   Juste → `+pointsEnJeu`. Faux → `-pointsEnJeu × 0.5` (pénalité réduite pour inciter à toujours tenter une réponse plutôt qu'à s'abstenir — voir `docs/architecture.md` section 6 pour la justification). Pas de réponse en fin de round → `-5` fixe (brièvement `-2` en V2, remis à `-5` le 2026-09-27, plus aucun garde-fou sur cette valeur).
 4. `duréeEnPauseMs` neutralise le temps où la partie était en pause (voir plus bas).
 
 ## Cible du round (Titre / Auteur / Film / Année)

@@ -485,6 +485,42 @@ el("btn-rejouer").addEventListener("click", async () => {
   }
 });
 
+// Retour utilisateur (2026-09-27) — pendant de "Rejouer" : ferme ce salon côté serveur (les joueurs
+// reviennent à l'écran « rejoindre », voir GameHub.FermerSalon) et repart sur l'écran de création
+// pour obtenir un nouveau code, typiquement quand une partie du groupe arrête de jouer.
+el("btn-nouveau-salon").addEventListener("click", async () => {
+  el("ended-error").textContent = "";
+  if (!window.confirm("Fermer ce salon ? Les joueurs devront rejoindre le nouveau code.")) return;
+  try {
+    await transport.invoke.fermerSalon();
+  } catch (err) {
+    console.error(err);
+    el("ended-error").textContent = "Erreur : " + (err.message || err);
+    return;
+  }
+
+  timers.annulerTousLesMinuteurs();
+  timers.stopTimer();
+  audio.pauseAudioEnDouceur();
+  clearHostSession();
+  state.gameCode = null;
+  state.hostSecret = null;
+  state.players = [];
+  state.equipes = [];
+  state.equipeParJoueur = {};
+  state.partieConfiguree = false;
+  state.jeuEnPause = false;
+  state.leaderboardOpen = false;
+  state.currentScreen = null; // écran de création piloté par config.js, voir render.js
+  state.currentDisplayScreen = "idle";
+  state.currentScoresInfo = null;
+  state.currentTitresInfo = [];
+  state.titreIndexAffiche = -1;
+  state.morceauxJoues = [];
+  notify();
+  showScreen("screen-setup");
+});
+
 el("btn-open-display").addEventListener("click", () => displayBridge.openDisplayWindow());
 
 // ----- Signalement en direct (V2, section 12.4) -----
