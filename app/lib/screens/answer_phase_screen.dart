@@ -75,9 +75,19 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
   int? _dernierTic;
   static const _secondesTic = 3;
 
+  /// Alerte jouée une seule fois par écran, au passage du chrono au rouge (retour utilisateur
+  /// 2026-10-17).
+  bool _alerteJouee = false;
+
   void _ticSiDernieresSecondes() {
     final game = context.read<GameConnection>();
     final dejaRepondu = _bonus ? game.bonusAnswered : game.roundAnswered;
+    final totalMs = _bonus ? (game.bonusQuestion?.dureePhaseQuestionMs ?? 0) : (game.currentRound?.dureeFenetreReponseMs ?? 0);
+    if (!dejaRepondu && !game.paused && !_alerteJouee && _remainingMs > 0 && _remainingMs <= totalMs * 0.15) {
+      _alerteJouee = true;
+      Haptique.alerte();
+      return;
+    }
     final secondes = (_remainingMs / 1000).ceil();
     if (dejaRepondu || game.paused || secondes <= 0 || secondes > _secondesTic || secondes == _dernierTic) return;
     _dernierTic = secondes;

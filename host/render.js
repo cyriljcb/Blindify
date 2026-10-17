@@ -249,12 +249,15 @@ function renderVotePanel(state) {
   statut.innerHTML =
     `<strong>${vote.votants.length} / ${joueurs}</strong> joueur${joueurs > 1 ? "s" : ""} ont voté · ` +
     `<strong>${n}</strong> thème${n > 1 ? "s" : ""} voté${n > 1 ? "s" : ""} → jusqu'à ${n} série${n > 1 ? "s" : ""}` +
-    (vote.ouvert ? "" : " · <em>vote clos</em>");
+    (vote.ouvert ? "" : " · <em>vote clos</em>") +
+    (!vote.ouvert && vote.themesRetenus?.length
+      ? `<br>Tirés : ${vote.themesRetenus.map((t, i) => `<strong>${String.fromCharCode(65 + i)}</strong> ${escapeHtml(libelleTheme([t]))}`).join(" · ")}`
+      : "");
 
   const max = Math.max(1, ...vote.votes.map((v) => v.nombre));
   liste.innerHTML = vote.votes
     .map(
-      (v) => `<li class="vote-ligne">
+      (v) => `<li class="vote-ligne${!vote.ouvert && vote.themesRetenus?.includes(v.theme) ? " vote-ligne--retenu" : ""}">
         <span class="vote-ligne__theme">${escapeHtml(libelleTheme([v.theme]))}</span>
         <span class="vote-ligne__barre"><i style="width: ${(v.nombre / max) * 100}%"></i></span>
         <span class="vote-ligne__nombre">${v.nombre}</span>

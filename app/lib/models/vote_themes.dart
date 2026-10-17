@@ -29,12 +29,22 @@ class VoteThemeCompte {
 
 /// Miroir de `VotesThemesDto` (événement VotesThemesMisAJour) — jamais qui a voté quoi.
 class VotesThemesDecompte {
-  VotesThemesDecompte({required this.ouvert, required this.votes, required this.votants, required this.themesDistincts});
+  VotesThemesDecompte({
+    required this.ouvert,
+    required this.votes,
+    required this.votants,
+    required this.themesDistincts,
+    this.themesRetenus,
+  });
 
   final bool ouvert;
   final List<VoteThemeCompte> votes;
   final List<String> votants;
   final int themesDistincts;
+
+  /// Thèmes tirés pour la partie, dans l'ordre des séries — null tant que le host n'a pas configuré
+  /// la partie depuis les votes.
+  final List<String>? themesRetenus;
 
   int nombrePour(String theme) => votes.where((v) => v.theme == theme).map((v) => v.nombre).firstOrNull ?? 0;
 
@@ -45,5 +55,6 @@ class VotesThemesDecompte {
             .toList(),
         votants: (json['votants'] as List<dynamic>? ?? []).cast<String>(),
         themesDistincts: json['themesDistincts'] as int? ?? 0,
+        themesRetenus: (json['themesRetenus'] as List<dynamic>?)?.cast<String>(),
       );
 }

@@ -509,6 +509,7 @@ class GameConnection extends ChangeNotifier {
       lastRoundResult = null;
       errorMessage = null;
       screen = AppScreen.round;
+      unawaited(Haptique.depart());
       notifyListeners();
     });
 
@@ -613,6 +614,7 @@ class GameConnection extends ChangeNotifier {
       bonusStakeEnvoyee = false;
       envoiReponseEchoue = false;
       screen = AppScreen.bonusStake;
+      unawaited(Haptique.depart());
       notifyListeners();
     });
 
@@ -661,6 +663,7 @@ class GameConnection extends ChangeNotifier {
     repondants.clear();
     envoiReponseEchoue = false;
     _introCourseTimer?.cancel();
+    unawaited(Haptique.depart());
 
     if (bonusQuestion!.estCourse) {
       screen = AppScreen.bonusCourseIntro;

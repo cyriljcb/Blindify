@@ -119,6 +119,7 @@ public class GameHubLobbyIntegrationTests : IClassFixture<GameHubTestFactory>, I
         Assert.True(await _alice.InvokeAsync<bool>("VoterThemes", new List<string> { "test-cover" }));
         await AttendreAsync(() => dernier?.Votants.Count == 1);
         Assert.Equal(1, dernier!.ThemesDistincts);
+        Assert.Null(dernier.ThemesRetenus);
 
         // Jamais plus de séries jouées que de thèmes votés.
         var refus = await Assert.ThrowsAsync<HubException>(() => Configurer(nombreSeries: 2, utiliserVotes: true));
@@ -126,6 +127,7 @@ public class GameHubLobbyIntegrationTests : IClassFixture<GameHubTestFactory>, I
 
         await Configurer(nombreSeries: 1, utiliserVotes: true);
         await AttendreAsync(() => dernier is { Ouvert: false });
+        Assert.Equal(["test-cover"], dernier!.ThemesRetenus);
 
         SerieAnnonceeDto? serie = null;
         _host.On<SerieAnnonceeDto>("SerieAnnoncee", s => serie = s);

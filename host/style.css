@@ -964,3 +964,5 @@ body.regie .action-principale { display: none; }
 .vote-ligne__barre { height: 0.8rem; border: 2px solid var(--ink); border-radius: 3px; background: var(--surface); overflow: hidden; }
 .vote-ligne__barre i { display: block; height: 100%; background: var(--mustard); transition: width 300ms ease; }
 .vote-ligne__nombre { font-family: var(--font-display); font-size: 1.1rem; text-align: right; font-variant-numeric: tabular-nums; }
+.vote-ligne--retenu .vote-ligne__theme { color: var(--coral); }
+.vote-ligne--retenu .vote-ligne__barre i { background: var(--coral); }

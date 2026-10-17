@@ -158,7 +158,14 @@ public class GameHub(
             if (request.UtiliserVotes && session.VoteThemes is { } voteUtilise)
             {
                 voteUtilise.Ouvert = false;
+                voteUtilise.ThemesRetenus = tagsParSerie.Select(t => t[0]).ToList();
                 voteFerme = ConstruireVotesThemes(voteUtilise);
+            }
+            else if (!request.UtiliserVotes && session.VoteThemes is { ThemesRetenus: not null } voteIgnore)
+            {
+                // Reconfiguration sans les votes : l'ancien tirage ne décrit plus la partie.
+                voteIgnore.ThemesRetenus = null;
+                voteFerme = ConstruireVotesThemes(voteIgnore);
             }
         }
 
@@ -192,6 +199,7 @@ public class GameHub(
 
             var vote = session.VoteThemes ??= new VoteThemes();
             vote.Ouvert = true;
+            vote.ThemesRetenus = null;
             vote.VotesParJoueur = request.VotesParJoueur;
             vote.ThemesProposes = themes;
             foreach (var playerId in vote.VotesParPlayerId.Keys.ToList())
@@ -1111,7 +1119,7 @@ public class GameHub(
             .Select(g => new VoteThemeCompteDto(g.Key, g.Count()))
             .OrderByDescending(v => v.Nombre).ThenBy(v => v.Theme, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        return new VotesThemesDto(vote.Ouvert, votes, vote.VotesParPlayerId.Keys.ToList(), votes.Count);
+        return new VotesThemesDto(vote.Ouvert, votes, vote.VotesParPlayerId.Keys.ToList(), votes.Count, vote.ThemesRetenus?.ToList());
     }
 
     /// <summary>Appelé sous session.Lock.</summary>

@@ -22,4 +22,16 @@ class Haptique {
 
   /// Tic léger sur chacune des dernières secondes du chrono.
   static void tic() => HapticFeedback.selectionClick();
+
+  /// Deux impulsions légères : un round, une mise ou une question bonus démarre (retour
+  /// utilisateur 2026-10-17 — téléphone posé ou en poche, on rate le début du round).
+  static Future<void> depart() async {
+    await HapticFeedback.lightImpact();
+    await Future<void>.delayed(const Duration(milliseconds: 110));
+    await HapticFeedback.lightImpact();
+  }
+
+  /// Impulsion forte unique quand le chrono passe au rouge sans réponse envoyée (même seuil que
+  /// TimerBar : 15 % du temps restant).
+  static void alerte() => HapticFeedback.heavyImpact();
 }

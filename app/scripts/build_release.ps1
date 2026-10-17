@@ -24,10 +24,16 @@ $buildNumber = [int]$parts[1]
 Write-Host "Build release $versionName (build $buildNumber)..."
 
 Push-Location $appDir
+# Windows PowerShell 5.1 transforme chaque ligne écrite sur stderr par un exécutable natif en
+# ErrorRecord : avec "Stop", un simple avertissement Java/Gradle (ex. "source value 8 is obsolete")
+# interrompait le script alors que le build réussissait. On suspend "Stop" le temps de l'appel et
+# seul $LASTEXITCODE fait foi.
+$ErrorActionPreference = "Continue"
 try {
     flutter build apk --release
     if ($LASTEXITCODE -ne 0) { throw "flutter build apk a échoué (code $LASTEXITCODE)" }
 } finally {
+    $ErrorActionPreference = "Stop"
     Pop-Location
 }
 

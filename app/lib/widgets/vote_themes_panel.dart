@@ -23,7 +23,9 @@ class VoteThemesPanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     final statut = !vote.ouvert
-        ? 'Vote clos — le host prépare la partie.'
+        ? (decompte?.themesRetenus?.isNotEmpty ?? false)
+            ? 'Thèmes tirés au sort — regarde l\'écran !'
+            : 'Vote clos — le host prépare la partie.'
         : '${choisis.length}/${vote.votesParJoueur} choisi${choisis.length > 1 ? 's' : ''}'
             '${decompte != null ? ' · ${decompte.votants.length}/${game.players.length} ont voté' : ''}';
 

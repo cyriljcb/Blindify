@@ -807,3 +807,32 @@ body.en-pause .screen--bonus-stake * { animation-play-state: paused !important; 
 .lobby-vote--2 .lobby-vote__barre i { background: var(--mustard); }
 .lobby-vote--3 .lobby-vote__barre i { background: var(--good); }
 .lobby-vote b { font-family: var(--font-display); font-weight: 400; font-size: 1.5rem; text-align: right; }
+
+/* ----- Tirage des thèmes joués (retour utilisateur 2026-10-17) ----- */
+
+.lobby-vote { grid-template-columns: minmax(8rem, 13rem) 1fr 2.5rem 2.6rem; padding: 0.15rem 0.4rem; border: 2px solid transparent; border-radius: var(--radius); transition: opacity 300ms, background-color 120ms, transform 120ms; }
+.lobby-vote__serie {
+  width: 2.3rem; height: 2.3rem; display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 1.5rem; line-height: 1;
+  border-radius: 50%; visibility: hidden;
+}
+.lobby-vote--curseur { background: var(--mustard); border-color: var(--ink); transform: scale(1.04); box-shadow: 3px 3px 0 var(--ink); }
+.lobby-vote--curseur .lobby-vote__theme, .lobby-vote--curseur b { color: var(--ink-on-accent, #111); }
+.lobby-vote--retenu { background: var(--surface); border-color: var(--ink); box-shadow: 4px 4px 0 var(--coral); }
+.lobby-vote--retenu .lobby-vote__serie { visibility: visible; background: var(--coral); color: #fff; border: 2px solid var(--ink); }
+.lobby-vote--tampon .lobby-vote__serie { animation: serie-tampon 420ms cubic-bezier(.3, 1.6, .5, 1) both; }
+.lobby-vote--tampon { animation: vote-retenu 420ms ease-out both; }
+.lobby-vote--ecarte { opacity: 0.32; }
+.lobby-votes--tirage-fini .lobby-vote--retenu .lobby-vote__theme { color: var(--coral); }
+
+@keyframes serie-tampon {
+  from { transform: scale(2.6) rotate(-25deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes vote-retenu {
+  0% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lobby-vote, .lobby-vote--tampon, .lobby-vote--tampon .lobby-vote__serie { animation: none; transition: none; }
+}

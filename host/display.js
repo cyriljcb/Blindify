@@ -419,21 +419,117 @@ function renderVotesLobby() {
   const vote = state.votesThemes;
   const bloc = el("lobby-votes");
   bloc.classList.toggle("hidden", !vote);
-  if (!vote) return;
+  if (!vote) {
+    annulerTirage();
+    return;
+  }
 
   const presents = joueursPresents().length;
-  el("lobby-votes-compteur").textContent = vote.ouvert ? `· ${vote.votants.length} / ${presents} ont voté` : "· vote clos";
+  const retenus = !vote.ouvert && vote.themesRetenus?.length ? vote.themesRetenus : null;
+  if (retenus) lancerTirageSiNouveau(retenus, vote.themesDistincts);
+  else annulerTirage();
+
+  el("lobby-votes-compteur").textContent = vote.ouvert ? `· ${vote.votants.length} / ${presents} ont voté` : retenus ? "" : "· vote clos";
   const max = Math.max(1, ...vote.votes.map((v) => v.nombre));
+  // Les 8 thèmes les plus votés, plus les thèmes tirés hors de ce top (complément aléatoire).
   el("lobby-votes-liste").innerHTML = vote.votes
-    .slice(0, 8)
+    .filter((v, i) => i < 8 || retenus?.includes(v.theme))
     .map(
-      (v, i) => `<li class="lobby-vote lobby-vote--${i % 4}">
+      (v, i) => `<li class="lobby-vote lobby-vote--${i % 4}" data-theme="${escapeHtml(v.theme)}">
         <span class="lobby-vote__theme">${escapeHtml(libelleTheme([v.theme]))}</span>
         <span class="lobby-vote__barre"><i style="width: ${(v.nombre / max) * 100}%"></i></span>
         <b>${v.nombre}</b>
+        <span class="lobby-vote__serie" aria-hidden="true"></span>
       </li>`
     )
     .join("");
+  appliquerTirage();
+}
+
+// ----- Tirage des thèmes joués (retour utilisateur 2026-10-17) -----
+// Rend visible le tirage fait par le serveur (ConfigurerPartie avec les votes) : un curseur saute de
+// thème en thème en ralentissant et s'arrête sur chaque thème retenu, dans l'ordre des séries. Le
+// résultat vient du serveur (themesRetenus), l'animation ne fait que le mettre en scène. Quand tous
+// les thèmes votés sont joués, pas de roulette : ils sont simplement validés l'un après l'autre.
+// Les rendus suivants (autre message d'état) réappliquent les classes sans relancer l'animation.
+
+let tirage = null; // { cle, retenus, curseur, verrouilles: string[], fini, sansTirage, timers: [] }
+
+function annulerTirage() {
+  if (!tirage) return;
+  tirage.timers.forEach(clearTimeout);
+  tirage = null;
+}
+
+function lancerTirageSiNouveau(retenus, themesDistincts) {
+  const cle = retenus.join("|");
+  if (tirage?.cle === cle) return;
+  annulerTirage();
+  const t = { cle, retenus, curseur: null, verrouilles: [], fini: false, sansTirage: retenus.length >= themesDistincts, timers: [] };
+  tirage = t;
+  const planifier = (fn, ms) => t.timers.push(setTimeout(() => { if (tirage === t) fn(); }, ms));
+  const verrouiller = (theme) => {
+    t.curseur = null;
+    t.verrouilles.push(theme);
+    appliquerTirage(theme);
+  };
+  const terminer = () => { t.fini = true; appliquerTirage(); };
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    t.verrouilles = [...retenus];
+    terminer();
+    return;
+  }
+
+  if (t.sansTirage) {
+    retenus.forEach((theme, k) => planifier(() => verrouiller(theme), 350 + k * 380));
+    planifier(terminer, 350 + retenus.length * 380);
+    return;
+  }
+
+  // Une roulette par série : longue pour la première, plus courte ensuite.
+  let delai = 300;
+  retenus.forEach((cible, k) => {
+    const pas = k === 0 ? 16 : 9;
+    for (let s = 0; s < pas; s++) {
+      const dernier = s === pas - 1;
+      planifier(() => {
+        const candidats = [...document.querySelectorAll("#lobby-votes-liste .lobby-vote")]
+          .map((li) => li.dataset.theme)
+          .filter((th) => !t.verrouilles.includes(th) && th !== t.curseur);
+        t.curseur = dernier || candidats.length === 0 ? cible : candidats[Math.floor(Math.random() * candidats.length)];
+        appliquerTirage();
+      }, delai);
+      // Ralentit en fin de roulette (55 ms au départ, ~330 ms au dernier saut).
+      delai += 55 + Math.round(275 * Math.pow(s / (pas - 1), 2.2));
+    }
+    planifier(() => verrouiller(cible), delai + 420);
+    delai += 1050;
+  });
+  planifier(terminer, delai);
+}
+
+// lettreAnimee : thème qui vient d'être verrouillé (joue le tampon une seule fois).
+function appliquerTirage(lettreAnimee = null) {
+  const bloc = el("lobby-votes");
+  bloc.classList.toggle("lobby-votes--tirage", !!tirage);
+  bloc.classList.toggle("lobby-votes--tirage-fini", !!tirage?.fini);
+  if (!tirage) return;
+
+  const n = tirage.retenus.length;
+  el("lobby-votes-compteur").textContent = !tirage.fini
+    ? tirage.sansTirage ? "· tous les thèmes votés seront joués" : "· tirage au sort…"
+    : `· ${n} série${n > 1 ? "s" : ""} au programme`;
+
+  document.querySelectorAll("#lobby-votes-liste .lobby-vote").forEach((li) => {
+    const theme = li.dataset.theme;
+    const k = tirage.verrouilles.indexOf(theme);
+    li.classList.toggle("lobby-vote--curseur", tirage.curseur === theme);
+    li.classList.toggle("lobby-vote--retenu", k >= 0);
+    li.classList.toggle("lobby-vote--ecarte", tirage.fini && k < 0);
+    li.classList.toggle("lobby-vote--tampon", theme === lettreAnimee);
+    li.querySelector(".lobby-vote__serie").textContent = k >= 0 ? String.fromCharCode(65 + tirage.retenus.indexOf(theme)) : "";
+  });
 }
 
 // Badge « Rejoindre » en coin d'écran, partout sauf là où le code est déjà affiché en grand.

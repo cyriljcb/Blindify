@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../motion.dart';
 import '../services/game_connection.dart';
+import '../services/haptique.dart';
 import '../theme.dart';
 import '../widgets/answer_banner.dart';
 import '../widgets/qcm_tile.dart';
@@ -40,8 +41,29 @@ class _BonusStakeScreenState extends State<BonusStakeScreen> {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) {
       setState(() => _remainingMs = (_remainingMs - 100).clamp(0, _remainingMs));
+      _vibrerSiFinProche();
       if (_remainingMs <= 0) _ticker?.cancel();
     });
+  }
+
+  // Retour utilisateur (2026-10-17) — mêmes retours haptiques que AnswerPhaseScreen tant que la
+  // mise n'est pas posée : une alerte au passage au rouge, puis un tic par seconde sur les 3 dernières.
+  bool _alerteJouee = false;
+  int? _dernierTic;
+
+  void _vibrerSiFinProche() {
+    final game = context.read<GameConnection>();
+    final totalMs = game.bonusStakeOptions?.dureePhaseMiseMs ?? 0;
+    if (game.bonusStakeEnvoyee || game.paused || _remainingMs <= 0) return;
+    if (!_alerteJouee && _remainingMs <= totalMs * 0.15) {
+      _alerteJouee = true;
+      Haptique.alerte();
+      return;
+    }
+    final secondes = (_remainingMs / 1000).ceil();
+    if (secondes > 3 || secondes == _dernierTic) return;
+    _dernierTic = secondes;
+    Haptique.tic();
   }
 
   // Idempotent, même pattern que RoundScreen (retour de test : le décompte visuel continuait de
