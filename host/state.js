@@ -14,7 +14,7 @@ export const state = {
   gameCode: null,
   // Distinct du code de partie (public) — requis par RejoinAsHost, jamais envoyé aux joueurs.
   hostSecret: null,
-  players: [], // { playerId, nom, estConnecte }
+  players: [], // { playerId, nom, estConnecte, aQuitte }
   equipes: [], // [{ id, nom }] — vide si mode équipe inactif
   equipeParJoueur: {}, // playerId -> teamId
 
@@ -51,6 +51,14 @@ export const state = {
   // chaque RoundStarted/BonusQuestionStarted.
   repondants: [],
   jokersRound: [], // playerId ayant sorti leur joker sur ce round
+  // Retour utilisateur (2026-10-17) — playerId ayant déjà verrouillé leur mise bonus (MiseEnregistree),
+  // jamais le palier choisi. Vidé à chaque BonusStakeOptions.
+  misesEnregistrees: [],
+
+  // ----- Vote des thèmes (retour utilisateur 2026-10-17) -----
+  // Décompte reçu par VotesThemesMisAJour ({ ouvert, votes: [{ theme, nombre }], votants, themesDistincts }),
+  // null tant qu'aucun vote n'a été ouvert dans ce salon.
+  votesThemes: null,
 
   // ----- Pause -----
   jeuEnPause: false,

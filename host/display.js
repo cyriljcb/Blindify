@@ -11,7 +11,7 @@
 // sans découpage en fichiers séparés (state.js/handlers.js/render.js), pas justifié pour un simple
 // récepteur de ~250 lignes.
 
-import { escapeHtml, libelleReveal, questionCible, libelleMode } from "./shared/format.js";
+import { escapeHtml, libelleReveal, libelleTheme, questionCible, libelleMode } from "./shared/format.js";
 import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode, renderTitrePanel, formeQcmSvg } from "./shared/components.js";
 import { iconeSvg } from "./shared/icons.js";
 
@@ -39,7 +39,17 @@ const state = {
   // note en tête de fichier). Vidé à chaque nouveau round/question bonus, voir
   // "player-answered-reset" ci-dessous.
   playersAnswered: [],
+  // Retour utilisateur (2026-10-17) — playerId ayant verrouillé leur mise bonus (jamais le palier),
+  // décompte du vote des thèmes au lobby.
+  misesEnregistrees: [],
+  votesThemes: null,
 };
+
+// Joueurs encore attendus : un joueur parti volontairement (QuitterPartie) reste dans le roster pour
+// les noms/couleurs du classement, mais n'est plus compté ni affiché comme « en train de répondre ».
+function joueursPresents() {
+  return state.players.filter((p) => !p.aQuitte);
+}
 
 function roster() {
   return { joueurs: state.players, equipes: state.equipes };
@@ -125,8 +135,9 @@ const ICONES_STATUT = { correct: "✓", incorrect: "✗", "sans-reponse": "–" 
 function renderAnsweredBlock(container) {
   if (!container) return;
   const repondus = new Set(state.playersAnswered.map((p) => p.playerId));
-  const total = state.players.length;
-  const avatars = state.players
+  const presents = joueursPresents();
+  const total = presents.length;
+  const avatars = presents
     .map((p) => {
       const classe = repondus.has(p.playerId) ? "answered-avatar answered-avatar--done" : "answered-avatar";
       const titre = escapeHtml(p.nom) + (p.estConnecte ? "" : " (déconnecté)");
@@ -135,7 +146,7 @@ function renderAnsweredBlock(container) {
     .join("");
   container.innerHTML = `
     <span class="answered-label">Ont répondu</span>
-    <span class="answered-count">${state.players.filter((p) => repondus.has(p.playerId)).length}<small> / ${total}</small></span>
+    <span class="answered-count">${presents.filter((p) => repondus.has(p.playerId)).length}<small> / ${total}</small></span>
     <div class="answered-avatars">${avatars}</div>`;
 }
 
@@ -253,16 +264,26 @@ function afficherEcran(id) {
 let timerInterval = null;
 
 // secondesEl : retour utilisateur — la barre seule ne suffisait pas, il faut un décompte chiffré
-// visible depuis le fond de la salle sur l'écran public.
-function startLocalTimer(fillEl, secondesEl) {
+// visible depuis le fond de la salle sur l'écran public. chronoEl (retour utilisateur 2026-10-17) :
+// chrono circulaire de la mise bonus à la place de la barre — arc SVG + classes d'urgence.
+const CIRCONFERENCE_CHRONO = 2 * Math.PI * 52;
+
+function startLocalTimer(fillEl, secondesEl, chronoEl = null) {
   clearInterval(timerInterval);
   const update = () => {
     if (state.timerEndAt === null) return;
     const remaining = Math.max(0, state.timerEndAt - Date.now());
     const pct = state.timerDurationMs > 0 ? (remaining / state.timerDurationMs) * 100 : 0;
-    fillEl.style.width = `${pct}%`;
-    fillEl.classList.toggle("timer-fill--warn", pct <= 40 && pct > 15);
-    fillEl.classList.toggle("timer-fill--danger", pct <= 15);
+    if (fillEl) {
+      fillEl.style.width = `${pct}%`;
+      fillEl.classList.toggle("timer-fill--warn", pct <= 40 && pct > 15);
+      fillEl.classList.toggle("timer-fill--danger", pct <= 15);
+    }
+    if (chronoEl) {
+      chronoEl.querySelector(".bonus-chrono__arc").style.strokeDashoffset = `${CIRCONFERENCE_CHRONO * (1 - pct / 100)}`;
+      chronoEl.classList.toggle("bonus-chrono--warn", pct <= 40 && pct > 15);
+      chronoEl.classList.toggle("bonus-chrono--danger", pct <= 15 || (remaining <= 5000 && remaining > 0));
+    }
     if (secondesEl) {
       secondesEl.textContent = `${Math.ceil(remaining / 1000)}s`;
       secondesEl.classList.toggle("timer-seconds--warn", pct <= 40 && pct > 15);
@@ -283,18 +304,162 @@ function stopLocalTimer(fillEl, secondesEl) {
   }
 }
 
+// ----- Mise bonus (retour utilisateur 2026-10-17 : « vraiment fade ») -----
+
+// Du plus prudent au plus risqué — même ordre que les paliers (croissants) côté serveur.
+const PALIERS_DISPLAY = [
+  { nom: "Safe", accroche: "on assure" },
+  { nom: "Malin", accroche: "un peu de risque" },
+  { nom: "Audacieux", accroche: "ça passe ou ça casse" },
+  { nom: "Tapis", accroche: "tout ou rien" },
+];
+
+// Reconstruit les paliers seulement quand ils changent (nouvelle question bonus) : l'écran reçoit un
+// état complet à chaque événement, rejouer l'entrée en escalier à chaque fois serait épuisant.
+let clePaliersAffiches = null;
+
+function renderPaliersBonus(paliers) {
+  const cle = paliers.join("|") + "|" + (state.bonus?.serieLettre ?? "");
+  if (cle === clePaliersAffiches) return;
+  clePaliersAffiches = cle;
+
+  const max = Math.max(1, ...paliers);
+  el("bonus-paliers").innerHTML = paliers
+    .map((valeur, i) => {
+      const infos = PALIERS_DISPLAY[i] ?? { nom: `Palier ${i + 1}`, accroche: "" };
+      // Hauteur en escalier : jamais sous 38 % pour garder le texte lisible sur la première marche.
+      const hauteur = 38 + (valeur / max) * 62;
+      return `<li class="palier palier--${i % 4}" style="--i: ${i}; --h: ${hauteur}%">
+        <div class="palier__carte">
+          ${i === paliers.length - 1 ? `<span class="palier__flamme">${iconeSvg("etincelle")}</span>` : ""}
+          <span class="palier__valeur"><small>±</small><b data-valeur="${valeur}">0</b></span>
+          <span class="palier__nom">${escapeHtml(infos.nom)}</span>
+          <span class="palier__accroche">${escapeHtml(infos.accroche)}</span>
+        </div>
+      </li>`;
+    })
+    .join("");
+
+  animerCompteurs(el("bonus-paliers").querySelectorAll("b[data-valeur]"));
+}
+
+// Les valeurs « montent » de 0 à leur montant, décalées comme les marches.
+function animerCompteurs(elements) {
+  const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  elements.forEach((b, i) => {
+    const cible = Number(b.dataset.valeur);
+    if (reduit) {
+      b.textContent = String(cible);
+      return;
+    }
+    const delai = 250 + i * 160;
+    const duree = 700;
+    const depart = performance.now() + delai;
+    const pas = (t) => {
+      const p = Math.min(1, Math.max(0, (t - depart) / duree));
+      b.textContent = String(Math.round(cible * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(pas);
+    };
+    requestAnimationFrame(pas);
+    // Filet de sécurité : rAF peut être ralenti (onglet en arrière-plan) — la valeur finale est garantie.
+    setTimeout(() => { b.textContent = String(cible); }, delai + duree + 100);
+  });
+}
+
+// Mise à jour par joueur (jamais un innerHTML global) : une mise qui vient d'être posée déclenche son
+// animation « verrouillée » une seule fois, même si l'état complet est rediffusé juste après.
+function renderMisesBonus() {
+  const liste = el("bonus-mises-joueurs");
+  const presents = joueursPresents();
+  const posees = new Set(state.misesEnregistrees);
+
+  const existants = new Map([...liste.children].map((li) => [li.dataset.playerId, li]));
+  for (const [id, li] of existants) {
+    if (!presents.some((p) => p.playerId === id)) li.remove();
+  }
+  for (const p of presents) {
+    let li = existants.get(p.playerId);
+    if (!li) {
+      li = document.createElement("li");
+      li.className = "mise-joueur";
+      li.dataset.playerId = p.playerId;
+      li.innerHTML = `<span class="mise-joueur__avatar">${avatarHtml(p.playerId, p.nom, undefined, roster())}<span class="mise-joueur__jeton" aria-hidden="true"></span></span><span class="mise-joueur__nom">${escapeHtml(p.nom)}</span>`;
+      liste.appendChild(li);
+    }
+    const etaitPosee = li.classList.contains("mise-joueur--posee");
+    const estPosee = posees.has(p.playerId);
+    li.classList.toggle("mise-joueur--posee", estPosee);
+    li.classList.toggle("mise-joueur--off", !p.estConnecte && !estPosee);
+    if (estPosee && !etaitPosee && existants.has(p.playerId)) {
+      li.classList.remove("mise-joueur--pop");
+      void li.offsetWidth;
+      li.classList.add("mise-joueur--pop");
+    }
+  }
+
+  const nb = presents.filter((p) => posees.has(p.playerId)).length;
+  el("bonus-mises-compteur").innerHTML = `<b>${nb}</b><small> / ${presents.length}</small> mise${nb > 1 ? "s" : ""} posée${nb > 1 ? "s" : ""}`;
+  el("bonus-mises-toutes").classList.toggle("hidden", presents.length === 0 || nb < presents.length);
+}
+
+// Flash bref couleur moutarde à chaque mise — plus léger que la secousse d'une réponse.
+let flashMiseTimeout = null;
+function flashMise() {
+  const flash = el("flash-overlay");
+  flash.classList.remove("flash-overlay--mise");
+  void flash.offsetWidth;
+  flash.classList.add("flash-overlay--mise");
+  clearTimeout(flashMiseTimeout);
+  flashMiseTimeout = setTimeout(() => flash.classList.remove("flash-overlay--mise"), 380);
+}
+
+// ----- Vote des thèmes au lobby (retour utilisateur 2026-10-17) -----
+
+function renderVotesLobby() {
+  const vote = state.votesThemes;
+  const bloc = el("lobby-votes");
+  bloc.classList.toggle("hidden", !vote);
+  if (!vote) return;
+
+  const presents = joueursPresents().length;
+  el("lobby-votes-compteur").textContent = vote.ouvert ? `· ${vote.votants.length} / ${presents} ont voté` : "· vote clos";
+  const max = Math.max(1, ...vote.votes.map((v) => v.nombre));
+  el("lobby-votes-liste").innerHTML = vote.votes
+    .slice(0, 8)
+    .map(
+      (v, i) => `<li class="lobby-vote lobby-vote--${i % 4}">
+        <span class="lobby-vote__theme">${escapeHtml(libelleTheme([v.theme]))}</span>
+        <span class="lobby-vote__barre"><i style="width: ${(v.nombre / max) * 100}%"></i></span>
+        <b>${v.nombre}</b>
+      </li>`
+    )
+    .join("");
+}
+
+// Badge « Rejoindre » en coin d'écran, partout sauf là où le code est déjà affiché en grand.
+function renderJoinBadge() {
+  const visible = !!state.gameCode && !["idle", "lobby"].includes(state.screen);
+  el("join-badge").classList.toggle("hidden", !visible);
+  if (!visible) return;
+  el("join-badge-code").textContent = state.gameCode;
+  renderJoinQrCode(el("join-badge-qr"), state.serverBaseUrl, state.gameCode);
+}
+
 // ----- Rendu -----
 
 function render() {
   el("paused-banner").classList.toggle("hidden", !state.paused);
   // Refonte UI (lot 2) : fige l'égaliseur de la pochette mystère pendant la pause.
   document.body.classList.toggle("en-pause", state.paused);
+  renderJoinBadge();
+  if (state.screen !== "bonus-stake") clePaliersAffiches = null;
 
   switch (state.screen) {
     case "lobby":
       el("lobby-code").textContent = state.gameCode ?? "";
       renderJoinQrCode(el("lobby-qrcode"), state.serverBaseUrl, state.gameCode);
-      renderPlayerList(el("lobby-players"), state.players);
+      renderPlayerList(el("lobby-players"), joueursPresents());
+      renderVotesLobby();
       showScreen("screen-lobby");
       stopLocalTimer(null);
       break;
@@ -332,17 +497,14 @@ function render() {
     }
 
     case "bonus-stake": {
-      el("bonus-stake-title").textContent = `Question bonus — mise à l'aveugle${state.bonus?.serieLabel ?? ""}`;
-      const list = el("bonus-paliers");
-      list.innerHTML = "";
-      (state.bonus?.paliers ?? []).forEach((valeur, index) => {
-        const li = document.createElement("li");
-        li.innerHTML = `<span>Palier ${index + 1}${index === 0 ? " (safe)" : ""}</span><span>${valeur} pts</span>`;
-        list.appendChild(li);
-      });
+      el("bonus-stake-eyebrow").textContent = [state.bonus?.serieLettre ? `Série ${state.bonus.serieLettre}` : null, state.bonus?.theme]
+        .filter(Boolean)
+        .join(" · ");
+      renderPaliersBonus(state.bonus?.paliers ?? []);
+      renderMisesBonus();
       showScreen("screen-bonus-stake");
-      if (!state.paused && state.timerEndAt !== null) startLocalTimer(el("bonus-stake-timer-fill"), el("bonus-stake-timer-seconds"));
-      else stopLocalTimer(el("bonus-stake-timer-fill"), el("bonus-stake-timer-seconds"));
+      if (!state.paused && state.timerEndAt !== null) startLocalTimer(null, el("bonus-stake-timer-seconds"), el("bonus-chrono"));
+      else stopLocalTimer(null, el("bonus-stake-timer-seconds"));
       break;
     }
 
@@ -422,6 +584,8 @@ function appliquerEtat(msg) {
   state.titreIndexAffiche = msg.titreIndexAffiche ?? -1;
   state.serieIntro = msg.serieIntro ?? {};
   state.scoreHistory = msg.scoreHistory ?? [];
+  state.misesEnregistrees = msg.misesEnregistrees ?? [];
+  state.votesThemes = msg.votesThemes ?? null;
 
   render();
 }
@@ -454,6 +618,8 @@ window.addEventListener("message", (event) => {
   } else if (msg.type === "player-answered-reset") {
     state.playersAnswered = [];
     renderAnsweredBlocks();
+  } else if (msg.type === "mise-enregistree") {
+    if (state.screen === "bonus-stake") flashMise();
   } else if (msg.type === "joker-utilise") {
     afficherBanniereJoker(msg.playerId);
   }

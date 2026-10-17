@@ -11,4 +11,5 @@ public record HostStateSnapshotDto(
     string? FilePath,
     int? RefrainStartMs,
     long? PositionAudioMs,
-    int? DureeFenetreReponseMs);
+    int? DureeFenetreReponseMs,
+    VotesThemesDto? VotesThemes = null);

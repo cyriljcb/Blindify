@@ -39,6 +39,10 @@ public class GameSession
     /// connaissant seulement le code de prendre le contrôle host (pause, override, fin de partie).</summary>
     public required string HostSecret { get; set; }
 
+    /// <summary>Vote des thèmes par les joueurs (retour utilisateur 2026-10-17) — null tant que le host
+    /// n'a jamais ouvert de vote dans ce lobby. Voir GameHub.OuvrirVoteThemes/VoterThemes.</summary>
+    public VoteThemes? VoteThemes { get; set; }
+
     public int SerieCouranteIndex { get; set; }
 
     /// <summary>Index du round courant dans Series[SerieCouranteIndex].Rounds. -1 = aucun round démarré.</summary>

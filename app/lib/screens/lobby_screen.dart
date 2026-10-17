@@ -8,6 +8,8 @@ import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/game_card.dart';
 import '../widgets/player_avatar.dart';
+import '../widgets/quitter_salon.dart';
+import '../widgets/vote_themes_panel.dart';
 
 class LobbyScreen extends StatelessWidget {
   const LobbyScreen({super.key});
@@ -96,6 +98,10 @@ class LobbyScreen extends StatelessWidget {
               ],
             ),
           ],
+          if (game.voteThemes != null) ...[
+            const SizedBox(height: 16),
+            const VoteThemesPanel(),
+          ],
           const SizedBox(height: 20),
           Text('JOUEURS CONNECTÉS (${game.players.length})', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
@@ -153,9 +159,22 @@ class LobbyScreen extends StatelessWidget {
                   ),
           ),
           const SizedBox(height: 12),
-          Text(
-            'En attente que le host démarre le round...',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'En attente que le host démarre le round...',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+                ),
+              ),
+              // Retour utilisateur (2026-10-17) — sans ce bouton, impossible de quitter un salon.
+              TextButton.icon(
+                onPressed: () => confirmerQuitterSalon(context),
+                icon: const Icon(Icons.logout_rounded, size: 18),
+                label: const Text('Quitter'),
+                style: TextButton.styleFrom(foregroundColor: BlindifyColors.coral),
+              ),
+            ],
           ),
         ],
       ),

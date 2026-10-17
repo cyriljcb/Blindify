@@ -25,6 +25,8 @@
     <div class="header-actions">
       <button id="btn-open-display" class="btn-secondary">Ouvrir l'écran public</button>
       <span id="display-indicator" class="pill pill--off">écran public : fermé</span>
+      <!-- Retour utilisateur (2026-10-17) : code toujours visible, pour faire (re)joindre un joueur en pleine partie. -->
+      <span id="code-indicator" class="pill pill--code hidden"></span>
       <span id="players-indicator" class="pill pill--off hidden"></span>
       <span id="connection-indicator" class="pill pill--off">déconnecté</span>
       <div class="menu">
@@ -132,6 +134,25 @@
       <div id="blindtest-config">
         <h3>Configuration du blindtest</h3>
         <label>Thèmes</label>
+        <!-- Retour utilisateur (2026-10-17) — les joueurs votent pour leurs thèmes sur leur téléphone,
+             le host fixe ensuite le nombre de séries (jamais plus que de thèmes votés). Voir
+             GameHub.OuvrirVoteThemes / SeriesPlanner.ChoisirThemesDepuisVotes. -->
+        <label class="vote-toggle"><input id="setup-vote-joueurs" type="checkbox" /> Faire voter les joueurs</label>
+        <div id="vote-panel" class="vote-panel hidden">
+          <p class="field-hint">
+            Chaque joueur choisit ses thèmes sur son téléphone. S'il y a plus de thèmes votés que de séries,
+            tirage au sort, en gardant au moins un thème par joueur quand c'est possible.
+          </p>
+          <div class="vote-panel__reglage">
+            <label for="setup-votes-par-joueur">Votes par joueur</label>
+            <input id="setup-votes-par-joueur" type="number" min="1" max="10" value="2" />
+            <button type="button" id="btn-ouvrir-vote" class="btn-secondary">Ouvrir le vote</button>
+          </div>
+          <p id="vote-statut" class="vote-statut"></p>
+          <ul id="vote-decompte" class="vote-decompte"></ul>
+          <p id="vote-error" class="error"></p>
+        </div>
+        <div id="themes-host">
         <p class="field-hint">
           Chaque case cochée est un thème candidat. Chaque série jouée reçoit UN SEUL thème, tiré au
           sort parmi ceux cochés (sans répétition tant qu'il en reste) — coche-en plusieurs pour que
@@ -142,6 +163,7 @@
             <input id="setup-tags-aleatoire" type="checkbox" /> Thème aléatoire (tout le catalogue)
           </label>
           <!-- Cases générées dynamiquement depuis GET /api/tags (voir app.js:chargerTagsDisponibles) -->
+        </div>
         </div>
 
         <!-- Refonte UI (lot 2) : préréglages en un clic + durée estimée ; le détail des champs est
@@ -251,6 +273,7 @@
       <p>Les joueurs choisissent un palier sur leur téléphone avant de découvrir la question.</p>
       <div class="timer-bar"><div id="bonus-stake-timer-fill" class="timer-fill"></div></div>
       <ul id="bonus-paliers" class="score-list"></ul>
+      <div id="bonus-stake-mises" class="answers-live"></div>
     </section>
 
     <!-- Écran 7 : question bonus — phase question -->

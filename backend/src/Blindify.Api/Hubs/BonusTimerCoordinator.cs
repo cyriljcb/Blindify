@@ -119,7 +119,7 @@ public class BonusTimerCoordinator(
         if (session.HostConnectionId is not null)
         {
             await hubContext.Clients.Client(session.HostConnectionId).SendAsync("BonusQuestionStarted",
-                new BonusQuestionStartedForHostDto(track.Id, track.FilePath, track.RefrainStartMs, bonusRound.Id, config.DureePhaseQuestionMs, session.Config.RalentissementBonusActive, session.Config.FacteurRalentissementBonus, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, anneeOptions));
+                new BonusQuestionStartedForHostDto(track.Id, track.FilePath, track.RefrainStartMs, bonusRound.Id, config.DureePhaseQuestionMs, session.Config.RalentissementBonusActive, session.Config.FacteurRalentissementBonus, bonusRound.Mode, bonusRound.Cible, qcmOptions, bonusRound.EstCourse, anneeOptions));
         }
 
         var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();

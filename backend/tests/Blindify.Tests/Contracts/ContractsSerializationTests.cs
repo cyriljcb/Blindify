@@ -63,7 +63,7 @@ public class ContractsSerializationTests
             Config: null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"nombreSeries":3,"nombreRoundsClassiques":8,"dureeFenetreReponseMs":20000,"themesVivier":["rock","pop"],"config":null,"pointsMax":100,"pointsMin":20,"penaliteMauvaiseReponseRatio":0.5,"penaliteAbsenceReponse":-5,"dureePhaseMiseMs":15000,"dureePhaseQuestionMs":20000,"afficherEcart":true}""",
+            """{"nombreSeries":3,"nombreRoundsClassiques":8,"dureeFenetreReponseMs":20000,"themesVivier":["rock","pop"],"config":null,"pointsMax":100,"pointsMin":20,"penaliteMauvaiseReponseRatio":0.5,"penaliteAbsenceReponse":-5,"dureePhaseMiseMs":15000,"dureePhaseQuestionMs":20000,"afficherEcart":true,"utiliserVotes":false}""",
             json);
     }
 
@@ -75,7 +75,7 @@ public class ContractsSerializationTests
         var dto = new HostStateSnapshotDto(false, RoundMode.Qcm, RoundCible.Titre, "t1", "audio/t1.mp3", 30000, 5200, 20000);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"enPause":false,"modeCourant":"Qcm","cibleCourante":"Titre","trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"positionAudioMs":5200,"dureeFenetreReponseMs":20000}""",
+            """{"enPause":false,"modeCourant":"Qcm","cibleCourante":"Titre","trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"positionAudioMs":5200,"dureeFenetreReponseMs":20000,"votesThemes":null}""",
             json);
     }
 
@@ -85,7 +85,7 @@ public class ContractsSerializationTests
     public void PlayerSummaryDto_Golden()
     {
         var json = Serialize(new PlayerSummaryDto("player-1", "Alice", true, "team-1"));
-        Assert.Equal("""{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1"}""", json);
+        Assert.Equal("""{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1","aPartie":false}""", json);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class ContractsSerializationTests
             null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1"}],"etatCourant":null,"jokerDisponible":false,"afficherEcart":true}""",
+            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1","aPartie":false}],"etatCourant":null,"jokerDisponible":false,"afficherEcart":true,"voteThemes":null}""",
             json);
     }
 
@@ -140,7 +140,7 @@ public class ContractsSerializationTests
     {
         var dto = new EtatCourantConnexionDto(120, "team-1", null, true);
         var json = Serialize(dto);
-        Assert.Equal("""{"score":120,"teamId":"team-1","etatCourant":null,"jokerDisponible":true,"afficherEcart":true}""", json);
+        Assert.Equal("""{"score":120,"teamId":"team-1","etatCourant":null,"jokerDisponible":true,"afficherEcart":true,"voteThemes":null}""", json);
     }
 
     [Fact]
@@ -313,11 +313,11 @@ public class ContractsSerializationTests
     public void BonusQuestionStartedForHostDto_Golden()
     {
         var roundId = Guid.Parse("00000000-0000-0000-0000-000000000008");
-        var dto = new BonusQuestionStartedForHostDto("t1", "audio/t1.mp3", 30000, roundId, 20000, true, 0.65, RoundMode.Qcm,
+        var dto = new BonusQuestionStartedForHostDto("t1", "audio/t1.mp3", 30000, roundId, 20000, true, 0.65, RoundMode.Qcm, RoundCible.Film,
             [new QcmOptionDto("t1", "Under the Sea", "Samuel E. Wright", "La Petite Sirene")], false);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"roundId":"00000000-0000-0000-0000-000000000008","dureePhaseQuestionMs":20000,"ralentissementActive":true,"facteurRalentissement":0.65,"mode":"Qcm","qcmOptions":[{"trackId":"t1","title":"Under the Sea","artist":"Samuel E. Wright","film":"La Petite Sirene"}],"estCourse":false,"anneeOptions":null}""",
+            """{"trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"roundId":"00000000-0000-0000-0000-000000000008","dureePhaseQuestionMs":20000,"ralentissementActive":true,"facteurRalentissement":0.65,"mode":"Qcm","cible":"Film","qcmOptions":[{"trackId":"t1","title":"Under the Sea","artist":"Samuel E. Wright","film":"La Petite Sirene"}],"estCourse":false,"anneeOptions":null}""",
             json);
     }
 

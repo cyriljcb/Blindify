@@ -54,6 +54,7 @@ export const invoke = {
   supprimerPreset: (nom) => connection.invoke("SupprimerPreset", nom),
   publierEtatRegie: (etat) => connection.invoke("PublierEtatRegie", etat),
   fermerSalon: () => connection.invoke("FermerSalon"),
+  ouvrirVoteThemes: (payload) => connection.invoke("OuvrirVoteThemes", payload),
   // V2, section 12.4 — commentaire: null si vide, jamais une chaîne vide (SignalementRequestDto.Commentaire
   // reste optionnel côté contrat).
   signalerMorceau: (trackId, raison, commentaire) =>

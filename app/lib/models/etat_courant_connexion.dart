@@ -1,4 +1,5 @@
 import 'etat_courant_joueur.dart';
+import 'vote_themes.dart';
 
 /// Miroir de `EtatCourantConnexionDto` — envoyé (V2) par le serveur dès qu'une connexion est
 /// automatiquement rattachée à un joueur existant via l'URL du hub (?code&playerId, voir
@@ -6,7 +7,7 @@ import 'etat_courant_joueur.dart';
 /// par rapport à JoinResult : pas de roster/teams à renvoyer, déjà connus du client depuis le join
 /// initial.
 class EtatCourantConnexion {
-  EtatCourantConnexion({required this.score, this.teamId, this.etatCourant, this.jokerDisponible = false, this.afficherEcart = true});
+  EtatCourantConnexion({required this.score, this.teamId, this.etatCourant, this.jokerDisponible = false, this.afficherEcart = true, this.voteThemes});
 
   final int score;
   final String? teamId;
@@ -18,6 +19,9 @@ class EtatCourantConnexion {
   /// Refonte UI (lot 3) — voir JoinResult.afficherEcart.
   final bool afficherEcart;
 
+  /// Retour utilisateur (2026-10-17) — voir JoinResult.voteThemes.
+  final VoteThemesEtat? voteThemes;
+
   factory EtatCourantConnexion.fromJson(Map<String, dynamic> json) => EtatCourantConnexion(
         score: json['score'] as int,
         teamId: json['teamId'] as String?,
@@ -25,5 +29,6 @@ class EtatCourantConnexion {
             json['etatCourant'] != null ? EtatCourantJoueur.fromJson(json['etatCourant'] as Map<String, dynamic>) : null,
         jokerDisponible: json['jokerDisponible'] as bool? ?? false,
         afficherEcart: json['afficherEcart'] as bool? ?? true,
+        voteThemes: json['voteThemes'] != null ? VoteThemesEtat.fromJson(json['voteThemes'] as Map<String, dynamic>) : null,
       );
 }

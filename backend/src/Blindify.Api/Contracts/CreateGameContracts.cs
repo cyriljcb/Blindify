@@ -40,4 +40,5 @@ public record ConfigurerPartieRequestDto(
     int PenaliteAbsenceReponse = -5,
     int DureePhaseMiseMs = 15000,
     int DureePhaseQuestionMs = 20000,
-    bool AfficherEcart = true);
+    bool AfficherEcart = true,
+    bool UtiliserVotes = false);

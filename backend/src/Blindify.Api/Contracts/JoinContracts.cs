@@ -2,7 +2,7 @@ using Blindify.Domain.Enums;
 
 namespace Blindify.Api.Contracts;
 
-public record PlayerSummaryDto(string PlayerId, string Nom, bool EstConnecte, string? TeamId);
+public record PlayerSummaryDto(string PlayerId, string Nom, bool EstConnecte, string? TeamId, bool APartie = false);
 
 /// <summary>Resynchronise un joueur qui (re)rejoint en pleine partie sur la phase actuellement
 /// active, pour qu'il puisse répondre au round/à la question bonus en cours plutôt que d'attendre
@@ -28,17 +28,22 @@ public record EtatCourantJoueurDto(
 /// retombe alors sur le lobby en attendant la prochaine diffusion serveur, comportement inchangé.
 /// JokerDisponible (V2, section 12.7) : au même niveau que Score/TeamId (pas dans EtatCourant, qui
 /// est null en dehors d'un round/phase bonus actif) — état permanent du joueur pour la partie entière.</summary>
-public record JoinGameResultDto(bool Success, string? ErrorMessage, int Score, string? TeamId, List<TeamDto> Teams, List<PlayerSummaryDto> Joueurs, EtatCourantJoueurDto? EtatCourant, bool JokerDisponible = false, bool AfficherEcart = true);
+public record JoinGameResultDto(bool Success, string? ErrorMessage, int Score, string? TeamId, List<TeamDto> Teams, List<PlayerSummaryDto> Joueurs, EtatCourantJoueurDto? EtatCourant, bool JokerDisponible = false, bool AfficherEcart = true, VoteThemesEtatJoueurDto? VoteThemes = null);
 
 /// <summary>Envoyé (V2) au joueur automatiquement rattaché à sa partie via GameHub.OnConnectedAsync
 /// (reconnexion via ?code&playerId dans l'URL du hub) — remplace l'obligation de rappeler JoinGame après
 /// chaque reconnexion transport SignalR. Contenu volontairement réduit par rapport à JoinGameResultDto :
 /// pas de roster/teams à renvoyer, déjà connus du client depuis le join initial.
 /// JokerDisponible : voir JoinGameResultDto.</summary>
-public record EtatCourantConnexionDto(int Score, string? TeamId, EtatCourantJoueurDto? EtatCourant, bool JokerDisponible = false, bool AfficherEcart = true);
+public record EtatCourantConnexionDto(int Score, string? TeamId, EtatCourantJoueurDto? EtatCourant, bool JokerDisponible = false, bool AfficherEcart = true, VoteThemesEtatJoueurDto? VoteThemes = null);
 
 public record PlayerJoinedDto(string PlayerId, string Nom);
 
 public record PlayerConnectionChangedDto(string PlayerId, bool EstConnecte);
 
 public record PlayerTeamChangedDto(string PlayerId, string TeamId);
+
+/// <summary>Retour utilisateur (2026-10-17) — diffusé quand un joueur quitte volontairement la partie
+/// (GameHub.QuitterPartie). Retire : true au lobby (joueur supprimé de la partie), false en cours de
+/// partie (joueur gardé au classement avec son score, mais plus attendu — voir Player.APartie).</summary>
+public record PlayerLeftDto(string PlayerId, bool Retire);

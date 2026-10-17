@@ -11,6 +11,41 @@ public static class SeriesPlanner
     private static readonly int[] PaliersBase = [10, 20, 30, 50];
     private static readonly RoundMode[] ModesPossibles = [RoundMode.Qcm, RoundMode.TapeReponse, RoundMode.PremiereLettre];
 
+    /// <summary>Vote des thèmes (retour utilisateur 2026-10-17) : choisit nombreSeries thèmes distincts
+    /// parmi ceux qui ont reçu au moins une voix. Autant de thèmes votés que de séries → tous joués.
+    /// Moins de séries → tirage, en couvrant d'abord le plus de votants possible (au moins un thème
+    /// par personne quand c'est faisable) : on prend tant qu'il reste des votants non couverts le thème
+    /// qui en couvre le plus (égalités départagées au hasard), puis on complète au hasard parmi les
+    /// thèmes votés restants. Jamais plus de séries que de thèmes votés (ArgumentException). Ordre
+    /// renvoyé mélangé — c'est l'ordre de jeu des séries.</summary>
+    public static List<string> ChoisirThemesDepuisVotes(IReadOnlyDictionary<string, List<string>> votesParJoueur, int nombreSeries, Random? random = null)
+    {
+        random ??= Random.Shared;
+        var votes = votesParJoueur.Values.Where(v => v.Count > 0).Select(v => v.Distinct().ToList()).ToList();
+        var themesVotes = votes.SelectMany(v => v).Distinct().ToList();
+
+        if (nombreSeries > themesVotes.Count)
+            throw new ArgumentException($"Seulement {themesVotes.Count} thème(s) voté(s) pour {nombreSeries} série(s) demandée(s).");
+
+        var choisis = new List<string>();
+        var nonCouverts = votes.ToList();
+
+        while (choisis.Count < nombreSeries && nonCouverts.Count > 0)
+        {
+            var meilleur = nonCouverts.SelectMany(v => v).Distinct()
+                .Select(theme => (theme, couverts: nonCouverts.Count(v => v.Contains(theme)), alea: random.Next()))
+                .OrderByDescending(c => c.couverts).ThenBy(c => c.alea)
+                .First().theme;
+            choisis.Add(meilleur);
+            nonCouverts.RemoveAll(v => v.Contains(meilleur));
+        }
+
+        var restants = MelangerCopie(themesVotes.Except(choisis).ToList(), random);
+        choisis.AddRange(restants.Take(nombreSeries - choisis.Count));
+
+        return MelangerCopie(choisis, random);
+    }
+
     /// <summary>Une série = un thème, jamais un mélange. Chaque série tirée reçoit un thème distinct
     /// pioché au hasard dans le vivier, sans répétition tant qu'il reste des thèmes non utilisés —
     /// au-delà (plus de séries que de thèmes fournis), le vivier est remélangé et repioché en boucle.
@@ -34,12 +69,13 @@ public static class SeriesPlanner
         return assignation;
     }
 
-    private static List<string> MelangerCopie(IReadOnlyList<string> liste)
+    private static List<string> MelangerCopie(IReadOnlyList<string> liste, Random? random = null)
     {
+        random ??= Random.Shared;
         var copie = liste.ToList();
         for (var i = copie.Count - 1; i > 0; i--)
         {
-            var j = Random.Shared.Next(i + 1);
+            var j = random.Next(i + 1);
             (copie[i], copie[j]) = (copie[j], copie[i]);
         }
         // Pioche par Pop (retire depuis la fin) — inverser pour piocher dans le même ordre que le

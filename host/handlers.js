@@ -23,12 +23,38 @@ export function onPlayerJoined(state, { playerId, nom }) {
 
 export function onPlayerReconnected(state, { playerId }) {
   const p = state.players.find((j) => j.playerId === playerId);
-  if (p) p.estConnecte = true;
+  if (p) {
+    p.estConnecte = true;
+    p.aQuitte = false; // revenu avec le même code après QuitterPartie
+  }
 }
 
 export function onPlayerDisconnected(state, { playerId }) {
   const p = state.players.find((j) => j.playerId === playerId);
   if (p) p.estConnecte = false;
+}
+
+// Retour utilisateur (2026-10-17) — départ volontaire depuis l'app (GameHub.QuitterPartie). Au lobby
+// (retire) : le joueur disparaît. En partie : gardé pour le classement, mais plus attendu.
+export function onPlayerLeft(state, { playerId, retire }) {
+  if (retire) {
+    state.players = state.players.filter((j) => j.playerId !== playerId);
+    delete state.equipeParJoueur[playerId];
+    return;
+  }
+  const p = state.players.find((j) => j.playerId === playerId);
+  if (p) {
+    p.estConnecte = false;
+    p.aQuitte = true;
+  }
+}
+
+export function onMiseEnregistree(state, { playerId }) {
+  if (!state.misesEnregistrees.includes(playerId)) state.misesEnregistrees.push(playerId);
+}
+
+export function onVotesThemesMisAJour(state, dto) {
+  state.votesThemes = dto;
 }
 
 export function onPlayerTeamChanged(state, { playerId, teamId }) {
@@ -131,6 +157,8 @@ export function onGameEnded(state, dto) {
 }
 
 export function onGameRestarted(state) {
+  // RejouerPartie ne réinscrit pas les joueurs partis en cours de partie (voir GameHub).
+  state.players = state.players.filter((p) => !p.aQuitte);
   state.repondants = [];
   state.jokersRound = [];
   state.roundsDemarres = 0;
@@ -153,11 +181,14 @@ export function onGameRestarted(state) {
 }
 
 export function onBonusStakeOptions(state, payload) {
+  state.misesEnregistrees = [];
   state.currentScreen = "bonus-stake";
   state.currentDisplayScreen = "bonus-stake";
   state.currentBonusInfo = {
     paliers: payload.paliers,
     serieLabel: libelleSerie(state.serieCouranteIndex, state.nombreSeriesTotal, state.tagsParSerieCourante),
+    serieLettre: lettreSerie(state.serieCouranteIndex),
+    theme: libelleTheme(state.tagsParSerieCourante[state.serieCouranteIndex] ?? []),
   };
 }
 
@@ -225,6 +256,9 @@ export function registerHandlers(connection, callbacks) {
   connection.on("PlayerJoined", (payload) => callbacks.onEvent("PlayerJoined", payload));
   connection.on("PlayerReconnected", (payload) => callbacks.onEvent("PlayerReconnected", payload));
   connection.on("PlayerDisconnected", (payload) => callbacks.onEvent("PlayerDisconnected", payload));
+  connection.on("PlayerLeft", (payload) => callbacks.onEvent("PlayerLeft", payload));
+  connection.on("MiseEnregistree", (payload) => callbacks.onEvent("MiseEnregistree", payload));
+  connection.on("VotesThemesMisAJour", (payload) => callbacks.onEvent("VotesThemesMisAJour", payload));
   connection.on("PlayerTeamChanged", (payload) => callbacks.onEvent("PlayerTeamChanged", payload));
   connection.on("SerieAnnoncee", (payload) => callbacks.onEvent("SerieAnnoncee", payload));
   connection.on("RoundStarted", (payload) => callbacks.onEvent("RoundStarted", payload));
@@ -249,6 +283,9 @@ export const mutations = {
   PlayerJoined: onPlayerJoined,
   PlayerReconnected: onPlayerReconnected,
   PlayerDisconnected: onPlayerDisconnected,
+  PlayerLeft: onPlayerLeft,
+  MiseEnregistree: onMiseEnregistree,
+  VotesThemesMisAJour: onVotesThemesMisAJour,
   PlayerTeamChanged: onPlayerTeamChanged,
   SerieAnnoncee: onSerieAnnoncee,
   RoundStarted: onRoundStarted,

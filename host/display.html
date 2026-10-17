@@ -24,6 +24,15 @@
        jamais l'effet ni la cible révélée. -->
   <div id="joker-banner" class="joker-banner hidden"></div>
 
+  <!-- Retour utilisateur (2026-10-17) — code + QR toujours visibles en pleine partie : un joueur dont
+       l'app a planté (score repris) ou un nouveau venu (à 0) peut rejoindre à tout moment. -->
+  <aside id="join-badge" class="join-badge hidden">
+    <div id="join-badge-qr" class="join-badge__qr"></div>
+    <div class="join-badge__texte">
+      <span>Rejoindre</span>
+      <strong id="join-badge-code"></strong>
+    </div>
+  </aside>
 
   <main>
     <!-- Écran d'attente : avant que le panneau de contrôle n'ait diffusé un état -->
@@ -40,6 +49,11 @@
       <div id="lobby-qrcode" class="qr-container"></div>
       <p class="waiting-text">Scanne le QR depuis l'app pour rejoindre sans rien taper</p>
       <ul id="lobby-players" class="player-list player-list--display"></ul>
+      <!-- Retour utilisateur (2026-10-17) — décompte en direct du vote des thèmes (jamais qui a voté quoi). -->
+      <div id="lobby-votes" class="lobby-votes hidden">
+        <p class="lobby-votes__titre">Thèmes votés <span id="lobby-votes-compteur"></span></p>
+        <ul id="lobby-votes-liste" class="lobby-votes__liste"></ul>
+      </div>
       <!-- Retour utilisateur : pénible de switcher vers le panneau de contrôle juste pour lancer.
            Relayé au panneau de contrôle via postMessage (voir display.js et app.js:"start-round") —
            cette fenêtre ne se connecte jamais à SignalR elle-même. -->
@@ -86,14 +100,32 @@
       <ul id="reveal-results" class="result-badges"></ul>
     </section>
 
-    <section id="screen-bonus-stake" class="screen hidden">
-      <h2 id="bonus-stake-title">Question bonus — mise à l'aveugle</h2>
-      <p class="waiting-text">Les joueurs choisissent un palier sur leur téléphone.</p>
-      <div class="timer-row">
-        <div class="timer-bar timer-bar--big"><div id="bonus-stake-timer-fill" class="timer-fill"></div></div>
-        <span id="bonus-stake-timer-seconds" class="timer-seconds"></span>
+    <!-- Retour utilisateur (2026-10-17) — mise à l'aveugle « plus dynamique » : rayons d'affiche en
+         rotation, paliers en escalier qui montent un par un, chrono circulaire qui s'affole sur la fin,
+         et les joueurs qui « verrouillent » leur mise en direct (MiseEnregistree — jamais le palier). -->
+    <section id="screen-bonus-stake" class="screen screen--bonus-stake hidden">
+      <div class="bonus-rayons" aria-hidden="true"></div>
+      <header class="bonus-entete">
+        <p id="bonus-stake-eyebrow" class="bonus-entete__eyebrow"></p>
+        <h2 class="bonus-entete__titre"><span>Question</span> <span>bonus</span></h2>
+        <p class="bonus-entete__accroche">Misez à l'aveugle — la question n'est pas encore révélée</p>
+      </header>
+      <div class="bonus-corps">
+        <ol id="bonus-paliers" class="paliers"></ol>
+        <div id="bonus-chrono" class="bonus-chrono">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="bonus-chrono__fond" cx="60" cy="60" r="52" />
+            <circle id="bonus-chrono-arc" class="bonus-chrono__arc" cx="60" cy="60" r="52" />
+          </svg>
+          <span id="bonus-stake-timer-seconds" class="bonus-chrono__secondes"></span>
+          <span class="bonus-chrono__label">pour miser</span>
+        </div>
       </div>
-      <ul id="bonus-paliers" class="score-list score-list--display"></ul>
+      <div class="bonus-mises">
+        <p id="bonus-mises-compteur" class="bonus-mises__compteur"></p>
+        <ul id="bonus-mises-joueurs" class="bonus-mises__joueurs"></ul>
+      </div>
+      <div id="bonus-mises-toutes" class="bonus-tampon hidden">Toutes les mises sont posées !</div>
     </section>
 
     <section id="screen-bonus-question" class="screen screen--question hidden">

@@ -16,4 +16,10 @@ public class Player
     /// <summary>Joker (V2, section 12.7) — un seul par joueur et par partie complète, remis à false par
     /// GameHub.RejouerPartie.</summary>
     public bool JokerUtilise { get; set; }
+
+    /// <summary>Retour utilisateur (2026-10-17) — le joueur a quitté volontairement la partie en cours
+    /// (GameHub.QuitterPartie). Reste dans Players pour garder son score au classement, mais n'est plus
+    /// compté comme absent (ni pénalité d'absence, ni palier bonus par défaut). Remis à false s'il
+    /// rejoint à nouveau avec le même PlayerId (JoinGame) — score conservé.</summary>
+    public bool APartie { get; set; }
 }

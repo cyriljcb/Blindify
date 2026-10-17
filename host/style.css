@@ -939,3 +939,28 @@ body.regie .action-principale { display: none; }
 .preset-supprimer:hover { opacity: 1; color: var(--coral); }
 .presets-actions { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
 .presets-note { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-dim); }
+
+/* ----- Vote des thèmes par les joueurs (retour utilisateur 2026-10-17) ----- */
+
+.pill--code { background: var(--mustard); color: var(--bg); border-color: var(--ink); letter-spacing: 0.12em; }
+
+.vote-toggle { font-weight: 700; }
+.vote-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem 1.1rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+  box-shadow: 4px 4px 0 var(--cobalt);
+}
+.vote-panel__reglage { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+.vote-panel__reglage input { width: 5rem; }
+.vote-statut { margin: 0; font-family: var(--font-mono); font-size: 0.85rem; }
+.vote-decompte { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.vote-ligne { display: grid; grid-template-columns: minmax(6rem, 10rem) 1fr 2rem; align-items: center; gap: 0.6rem; }
+.vote-ligne__theme { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vote-ligne__barre { height: 0.8rem; border: 2px solid var(--ink); border-radius: 3px; background: var(--surface); overflow: hidden; }
+.vote-ligne__barre i { display: block; height: 100%; background: var(--mustard); transition: width 300ms ease; }
+.vote-ligne__nombre { font-family: var(--font-display); font-size: 1.1rem; text-align: right; font-variant-numeric: tabular-nums; }

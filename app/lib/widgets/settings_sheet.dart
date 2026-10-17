@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../services/apk_update.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
+import 'quitter_salon.dart';
 import 'signalement_dialog.dart';
 
 /// Réglages accessibles en permanence (icône engrenage dans l'en-tête, voir main.dart) —
@@ -73,6 +74,41 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             ),
             Text('Réglages', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 16),
+            // Retour utilisateur (2026-10-17) — code de la partie toujours retrouvable (pour le donner à
+            // quelqu'un qui arrive en cours de route) et sortie du salon possible depuis n'importe quel écran.
+            if (game.gameCode != null) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        text: 'Salon ',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        children: [
+                          TextSpan(
+                            text: game.gameCode,
+                            style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 3, color: BlindifyColors.mustard),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final quitte = await confirmerQuitterSalon(context);
+                      if (quitte && context.mounted) Navigator.of(context).pop();
+                    },
+                    icon: const Icon(Icons.logout_rounded, size: 18),
+                    label: const Text('Quitter le salon'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: BlindifyColors.coral,
+                      side: const BorderSide(color: BlindifyColors.coral, width: 2),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
             TextField(
               controller: _urlController,
               decoration: const InputDecoration(

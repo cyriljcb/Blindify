@@ -78,6 +78,7 @@ async function tenterResumeHostSession() {
     state.gameCode = session.code;
     state.hostSecret = session.hostSecret;
     state.jeuEnPause = snapshot.enPause;
+    state.votesThemes = snapshot.votesThemes ?? null;
 
     if (snapshot.trackId) {
       audio.resumeAudio(state.serverBaseUrl, snapshot.filePath, snapshot.positionAudioMs, snapshot.enPause);
@@ -192,6 +193,12 @@ function handleEvent(name, payload) {
 
     case "BonusStakeOptions":
       timers.startTimer(payload.dureePhaseMiseMs, el("bonus-stake-timer-fill"));
+      break;
+
+    case "MiseEnregistree":
+      // Retour utilisateur (2026-10-17) — animation « mise verrouillée » sur l'écran public, jamais le
+      // palier choisi (voir MiseEnregistreeDto côté backend).
+      displayBridge.sendMiseEnregistree(payload);
       break;
 
     case "BonusQuestionStarted": {

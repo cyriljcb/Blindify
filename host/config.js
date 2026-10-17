@@ -80,15 +80,41 @@ function buildCreateGameRequest() {
 // cet écran (points, pénalités, durées des phases bonus) restent celles de
 // ConfigurerPartieRequestDto côté backend, jamais recalculées ici.
 function buildConfigurerPartieRequest() {
+  const utiliserVotes = el("setup-vote-joueurs").checked;
   return {
     nombreSeries: Math.max(1, parseInt(el("setup-nombre-series").value, 10) || 1),
     nombreRoundsClassiques: parseInt(el("setup-nombre-rounds").value, 10),
     dureeFenetreReponseMs: parseInt(el("setup-duree-fenetre").value, 10) * 1000,
-    themesVivier: themesSelectionnes(),
+    themesVivier: utiliserVotes ? [] : themesSelectionnes(),
     config: null,
     afficherEcart: el("setup-afficher-ecart").checked,
+    utiliserVotes,
   };
 }
+
+// ----- Vote des thèmes par les joueurs (retour utilisateur 2026-10-17) -----
+// Le décompte (state.votesThemes) est rendu par render.js:renderVotePanel — donnée serveur, dans le
+// flux état→rendu ; ici seulement les commandes du formulaire.
+
+el("setup-vote-joueurs").addEventListener("change", (e) => {
+  el("vote-panel").classList.toggle("hidden", !e.target.checked);
+  el("themes-host").classList.toggle("hidden", e.target.checked);
+  notify();
+});
+
+el("btn-ouvrir-vote").addEventListener("click", async () => {
+  el("vote-error").textContent = "";
+  try {
+    // Seuls les thèmes assez fournis pour le nombre de rounds choisi sont proposés aux joueurs.
+    await invoke.ouvrirVoteThemes({
+      votesParJoueur: lireEntier("setup-votes-par-joueur", 2),
+      nombreRoundsMin: lireEntier("setup-nombre-rounds", 1),
+    });
+  } catch (err) {
+    console.error(err);
+    el("vote-error").textContent = "Erreur : " + (err.message || err);
+  }
+});
 
 el("setup-mode-equipe").addEventListener("change", (e) => {
   el("setup-equipes-wrapper").classList.toggle("hidden", !e.target.checked);
@@ -112,6 +138,8 @@ el("btn-create-game").addEventListener("click", async () => {
     state.dernierScoreDto = null;
     state.historiqueLabelEnAttente = null;
     state.players = [];
+    state.votesThemes = null;
+    state.misesEnregistrees = [];
     state.equipes = result.teams ?? [];
     state.equipeParJoueur = {};
     state.currentScreen = "lobby";
@@ -139,13 +167,25 @@ el("btn-configurer-partie").addEventListener("click", async () => {
   errorEl.textContent = "";
   el("configurer-note").textContent = "";
 
-  if (!el("setup-tags-aleatoire").checked && themesSelectionnes().length === 0) {
+  const payload = buildConfigurerPartieRequest();
+
+  if (payload.utiliserVotes) {
+    // Contrôle déjà fait côté serveur (ConfigurerPartie) — ici pour un message immédiat et explicite.
+    const themesVotes = state.votesThemes?.themesDistincts ?? 0;
+    if (themesVotes === 0) {
+      errorEl.textContent = "Aucun thème voté pour l'instant — ouvre le vote et attends les joueurs.";
+      return;
+    }
+    if (payload.nombreSeries > themesVotes) {
+      errorEl.textContent = `Seulement ${themesVotes} thème${themesVotes > 1 ? "s" : ""} voté${themesVotes > 1 ? "s" : ""} : ${themesVotes} série${themesVotes > 1 ? "s" : ""} au maximum.`;
+      return;
+    }
+  } else if (!el("setup-tags-aleatoire").checked && themesSelectionnes().length === 0) {
     errorEl.textContent = "Coche au moins un thème, ou « Thème aléatoire ».";
     return;
   }
 
   try {
-    const payload = buildConfigurerPartieRequest();
     await invoke.configurerPartie(payload);
     state.nombreRoundsParSerie = payload.nombreRoundsClassiques;
     state.nombreSeriesTotal = payload.nombreSeries;

@@ -1,19 +1,25 @@
 import 'etat_courant_joueur.dart';
 import 'team.dart';
+import 'vote_themes.dart';
 
 class PlayerSummary {
-  PlayerSummary({required this.playerId, required this.nom, required this.estConnecte, this.teamId});
+  PlayerSummary({required this.playerId, required this.nom, required this.estConnecte, this.teamId, this.aPartie = false});
 
   final String playerId;
   final String nom;
   final bool estConnecte;
   final String? teamId;
 
+  /// Retour utilisateur (2026-10-17) — a quitté la partie en cours (GameHub.QuitterPartie) : gardé au
+  /// classement côté serveur, mais plus affiché parmi les joueurs présents.
+  final bool aPartie;
+
   factory PlayerSummary.fromJson(Map<String, dynamic> json) => PlayerSummary(
         playerId: json['playerId'] as String,
         nom: json['nom'] as String,
         estConnecte: json['estConnecte'] as bool,
         teamId: json['teamId'] as String?,
+        aPartie: json['aPartie'] as bool? ?? false,
       );
 }
 
@@ -28,6 +34,7 @@ class JoinResult {
     this.etatCourant,
     this.jokerDisponible = false,
     this.afficherEcart = true,
+    this.voteThemes,
   });
 
   final bool success;
@@ -52,6 +59,9 @@ class JoinResult {
   /// devant (voir GameConnection.ecartAvecJoueurDevant). Vrai si absent (serveur plus ancien).
   final bool afficherEcart;
 
+  /// Retour utilisateur (2026-10-17) — état du vote des thèmes si le host en a ouvert un, sinon null.
+  final VoteThemesEtat? voteThemes;
+
   factory JoinResult.fromJson(Map<String, dynamic> json) => JoinResult(
         success: json['success'] as bool,
         errorMessage: json['errorMessage'] as String?,
@@ -67,5 +77,6 @@ class JoinResult {
             json['etatCourant'] != null ? EtatCourantJoueur.fromJson(json['etatCourant'] as Map<String, dynamic>) : null,
         jokerDisponible: json['jokerDisponible'] as bool? ?? false,
         afficherEcart: json['afficherEcart'] as bool? ?? true,
+        voteThemes: json['voteThemes'] != null ? VoteThemesEtat.fromJson(json['voteThemes'] as Map<String, dynamic>) : null,
       );
 }

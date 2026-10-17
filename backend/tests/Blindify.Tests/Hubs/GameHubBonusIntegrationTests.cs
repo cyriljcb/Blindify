@@ -79,6 +79,8 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
         var questionHost = await AvecTimeout(questionStartedHostTcs.Task, TimeSpan.FromSeconds(5));
         Assert.NotNull(questionHost.FilePath);
         var questionPlayer = await AvecTimeout(questionStartedPlayerTcs.Task, TimeSpan.FromSeconds(5));
+        // L'écran public (host) doit afficher la même question que les téléphones.
+        Assert.Equal(questionPlayer.Cible, questionHost.Cible);
 
         // Le morceau bonus est tiré au hasard dans le catalogue de test (t1..t5), et sa cible
         // (Titre/Auteur) l'est aussi (voir BonusRoundService.CreerBonusRound) — on retrouve la bonne

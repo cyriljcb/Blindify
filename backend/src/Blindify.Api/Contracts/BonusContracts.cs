@@ -12,13 +12,18 @@ public record BonusStakeOptionsDto(int[] Paliers, Guid RoundId, int DureePhaseMi
 /// <summary>RoundId : voir BonusStakeOptionsDto.</summary>
 public record SelectStakeRequestDto(Guid RoundId, int PalierIndex);
 
+/// <summary>Retour utilisateur (2026-10-17) — diffusé à tout le groupe quand un joueur vient de miser
+/// (événement MiseEnregistree) : jamais le palier choisi, seulement qui a déjà verrouillé sa mise.</summary>
+public record MiseEnregistreeDto(string PlayerId);
+
 /// <summary>Envoyé au host uniquement — inclut l'audio (ralenti) du morceau révélé. RoundId : voir
 /// BonusStakeOptionsDto. RefrainStartMs : comme pour un round classique, appliqué au reveal
 /// (BonusResult), pas pendant la phase question qui reste jouée depuis le début (c'est la devinette
 /// elle-même). Mode/QcmOptions : mêmes rôles que RoundStartedForHostDto — Mode tiré au hasard comme un
 /// round classique. EstCourse : voir BonusRound.EstCourse, révélé seulement ici (jamais pendant la mise
-/// à l'aveugle). AnneeOptions : voir RoundStartedForHostDto.</summary>
-public record BonusQuestionStartedForHostDto(string TrackId, string FilePath, int? RefrainStartMs, Guid RoundId, int DureePhaseQuestionMs, bool RalentissementActive, double FacteurRalentissement, RoundMode Mode, List<QcmOptionDto>? QcmOptions, bool EstCourse, List<string>? AnneeOptions = null);
+/// à l'aveugle). AnneeOptions : voir RoundStartedForHostDto. Cible : comme RoundStartedForHostDto — sans
+/// elle, l'écran public retombait sur « Quel film ? » et affichait les titres dans le QCM bonus.</summary>
+public record BonusQuestionStartedForHostDto(string TrackId, string FilePath, int? RefrainStartMs, Guid RoundId, int DureePhaseQuestionMs, bool RalentissementActive, double FacteurRalentissement, RoundMode Mode, RoundCible Cible, List<QcmOptionDto>? QcmOptions, bool EstCourse, List<string>? AnneeOptions = null);
 
 /// <summary>Envoyé aux joueurs — pas d'audio. RoundId : voir BonusStakeOptionsDto. Cible (Titre/Film)
 /// indique ce qui est demandé, comme pour RoundStartedForPlayersDto — toujours Titre sauf morceau

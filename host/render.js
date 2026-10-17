@@ -6,7 +6,7 @@
 // fonction de rendu par écran repeint tout son contenu depuis `state`, jamais de mise à jour
 // incrémentale ciblée par événement (un seul chemin entre "l'état a changé" et "l'écran est à jour").
 
-import { escapeHtml, libelleCible, libelleMode, libelleReveal, lettreSerie, questionCible } from "./shared/format.js";
+import { escapeHtml, libelleCible, libelleMode, libelleReveal, libelleTheme, lettreSerie, questionCible } from "./shared/format.js";
 import { avatarHtml, renderScoreList, renderScoreChart, renderJoinQrCode, renderTitrePanel } from "./shared/components.js";
 
 const el = (id) => document.getElementById(id);
@@ -138,7 +138,8 @@ function renderPlayersList(state) {
     const li = document.createElement("li");
     if (!p.estConnecte) li.classList.add("disconnected");
     const equipeJoueur = nomEquipe(state, state.equipeParJoueur[p.playerId]);
-    const statut = [equipeJoueur, p.estConnecte ? "" : "déconnecté"].filter(Boolean).join(" — ");
+    const aVote = state.votesThemes?.votants?.includes(p.playerId) ? "a voté ✓" : "";
+    const statut = [equipeJoueur, aVote, p.estConnecte ? "" : "déconnecté"].filter(Boolean).join(" — ");
     li.innerHTML = `
       <div class="player-row">${avatarHtml(p.playerId, p.nom, undefined, roster(state))}<span>${escapeHtml(p.nom)}</span></div>
       <span>${escapeHtml(statut)}</span>
@@ -225,7 +226,41 @@ function renderLobby(state) {
   el("lobby-code").textContent = state.gameCode ?? "";
   renderJoinQrCode(el("lobby-qrcode"), state.serverBaseUrl, state.gameCode);
   renderPlayersList(state);
+  renderVotePanel(state);
   el("btn-start-round").disabled = !state.partieConfiguree;
+}
+
+// Retour utilisateur (2026-10-17) — décompte du vote des thèmes : voix par thème, combien ont voté,
+// et le nombre maximal de séries (= thèmes ayant au moins une voix).
+function renderVotePanel(state) {
+  const vote = state.votesThemes;
+  const statut = el("vote-statut");
+  const liste = el("vote-decompte");
+  el("btn-ouvrir-vote").textContent = vote?.ouvert ? "Rouvrir le vote (mettre à jour)" : vote ? "Rouvrir le vote" : "Ouvrir le vote";
+
+  if (!vote) {
+    statut.textContent = "Vote pas encore ouvert.";
+    liste.innerHTML = "";
+    return;
+  }
+
+  const joueurs = state.players.filter((p) => !p.aQuitte).length;
+  const n = vote.themesDistincts;
+  statut.innerHTML =
+    `<strong>${vote.votants.length} / ${joueurs}</strong> joueur${joueurs > 1 ? "s" : ""} ont voté · ` +
+    `<strong>${n}</strong> thème${n > 1 ? "s" : ""} voté${n > 1 ? "s" : ""} → jusqu'à ${n} série${n > 1 ? "s" : ""}` +
+    (vote.ouvert ? "" : " · <em>vote clos</em>");
+
+  const max = Math.max(1, ...vote.votes.map((v) => v.nombre));
+  liste.innerHTML = vote.votes
+    .map(
+      (v) => `<li class="vote-ligne">
+        <span class="vote-ligne__theme">${escapeHtml(libelleTheme([v.theme]))}</span>
+        <span class="vote-ligne__barre"><i style="width: ${(v.nombre / max) * 100}%"></i></span>
+        <span class="vote-ligne__nombre">${v.nombre}</span>
+      </li>`
+    )
+    .join("");
 }
 
 function renderSerieIntro(state) {
@@ -239,7 +274,9 @@ function renderSerieIntro(state) {
 // le host joue souvent (voir la revue UX).
 function renderAnswersLive(container, state) {
   const temps = new Map(state.repondants.map((r) => [r.playerId, r.tempsEcouleMs]));
-  const cartes = state.players
+  // Retour utilisateur (2026-10-17) — un joueur parti (QuitterPartie) n'est plus attendu.
+  const presents = state.players.filter((p) => !p.aQuitte);
+  const cartes = presents
     .map((p) => {
       const t = temps.get(p.playerId);
       const joker = state.jokersRound.includes(p.playerId) ? " · joker" : "";
@@ -250,7 +287,22 @@ function renderAnswersLive(container, state) {
     })
     .join("");
   container.innerHTML = `
-    <p class="answers-live__compteur"><strong>${state.players.filter((p) => temps.has(p.playerId)).length}</strong><span> / ${state.players.length}</span> ont répondu</p>
+    <p class="answers-live__compteur"><strong>${presents.filter((p) => temps.has(p.playerId)).length}</strong><span> / ${presents.length}</span> ont répondu</p>
+    <ul class="answers-live__grille">${cartes}</ul>`;
+}
+
+// Retour utilisateur (2026-10-17) — qui a déjà verrouillé sa mise (MiseEnregistree), jamais le palier.
+function renderMisesLive(container, state) {
+  const presents = state.players.filter((p) => !p.aQuitte);
+  const cartes = presents
+    .map((p) => {
+      const etat = state.misesEnregistrees.includes(p.playerId) ? "done" : p.estConnecte ? "wait" : "off";
+      const statut = etat === "done" ? "✓ mise posée" : etat === "wait" ? "hésite…" : "déconnecté";
+      return `<li class="answer-card answer-card--${etat}">${avatarHtml(p.playerId, p.nom, undefined, roster(state))}<div><div class="answer-card__nom">${escapeHtml(p.nom)}</div><div class="answer-card__statut">${statut}</div></div></li>`;
+    })
+    .join("");
+  container.innerHTML = `
+    <p class="answers-live__compteur"><strong>${presents.filter((p) => state.misesEnregistrees.includes(p.playerId)).length}</strong><span> / ${presents.length}</span> ont misé</p>
     <ul class="answers-live__grille">${cartes}</ul>`;
 }
 
@@ -277,6 +329,7 @@ function renderRoundEnded(state) {
 function renderBonusStake(state) {
   el("bonus-stake-title").textContent = `Question bonus — mise à l'aveugle${state.currentBonusInfo.serieLabel ?? ""}`;
   renderBonusPaliers(state.currentBonusInfo.paliers ?? []);
+  renderMisesLive(el("bonus-stake-mises"), state);
 }
 
 function renderBonusQuestion(state) {
@@ -416,6 +469,10 @@ function renderRegie(state) {
   joueursEl.textContent = `${connectes} joueur${connectes > 1 ? "s" : ""}`;
   joueursEl.classList.toggle("pill--on", connectes > 0);
   joueursEl.classList.toggle("pill--off", connectes === 0);
+
+  const codeEl = el("code-indicator");
+  codeEl.classList.toggle("hidden", !state.gameCode);
+  codeEl.textContent = state.gameCode ? `Code ${state.gameCode}` : "";
 
   // Miroir de l'action principale de l'écran courant : libellé et état repris du bouton d'origine
   // (masqué en mode régie, voir style.css .action-principale), clic relayé par main.js.

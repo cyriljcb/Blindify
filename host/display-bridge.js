@@ -45,7 +45,10 @@ export function syncDisplay(state) {
     gameCode: state.gameCode,
     serverBaseUrl: state.serverBaseUrl,
     paused: state.jeuEnPause,
-    players: state.players.map((p) => ({ playerId: p.playerId, nom: p.nom, estConnecte: p.estConnecte })),
+    players: state.players.map((p) => ({ playerId: p.playerId, nom: p.nom, estConnecte: p.estConnecte, aQuitte: !!p.aQuitte })),
+    // Retour utilisateur (2026-10-17) — qui a déjà misé (jamais le palier), décompte du vote des thèmes.
+    misesEnregistrees: state.misesEnregistrees,
+    votesThemes: state.votesThemes,
     equipeParJoueur: state.equipeParJoueur,
     equipes: state.equipes,
     timerEndAt: timerEndAtCourant(),
@@ -78,6 +81,12 @@ export function sendLeaderboardHide() {
 // relayé au téléphone des joueurs (uniquement l'écran public, voir main.js).
 export function sendPlayerAnswered({ playerId, tempsEcouleMs }) {
   sendToDisplay({ type: "player-answered", playerId, tempsEcouleMs });
+}
+
+// Retour utilisateur (2026-10-17) — déclenche l'animation « mise verrouillée » du joueur ; la liste
+// complète des mises posées arrive aussi par l'état (misesEnregistrees), pour un rechargement de l'écran.
+export function sendMiseEnregistree({ playerId }) {
+  sendToDisplay({ type: "mise-enregistree", playerId });
 }
 
 // Vide le classement de rapidité affiché — appelé à chaque nouveau round/question bonus (et à la

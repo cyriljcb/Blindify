@@ -79,9 +79,10 @@ public class GameHub(
     // d'un moyen de rejoindre une nouvelle partie sans redémarrage complet. Séparé de CreateGame :
     // rappelable autant de fois que nécessaire tant que la partie n'a pas démarré, remplace
     // entièrement la configuration précédente (recalcule la sélection de morceaux depuis zéro).
-    public Task ConfigurerPartie(ConfigurerPartieRequestDto request)
+    public async Task ConfigurerPartie(ConfigurerPartieRequestDto request)
     {
         var session = ResoudreSessionHost();
+        VotesThemesDto? voteFerme = null;
         lock (session.Lock)
         {
             if (session.Etat != GameState.Lobby)
@@ -92,7 +93,27 @@ public class GameHub(
             session.Config = request.Config ?? session.Config;
             session.Config.AfficherEcart = request.AfficherEcart;
 
-            var tagsParSerie = SeriesPlanner.AssignerThemesAuxSeries(request.ThemesVivier, request.NombreSeries);
+            // Retour utilisateur (2026-10-17) — thèmes tirés parmi les votes des joueurs plutôt que dans le
+            // vivier coché par le host. Jamais plus de séries que de thèmes votés (refusé ici).
+            List<List<string>> tagsParSerie;
+            if (request.UtiliserVotes)
+            {
+                var vote = session.VoteThemes ?? throw new HubException("Aucun vote n'a été ouvert pour ce salon.");
+                try
+                {
+                    tagsParSerie = SeriesPlanner.ChoisirThemesDepuisVotes(vote.VotesParPlayerId, request.NombreSeries)
+                        .Select(theme => new List<string> { theme })
+                        .ToList();
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new HubException($"{ex.Message} Réduis le nombre de séries ou attends d'autres votes.");
+                }
+            }
+            else
+            {
+                tagsParSerie = SeriesPlanner.AssignerThemesAuxSeries(request.ThemesVivier, request.NombreSeries);
+            }
             var catalogue = tracksRepository.GetAll();
             // V2, section 12.4 : pré-remplir l'exclusion avec les morceaux bloqués plutôt que de changer
             // la signature de SelectionnerMorceaux — dejaUtilises EST déjà l'ensemble d'exclusion qu'il
@@ -131,9 +152,59 @@ public class GameHub(
             session.SeriesList = seriesList;
             session.SerieCouranteIndex = 0;
             session.RoundCourantIndex = -1;
+
+            // Fermé seulement une fois la configuration réussie : un échec (thème trop maigre) laisse le
+            // vote ouvert pour un nouvel essai.
+            if (request.UtiliserVotes && session.VoteThemes is { } voteUtilise)
+            {
+                voteUtilise.Ouvert = false;
+                voteFerme = ConstruireVotesThemes(voteUtilise);
+            }
         }
 
-        return Task.CompletedTask;
+        if (voteFerme is not null)
+            await Clients.Group(session.Id).SendAsync("VotesThemesMisAJour", voteFerme);
+    }
+
+    /// <summary>Retour utilisateur (2026-10-17) — ouvre (ou rouvre) au lobby le vote des thèmes par les
+    /// joueurs : chacun choisit jusqu'à VotesParJoueur tags du catalogue (ceux ayant au moins
+    /// NombreRoundsMin morceaux), puis ConfigurerPartie(UtiliserVotes) tire les thèmes joués. Une
+    /// réouverture conserve les votes déjà exprimés encore valides.</summary>
+    public async Task OuvrirVoteThemes(OuvrirVoteThemesRequestDto request)
+    {
+        var session = ResoudreSessionHost();
+        if (request.VotesParJoueur < 1)
+            throw new HubException("Il faut au moins un vote par joueur.");
+
+        var themes = tracksRepository.GetAll()
+            .SelectMany(t => t.Tags.Distinct(StringComparer.OrdinalIgnoreCase))
+            .GroupBy(t => t, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() >= request.NombreRoundsMin)
+            .Select(g => g.Key)
+            .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        VotesThemesDto decompte;
+        lock (session.Lock)
+        {
+            if (session.Etat != GameState.Lobby)
+                throw new HubException("Le vote n'est possible qu'avant le début de la partie.");
+
+            var vote = session.VoteThemes ??= new VoteThemes();
+            vote.Ouvert = true;
+            vote.VotesParJoueur = request.VotesParJoueur;
+            vote.ThemesProposes = themes;
+            foreach (var playerId in vote.VotesParPlayerId.Keys.ToList())
+            {
+                var conserves = vote.VotesParPlayerId[playerId].Where(themes.Contains).Take(request.VotesParJoueur).ToList();
+                if (conserves.Count > 0) vote.VotesParPlayerId[playerId] = conserves;
+                else vote.VotesParPlayerId.Remove(playerId);
+            }
+            decompte = ConstruireVotesThemes(vote);
+        }
+
+        await Clients.Group(session.Id).SendAsync("VoteThemesOuvert", new VoteThemesOuvertDto(request.VotesParJoueur, themes));
+        await Clients.Group(session.Id).SendAsync("VotesThemesMisAJour", decompte);
     }
 
     public async Task<HostStateSnapshotDto> RejoinAsHost(string code, string hostSecret)
@@ -153,7 +224,8 @@ public class GameHub(
         {
             round = session.RoundCourant();
             if (round?.DebutRound is null)
-                return new HostStateSnapshotDto(session.EnPause, null, null, null, null, null, null, null);
+                return new HostStateSnapshotDto(session.EnPause, null, null, null, null, null, null, null,
+                    session.VoteThemes is { } vote ? ConstruireVotesThemes(vote) : null);
 
             track = tracksRepository.GetById(round.TrackId);
             positionMs = Math.Max(0, CalculerTempsEcouleMs(session, round.DebutRound.Value, round.DureeEnPauseMs));
@@ -644,6 +716,9 @@ public class GameHub(
             session.EnPause = false;
             session.PauseDemarreeA = null;
 
+            // Retour utilisateur (2026-10-17) — les joueurs partis en cours de partie ne sont pas réinscrits.
+            session.Players.RemoveAll(p => p.APartie);
+
             foreach (var player in session.Players)
             {
                 player.Score = 0;
@@ -666,6 +741,7 @@ public class GameHub(
         List<TeamDto> teams;
         List<PlayerSummaryDto> joueurs;
         EtatCourantJoueurDto? etatCourant;
+        VoteThemesEtatJoueurDto? voteJoueur;
 
         lock (session.Lock)
         {
@@ -681,14 +757,18 @@ public class GameHub(
             {
                 joueur = existant;
                 ReassocierConnexion(joueur, Context.ConnectionId);
+                // Retour utilisateur (2026-10-17) — un joueur parti (QuitterPartie) qui revient reprend sa
+                // place et son score.
+                joueur.APartie = false;
             }
 
             teams = session.Teams.Select(t => new TeamDto(t.Id, t.Nom)).ToList();
-            joueurs = session.Players.Select(p => new PlayerSummaryDto(p.PlayerId, p.Nom, p.EstConnecte, p.TeamId)).ToList();
+            joueurs = session.Players.Select(p => new PlayerSummaryDto(p.PlayerId, p.Nom, p.EstConnecte, p.TeamId, p.APartie)).ToList();
             // Retour utilisateur (playtest 2026-09-06) : un joueur qui rejoint en pleine partie
             // (reconnexion) atterrissait au lobby en attendant le prochain round, sans pouvoir
             // participer à celui déjà en cours — voir ConstruireEtatCourantJoueur.
             etatCourant = ConstruireEtatCourantJoueur(session, playerId);
+            voteJoueur = ConstruireVoteThemesJoueur(session, playerId);
         }
 
         // Posé aussi ici (pas seulement dans OnConnectedAsync) pour couvrir le tout premier join d'un
@@ -702,7 +782,74 @@ public class GameHub(
         else
             await Clients.OthersInGroup(code).SendAsync("PlayerJoined", new PlayerJoinedDto(joueur.PlayerId, joueur.Nom));
 
-        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs, etatCourant, !joueur.JokerUtilise, session.Config.AfficherEcart);
+        return new JoinGameResultDto(true, null, joueur.Score, joueur.TeamId, teams, joueurs, etatCourant, !joueur.JokerUtilise, session.Config.AfficherEcart, voteJoueur);
+    }
+
+    /// <summary>Retour utilisateur (2026-10-17) — quitter volontairement la partie depuis l'app (sans ça,
+    /// le rejoin automatique au redémarrage de l'app rendait le salon impossible à quitter). Au lobby, le
+    /// joueur est supprimé (votes compris). En cours de partie, il reste au classement avec son score
+    /// (Player.APartie : plus de pénalité d'absence ni de palier par défaut) et peut revenir avec le même
+    /// code, score conservé. Diffuse PlayerLeft aux autres membres du groupe.</summary>
+    public async Task QuitterPartie()
+    {
+        var session = ResoudreSession();
+        Player joueur;
+        bool retire;
+        VotesThemesDto? decompte = null;
+
+        lock (session.Lock)
+        {
+            joueur = ResoudrePlayer(session);
+            retire = session.Etat == GameState.Lobby;
+            joueur.ConnectionId = null;
+            joueur.EstConnecte = false;
+            session.AdminConnectionIds.Remove(Context.ConnectionId);
+
+            if (retire)
+            {
+                session.Players.Remove(joueur);
+                if (session.VoteThemes is { } vote && vote.VotesParPlayerId.Remove(joueur.PlayerId))
+                    decompte = ConstruireVotesThemes(vote);
+            }
+            else
+            {
+                joueur.APartie = true;
+            }
+        }
+
+        Context.Items.Remove("playerId");
+        sessionStore.DissocierConnexion(Context.ConnectionId);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, session.Id);
+
+        await Clients.Group(session.Id).SendAsync("PlayerLeft", new PlayerLeftDto(joueur.PlayerId, retire));
+        if (decompte is not null)
+            await Clients.Group(session.Id).SendAsync("VotesThemesMisAJour", decompte);
+    }
+
+    /// <summary>Retour utilisateur (2026-10-17) — remplace entièrement les votes de ce joueur (il peut
+    /// changer d'avis tant que le vote est ouvert). Au plus VoteThemes.VotesParJoueur thèmes, tous pris
+    /// parmi les thèmes proposés. Diffuse le décompte (jamais qui a voté quoi) à tout le groupe.</summary>
+    public async Task<bool> VoterThemes(List<string> themes)
+    {
+        var session = ResoudreSession();
+        VotesThemesDto decompte;
+
+        lock (session.Lock)
+        {
+            var joueur = ResoudrePlayer(session);
+            var vote = session.VoteThemes;
+            if (vote is null || !vote.Ouvert || session.Etat != GameState.Lobby) return false;
+
+            var choix = themes.Distinct().ToList();
+            if (choix.Count > vote.VotesParJoueur || choix.Any(t => !vote.ThemesProposes.Contains(t))) return false;
+
+            if (choix.Count == 0) vote.VotesParPlayerId.Remove(joueur.PlayerId);
+            else vote.VotesParPlayerId[joueur.PlayerId] = choix;
+            decompte = ConstruireVotesThemes(vote);
+        }
+
+        await Clients.Group(session.Id).SendAsync("VotesThemesMisAJour", decompte);
+        return true;
     }
 
     /// <summary>Rejoint (ou change) d'équipe — autorisé à tout moment, pas seulement au lobby, pour
@@ -803,17 +950,26 @@ public class GameHub(
         indice.OptionsRetirees, indice.TuilesRestantes, indice.Structure, indice.Decennie,
         indice.CoverToken is null ? null : $"/api/joker/cover/{indice.CoverToken}");
 
-    public bool SelectStake(SelectStakeRequestDto request)
+    public async Task<bool> SelectStake(SelectStakeRequestDto request)
     {
         var session = ResoudreSession();
+        bool enregistree;
+        string playerId;
         lock (session.Lock)
         {
             var joueur = ResoudrePlayer(session);
+            playerId = joueur.PlayerId;
 
             var bonusRound = session.SerieCourante().BonusRound ?? throw new HubException("Aucune question bonus en cours.");
 
-            return bonusRoundService.EnregistrerMise(session, bonusRound, joueur.PlayerId, request.RoundId, request.PalierIndex);
+            enregistree = bonusRoundService.EnregistrerMise(session, bonusRound, joueur.PlayerId, request.RoundId, request.PalierIndex);
         }
+
+        // Retour utilisateur (2026-10-17) — l'écran public montre qui a déjà verrouillé sa mise, jamais
+        // le palier choisi (voir MiseEnregistreeDto).
+        if (enregistree)
+            await Clients.Group(session.Id).SendAsync("MiseEnregistree", new MiseEnregistreeDto(playerId));
+        return enregistree;
     }
 
     public async Task<BonusAnswerResultDto> SubmitBonusAnswer(SubmitBonusAnswerRequestDto request)
@@ -876,7 +1032,9 @@ public class GameHub(
             Player? joueur;
             lock (session.Lock)
             {
-                joueur = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
+                // Un joueur parti (QuitterPartie) n'est jamais rattaché en silence : seul un JoinGame
+                // explicite le fait revenir.
+                joueur = session.Players.FirstOrDefault(p => p.PlayerId == playerId && !p.APartie);
                 if (joueur is not null) ReassocierConnexion(joueur, Context.ConnectionId);
             }
 
@@ -887,9 +1045,14 @@ public class GameHub(
                 await Groups.AddToGroupAsync(Context.ConnectionId, code);
 
                 EtatCourantJoueurDto? etatCourant;
-                lock (session.Lock) { etatCourant = ConstruireEtatCourantJoueur(session, playerId); }
+                VoteThemesEtatJoueurDto? voteJoueur;
+                lock (session.Lock)
+                {
+                    etatCourant = ConstruireEtatCourantJoueur(session, playerId);
+                    voteJoueur = ConstruireVoteThemesJoueur(session, playerId);
+                }
 
-                await Clients.Caller.SendAsync("EtatCourant", new EtatCourantConnexionDto(joueur.Score, joueur.TeamId, etatCourant, !joueur.JokerUtilise, session.Config.AfficherEcart));
+                await Clients.Caller.SendAsync("EtatCourant", new EtatCourantConnexionDto(joueur.Score, joueur.TeamId, etatCourant, !joueur.JokerUtilise, session.Config.AfficherEcart, voteJoueur));
                 await Clients.OthersInGroup(code).SendAsync("PlayerReconnected", new PlayerConnectionChangedDto(playerId, true));
             }
         }
@@ -938,6 +1101,25 @@ public class GameHub(
     }
 
     // ----- Aides privées -----
+
+    /// <summary>Décompte public du vote : nombre de voix par thème voté (plus voté d'abord), qui a voté,
+    /// jamais qui a voté quoi. Appelé sous session.Lock.</summary>
+    private static VotesThemesDto ConstruireVotesThemes(VoteThemes vote)
+    {
+        var votes = vote.VotesParPlayerId.Values.SelectMany(v => v)
+            .GroupBy(t => t)
+            .Select(g => new VoteThemeCompteDto(g.Key, g.Count()))
+            .OrderByDescending(v => v.Nombre).ThenBy(v => v.Theme, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return new VotesThemesDto(vote.Ouvert, votes, vote.VotesParPlayerId.Keys.ToList(), votes.Count);
+    }
+
+    /// <summary>Appelé sous session.Lock.</summary>
+    private static VoteThemesEtatJoueurDto? ConstruireVoteThemesJoueur(GameSession session, string playerId) =>
+        session.VoteThemes is { } vote
+            ? new VoteThemesEtatJoueurDto(vote.Ouvert, vote.VotesParJoueur, vote.ThemesProposes,
+                vote.VotesParPlayerId.TryGetValue(playerId, out var mesVotes) ? mesVotes : [])
+            : null;
 
     private static string RaisonRejet(bool enPause, bool nonDemarre, bool roundIdPerime, bool dejaRepondu) =>
         enPause ? "partie en pause"

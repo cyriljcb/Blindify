@@ -223,7 +223,8 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         var repondants = round.Reponses.Select(r => r.PlayerId).ToHashSet();
         var penalite = scoring.PointsAbsenceReponse(config);
 
-        foreach (var player in session.Players.Where(p => !repondants.Contains(p.PlayerId)))
+        // Un joueur parti (QuitterPartie) n'est plus compté absent — voir Player.APartie.
+        foreach (var player in session.Players.Where(p => !p.APartie && !repondants.Contains(p.PlayerId)))
         {
             round.Reponses.Add(new RoundAnswer
             {

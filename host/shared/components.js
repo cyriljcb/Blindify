@@ -149,17 +149,14 @@ export function renderTitrePanel(els, titres, index, roster) {
   els.joueurs.textContent = noms.join(", ");
 }
 
-// Mémoïsation par module — host/index.html et host/display.html sont deux documents séparés (l'un
-// ouvert via window.open), donc deux instances indépendantes de ce module : pas de collision entre
-// les deux QR codes malgré la même clé de cache.
-let dernierQrKey = null;
-
+// Mémoïsation par conteneur (data-qr-key) plutôt que par module — retour utilisateur (2026-10-17) :
+// l'écran public affiche désormais deux QR (salle d'attente + badge « Rejoindre » en pleine partie).
 export function renderJoinQrCode(container, serverUrl, code) {
   if (!container || !code || !serverUrl) return;
 
   const key = serverUrl + "|" + code;
-  if (key === dernierQrKey) return;
-  dernierQrKey = key;
+  if (container.dataset.qrKey === key) return;
+  container.dataset.qrKey = key;
 
   const payload = JSON.stringify({ server: serverUrl, code });
   const qr = qrcode(0, "M");

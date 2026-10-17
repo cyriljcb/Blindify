@@ -64,7 +64,7 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
     {
         var ontMise = bonusRound.Mises.Select(m => m.PlayerId).ToHashSet();
 
-        foreach (var player in session.Players.Where(p => !ontMise.Contains(p.PlayerId)))
+        foreach (var player in session.Players.Where(p => !p.APartie && !ontMise.Contains(p.PlayerId)))
             bonusRound.Mises.Add(new BonusStake { PlayerId = player.PlayerId, PalierIndex = bonusScoring.PalierParDefautIndex });
     }
 
@@ -167,7 +167,9 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
         // la perte générale ci-dessous (comportement inchangé pour les autres modes).
         if (bonusRound.EstCourse && repondants.Count > 0) return;
 
-        foreach (var mise in bonusRound.Mises.Where(m => !repondants.Contains(m.PlayerId)))
+        // Un joueur parti (QuitterPartie) après avoir misé ne perd pas sa mise : il n'est plus là pour répondre.
+        var partis = session.Players.Where(p => p.APartie).Select(p => p.PlayerId).ToHashSet();
+        foreach (var mise in bonusRound.Mises.Where(m => !repondants.Contains(m.PlayerId) && !partis.Contains(m.PlayerId)))
         {
             var perte = -bonusScoring.ValeurPalier(config, mise.PalierIndex);
 

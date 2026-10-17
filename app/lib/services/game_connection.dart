@@ -24,6 +24,7 @@ import '../models/score_update.dart';
 import '../models/serie_annoncee.dart';
 import '../models/team.dart';
 import '../models/titre.dart';
+import '../models/vote_themes.dart';
 import 'update_checker.dart';
 
 enum AppScreen { loading, connect, join, lobby, serieIntro, round, roundEnded, bonusStake, bonusCourseIntro, bonusQuestion, bonusResult, ended }
@@ -414,7 +415,38 @@ class GameConnection extends ChangeNotifier {
       teamId = etat.teamId;
       jokerDisponible = etat.jokerDisponible;
       afficherEcart = etat.afficherEcart;
+      if (etat.voteThemes != null) voteThemes = etat.voteThemes;
       appliquerEtatCourant(etat.etatCourant, actualiserEcran: false);
+      notifyListeners();
+    });
+
+    // Retour utilisateur (2026-10-17) — un joueur a quitté volontairement (GameHub.QuitterPartie) : au
+    // lobby il disparaît, en partie il reste visible comme déconnecté (son score reste au classement).
+    hub.on('PlayerLeft', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      final id = data['playerId'] as String;
+      if (data['retire'] as bool? ?? false) {
+        players.removeWhere((p) => p.playerId == id);
+        notifyListeners();
+      } else {
+        _updatePlayerConnection(id, false);
+      }
+    });
+
+    // Retour utilisateur (2026-10-17) — vote des thèmes au lobby, voir [voterThemes].
+    hub.on('VoteThemesOuvert', (args) {
+      final data = args![0] as Map<String, dynamic>;
+      final themes = (data['themes'] as List<dynamic>? ?? []).cast<String>();
+      final votesParJoueur = data['votesParJoueur'] as int;
+      // Le serveur garde les votes encore valides à une réouverture — même filtre ici.
+      final conserves = (voteThemes?.mesVotes ?? []).where(themes.contains).take(votesParJoueur).toList();
+      voteThemes = VoteThemesEtat(ouvert: true, votesParJoueur: votesParJoueur, themes: themes, mesVotes: conserves);
+      notifyListeners();
+    });
+
+    hub.on('VotesThemesMisAJour', (args) {
+      votesDecompte = VotesThemesDecompte.fromJson(args![0] as Map<String, dynamic>);
+      voteThemes?.ouvert = votesDecompte!.ouvert;
       notifyListeners();
     });
 
@@ -559,6 +591,8 @@ class GameConnection extends ChangeNotifier {
     // « rejoindre » en oubliant le code pour ne pas retenter un rejoin automatique dessus.
     hub.on('SalonFerme', (_) {
       _reinitialiserEtatPartie();
+      voteThemes = null;
+      votesDecompte = null;
       _rejoinRetryTimer?.cancel();
       _rejoinRetryTimer = null;
       _prefs?.remove(_prefsGameCode);
@@ -799,6 +833,7 @@ class GameConnection extends ChangeNotifier {
       teams = joinResult.teams;
       jokerDisponible = joinResult.jokerDisponible;
       afficherEcart = joinResult.afficherEcart;
+      voteThemes = joinResult.voteThemes;
       await _prefs?.setString(_prefsNom, pseudo);
       await _prefs?.setString(_prefsGameCode, code);
 
@@ -859,6 +894,70 @@ class GameConnection extends ChangeNotifier {
         // Jamais renvoyé par le serveur en pratique (GameHub.ConstruireEtatCourantJoueur renvoie
         // null plutôt qu'un DTO à Phase.Aucune) — présent pour l'exhaustivité du switch.
         if (actualiserEcran) screen = AppScreen.lobby;
+    }
+  }
+
+  /// Retour utilisateur (2026-10-17) — vote des thèmes ouvert par le host au lobby. null si aucun
+  /// vote n'a été ouvert. [votesDecompte] : décompte public (voix par thème, qui a voté), jamais qui a
+  /// voté quoi.
+  VoteThemesEtat? voteThemes;
+  VotesThemesDecompte? votesDecompte;
+  bool voteEnvoiEnCours = false;
+
+  /// Remplace entièrement les votes de ce joueur (il peut changer d'avis tant que le vote est
+  /// ouvert) — le serveur refuse au-delà de votesParJoueur ou hors des thèmes proposés.
+  Future<void> voterThemes(List<String> themes) async {
+    final vote = voteThemes;
+    if (vote == null || !vote.ouvert || voteEnvoiEnCours) return;
+    final precedents = vote.mesVotes;
+    vote.mesVotes = themes;
+    voteEnvoiEnCours = true;
+    notifyListeners();
+    try {
+      final ok = await _hub!.invoke('VoterThemes', args: [themes]) as bool? ?? false;
+      if (!ok) vote.mesVotes = precedents;
+    } catch (_) {
+      vote.mesVotes = precedents;
+    } finally {
+      voteEnvoiEnCours = false;
+      notifyListeners();
+    }
+  }
+
+  /// Retour utilisateur (2026-10-17) — « impossible de quitter un salon » : le code persisté faisait
+  /// rejoindre automatiquement la même partie à chaque relance de l'app. Prévient le serveur
+  /// (GameHub.QuitterPartie : au lobby le joueur est retiré, en partie son score est gardé et il pourra
+  /// revenir avec le même code), oublie le code, puis rouvre une connexion neuve au même serveur sans
+  /// ?code&playerId dans l'URL, prête pour rejoindre un autre salon. Best-effort côté serveur : même si
+  /// l'appel échoue (réseau coupé), le joueur se retrouve libre localement.
+  Future<void> quitterPartie() async {
+    try {
+      if (connected) await _hub?.invoke('QuitterPartie');
+    } catch (_) {
+      // Rien à faire : le joueur quitte quand même localement.
+    }
+
+    _introCourseTimer?.cancel();
+    _rejoinRetryTimer?.cancel();
+    _rejoinRetryTimer = null;
+    await _prefs?.remove(_prefsGameCode);
+    _reinitialiserEtatPartie();
+    gameCode = null;
+    teamId = null;
+    teams = [];
+    players.clear();
+    voteThemes = null;
+    votesDecompte = null;
+    isAdmin = false;
+    showLeaderboard = false;
+    errorMessage = null;
+
+    final url = serverUrl;
+    if (url != null) {
+      await connect(url, timeout: _delaiReconnexionAuto, silent: true);
+    } else {
+      screen = AppScreen.connect;
+      notifyListeners();
     }
   }
 
