@@ -6,6 +6,7 @@ import '../services/apk_update.dart';
 import '../services/game_connection.dart';
 import '../theme.dart';
 import 'quitter_salon.dart';
+import 'update_banner.dart' show IndicateurTelechargementApk;
 import 'signalement_dialog.dart';
 
 /// Réglages accessibles en permanence (icône engrenage dans l'en-tête, voir main.dart) —
@@ -157,6 +158,15 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                         side: const BorderSide(color: BlindifyColors.mustard, width: 2),
                       )
                     : null,
+              ),
+              ValueListenableBuilder<double?>(
+                valueListenable: MiseAJourApk.progression,
+                builder: (context, progression, _) => progression == null
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Center(child: IndicateurTelechargementApk(progression: progression)),
+                      ),
               ),
             ],
             const SizedBox(height: 8),

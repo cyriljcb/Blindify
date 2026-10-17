@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -18,6 +20,7 @@ import 'screens/loading_screen.dart';
 import 'screens/lobby_screen.dart';
 import 'screens/round_ended_screen.dart';
 import 'screens/serie_intro_screen.dart';
+import 'services/apk_update.dart';
 import 'services/game_connection.dart';
 import 'theme.dart';
 import 'widgets/player_avatar.dart';
@@ -41,6 +44,8 @@ void main() async {
   try {
     await WakelockPlus.enable();
   } catch (_) {}
+  // APK laissé par une mise à jour intégrée (voir services/apk_update.dart).
+  unawaited(nettoyerApkTelecharge());
   runApp(const BlindifyApp());
 }
 

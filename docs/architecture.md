@@ -124,6 +124,8 @@ Chaque téléphone Android visite `http://<ip-du-poste>:5000/blindify.apk` (ou `
 
 **Détection automatique d'une mise à jour disponible** (retour utilisateur) : l'app compare son propre build (`PackageInfo`, reflète `pubspec.yaml` au moment du build) à `host/apk_version.json` — un bandeau apparaît dès le lancement si le serveur a un build plus récent (voir `services/update_checker.dart`).
 
+**Mise à jour intégrée** (retour utilisateur 2026-10-17 — passer par le navigateur empilait les APK dans « Téléchargements ») : depuis la 1.0.11, le bouton « Mettre à jour » (bandeau, réglages, écran de connexion) télécharge l'APK dans le cache privé de l'app, toujours sous le même nom (`services/apk_update.dart`, avancement affiché), puis ouvre directement l'installeur Android via `open_filex` (son `FileProvider`). Le fichier est supprimé au démarrage suivant. Permission `REQUEST_INSTALL_PACKAGES` dans le manifeste : la première fois, Android demande d'autoriser Blindify à installer des applis ; la confirmation « Mettre à jour » reste obligatoire à chaque fois. Les permissions médias qu'ajoute `open_filex` sont retirées (`tools:node="remove"`). En cas d'échec, repli automatique sur le navigateur (ancien fonctionnement). Les téléphones encore en 1.0.10 ou avant passent une dernière fois par le navigateur pour installer la 1.0.11.
+
 Pas de solution équivalente pour iPhone sans compte Apple Developer/Xcode — voir point 9 du retour playtest 2026-08-24 (mémoire) pour la piste web (`flutter build web`, PWA via Safari).
 
 ## 3. Pipeline de préparation des données

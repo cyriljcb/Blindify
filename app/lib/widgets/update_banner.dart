@@ -41,16 +41,23 @@ class UpdateBanner extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
             ),
           ),
-          TextButton(
-            onPressed: () => ouvrirMiseAJourApk(game.urlTelechargementApk, version: game.updateVersionDistante),
-            style: TextButton.styleFrom(
-              foregroundColor: BlindifyColors.onLight,
-              backgroundColor: BlindifyColors.mustard,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text('Mettre à jour', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+          // Téléchargement intégré (voir services/apk_update.dart) : le bouton laisse place à
+          // l'avancement tant que l'APK descend.
+          ValueListenableBuilder<double?>(
+            valueListenable: MiseAJourApk.progression,
+            builder: (context, progression, _) => progression != null
+                ? IndicateurTelechargementApk(progression: progression)
+                : TextButton(
+                    onPressed: () => ouvrirMiseAJourApk(game.urlTelechargementApk, version: game.updateVersionDistante),
+                    style: TextButton.styleFrom(
+                      foregroundColor: BlindifyColors.onLight,
+                      backgroundColor: BlindifyColors.mustard,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text('Mettre à jour', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                  ),
           ),
           IconButton(
             onPressed: game.fermerBanniereMiseAJour,
@@ -62,5 +69,36 @@ class UpdateBanner extends StatelessWidget {
         ],
       ),
     ).animate().fadeIn(duration: BlindifyMotion.normal).slideY(begin: -0.4, curve: BlindifyMotion.pop);
+  }
+}
+
+/// Avancement du téléchargement de l'APK (« 42 % », ou un indicateur indéterminé tant que la taille
+/// n'est pas connue). Partagé par la bannière et le panneau de réglages.
+class IndicateurTelechargementApk extends StatelessWidget {
+  const IndicateurTelechargementApk({super.key, required this.progression});
+
+  final double progression;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            value: progression > 0 ? progression : null,
+            color: BlindifyColors.mustard,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          progression > 0 ? '${(progression * 100).round()} %' : 'Téléchargement…',
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+        ),
+      ],
+    );
   }
 }
