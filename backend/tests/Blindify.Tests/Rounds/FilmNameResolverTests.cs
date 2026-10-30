@@ -69,4 +69,14 @@ public class FilmNameResolverTests
 
         Assert.Equal("Titre Seul", FilmNameResolver.Resoudre(track));
     }
+
+    [Fact]
+    public void Resoudre_OeuvreRenseignee_PrioritaireSurTitreEtAlbum()
+    {
+        // Tag "film-serie" : l'album est celui de l'artiste, pas la BO (Friends -> "L.P.").
+        var track = NouveauTrack("I'll Be There for You - Extrait de \"Autre\"", "L.P.");
+        track.Oeuvre = " Friends ";
+
+        Assert.Equal("Friends", FilmNameResolver.Resoudre(track));
+    }
 }

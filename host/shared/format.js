@@ -22,12 +22,15 @@ export function lettreSerie(index) {
   return LETTRES_SERIES[index] ?? String(index + 1);
 }
 
+// Tags dont le libellé ne se déduit pas en remplaçant les tirets par des espaces.
+const LIBELLES_TAGS = { "film-serie": "Films & séries" };
+
 export function libelleTheme(tags) {
   if (!tags || tags.length === 0) return "Aléatoire";
-  return tags.map((t) => capitaliser(t.replace(/-/g, " "))).join(" + ");
+  return tags.map((t) => LIBELLES_TAGS[t] ?? capitaliser(t.replace(/-/g, " "))).join(" + ");
 }
 
-// Cible Film (morceaux "disney", voir RoundService.DemarrerRound / BonusRoundService.CreerBonusRound) :
+// Cible Film (morceaux "disney"/"film-serie", voir RoundService.DemarrerRound / BonusRoundService.CreerBonusRound) :
 // la réponse attendue était le film, pas le titre réel de la chanson — le reveal doit donc mettre
 // le film en avant. Le vrai titre/artiste reste affiché en dessous, à titre de bonus trivia. Version
 // défensive (optional chaining) — reprise de l'ancienne version de display.js comme unique version,
@@ -71,7 +74,7 @@ export function questionCible(cible) {
   if (cible === "Titre") return "Quel titre ?";
   if (cible === "Auteur") return "Qui chante ?";
   if (cible === "Annee") return "Quelle année ?";
-  return "Quel film ?";
+  return "Quel film ou série ?";
 }
 
 const LIBELLES_MODE = { Qcm: "QCM", PremiereLettre: "Première lettre", TapeReponse: "Réponse libre" };

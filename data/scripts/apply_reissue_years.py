@@ -91,7 +91,9 @@ def main() -> None:
             tags = track.get("tags") or []
             if ancien_tag in tags:
                 tags = [t for t in tags if t != ancien_tag]
-            if nouveau_tag not in tags:
+            # Morceau "film-serie" seul : aucun autre tag, pas même la décennie (architecture.md
+            # section 11) — sinon il deviendrait un morceau "double" sans qu'on l'ait décidé.
+            if nouveau_tag not in tags and tags != ["film-serie"]:
                 tags = [nouveau_tag] + tags
             track["tags"] = tags
             nb_modifies += 1

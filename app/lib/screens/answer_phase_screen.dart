@@ -674,7 +674,7 @@ class _TextAnswer extends StatelessWidget {
     final label = switch (cible) {
       RoundCible.titre => 'Titre du morceau',
       RoundCible.auteur => "Nom de l'artiste",
-      RoundCible.film => 'Film Disney',
+      RoundCible.film => 'Film ou série',
       // Jamais atteint en pratique (cible Année routée vers _AnneeInput, voir _buildAnswerArea) —
       // présent pour l'exhaustivité du switch.
       RoundCible.annee => 'Année',

@@ -17,10 +17,10 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
     // "50 Cent" ne matche aucune tuile A-Z côté joueur). Qcm : options générées ici via le même pool
     // que RoundService.DemarrerRound (RoundService.PoolPourQcm), les feintes (GameHub) sont
     // appliquées plus tard côté BonusTimerCoordinator au moment de la diffusion, pas ici.
-    public BonusRound CreerBonusRound(Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config)
+    public BonusRound CreerBonusRound(Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config, bool? forcerAnnee = null)
     {
         var mode = (RoundMode)Random.Shared.Next(3);
-        var cible = RoundService.ChoisirCible(answerMatcher, mode, track, config);
+        var cible = RoundService.ChoisirCible(answerMatcher, mode, track, config, tags, forcerAnnee);
 
         // V2, section 12.5 : voir RoundService.DemarrerRound pour la même règle (pas de "première
         // lettre" d'un nombre).

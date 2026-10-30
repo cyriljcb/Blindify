@@ -4,7 +4,8 @@ using Blindify.Domain.Entities;
 namespace Blindify.Application.Rounds;
 
 /// <summary>Déduit le nom du film à partir de Track.Title/Track.Album pour la cible RoundCible.Film
-/// (morceaux "disney") — les métadonnées Spotify suivent quelques formats récurrents ("X (Original
+/// (morceaux à tag œuvre, voir TagsOeuvre) — Track.Oeuvre, saisi à la main, est toujours prioritaire ;
+/// sinon les métadonnées Spotify suivent quelques formats récurrents ("X (Original
 /// Motion Picture Soundtrack)", "X Original Soundtrack (French Version)", "Chanson - Extrait de
 /// "Le Film"") qu'il faut nettoyer pour obtenir une réponse raisonnable à taper/reconnaître.
 /// Best-effort : quelques albums de compilation (ex. "La Magie De Disney", regroupant des chansons
@@ -25,6 +26,8 @@ public static partial class FilmNameResolver
 
     public static string Resoudre(Track track)
     {
+        if (!string.IsNullOrWhiteSpace(track.Oeuvre)) return track.Oeuvre.Trim();
+
         // Priorité au titre : "Chanson - Extrait de "Le Film"" / "Chanson - De "Le Film"" nomme le
         // film explicitement, plus fiable qu'un album de compilation qui ne le mentionne pas (voir
         // Cerise Calixte dans le catalogue "disney" français, ex. "Il vit en toi - Extrait de "Le

@@ -7,6 +7,7 @@ public class TrackDto
     public required string Title { get; set; }
     public required string Artist { get; set; }
     public string? Album { get; set; }
+    public string? Oeuvre { get; set; }
     public string? SpotifyId { get; set; }
     public string? YoutubeId { get; set; }
     public int DurationMs { get; set; }

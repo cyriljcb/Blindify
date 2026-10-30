@@ -11,8 +11,11 @@ String lettreSerie(int index) => index >= 0 && index < _lettres.length ? _lettre
 /// Équivalent de host/app.js:libelleTheme — "Rock + Années 2010", "Aléatoire" si aucun tag.
 String libelleTheme(List<String> tags) {
   if (tags.isEmpty) return 'Aléatoire';
-  return tags.map((t) => _capitaliser(t.replaceAll('-', ' '))).join(' + ');
+  return tags.map((t) => _libellesTags[t] ?? _capitaliser(t.replaceAll('-', ' '))).join(' + ');
 }
+
+/// Tags dont le libellé ne se déduit pas en remplaçant les tirets par des espaces.
+const _libellesTags = {'film-serie': 'Films & séries'};
 
 String _capitaliser(String texte) => texte.isEmpty ? texte : texte[0].toUpperCase() + texte.substring(1);
 

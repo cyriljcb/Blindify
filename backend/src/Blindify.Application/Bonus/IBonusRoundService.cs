@@ -8,7 +8,8 @@ public interface IBonusRoundService
 {
     /// <summary>catalogueComplet/tags/config : nécessaires pour générer les options QCM quand le
     /// tirage aléatoire du Mode tombe sur Qcm (voir RoundService.PoolPourQcm).</summary>
-    BonusRound CreerBonusRound(Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config);
+    /// <param name="forcerAnnee">Voir IRoundService.DemarrerRound (QuotaQuestionsAnnee.PourBonus).</param>
+    BonusRound CreerBonusRound(Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config, bool? forcerAnnee = null);
 
     void DemarrerPhaseMise(BonusRound bonusRound, DateTimeOffset maintenant);
 

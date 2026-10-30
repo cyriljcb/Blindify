@@ -273,7 +273,8 @@ public class GameHub(
             round = serie.Rounds[session.RoundCourantIndex];
             track = tracksRepository.GetById(round.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
 
-            roundService.DemarrerRound(round, track, tracksRepository.GetAll(), serie.Tags, session.Config, DateTimeOffset.UtcNow);
+            var forcerAnnee = QuotaQuestionsAnnee.PourRound(serie, session.RoundCourantIndex, tracksRepository.GetById, session.Config, Random.Shared);
+            roundService.DemarrerRound(round, track, tracksRepository.GetAll(), serie.Tags, session.Config, DateTimeOffset.UtcNow, forcerAnnee);
             session.Etat = GameState.EnCours;
             statsRepository.IncrementPlayCount(track.Id);
 
@@ -345,7 +346,8 @@ public class GameHub(
             if (morceaux.Count == 0)
                 throw new HubException("Pas assez de morceaux disponibles pour la question bonus.");
 
-            var bonusRound = bonusRoundService.CreerBonusRound(morceaux[0], tracksRepository.GetAll(), serie.Tags, session.Config);
+            var forcerAnnee = QuotaQuestionsAnnee.PourBonus(serie, morceaux[0], session.Config, Random.Shared);
+            var bonusRound = bonusRoundService.CreerBonusRound(morceaux[0], tracksRepository.GetAll(), serie.Tags, session.Config, forcerAnnee);
             serie.BonusRound = bonusRound;
             bonusRoundService.DemarrerPhaseMise(bonusRound, DateTimeOffset.UtcNow);
             statsRepository.IncrementPlayCount(morceaux[0].Id);

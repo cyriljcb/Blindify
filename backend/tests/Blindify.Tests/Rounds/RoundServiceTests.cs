@@ -145,6 +145,26 @@ public class RoundServiceTests
     }
 
     [Fact]
+    public void SelectionnerMorceaux_FilmSerie_ExcluDesAutresThemesSaufMorceauDoubleParSesAutresTags()
+    {
+        var pool = new List<Track>
+        {
+            NouveauTrack("film-serie", genres: ["rock"], tags: ["film-serie"]),
+            NouveauTrack("film-serie-rock", tags: ["film-serie", "rock"]),
+            NouveauTrack("film-serie-pop", genres: ["rock"], tags: ["film-serie", "pop"]),
+            NouveauTrack("rock", tags: ["rock"]),
+            NouveauTrack("disney", tags: ["disney"]),
+        };
+
+        // Genres Spotify seuls ("rock") : pas suffisant pour faire entrer un morceau film-serie.
+        Assert.Equal(["film-serie-rock", "rock"],
+            _service.SelectionnerMorceaux(pool, tags: ["rock"], nombre: 5, []).Select(t => t.Id).Order());
+        Assert.Equal(["disney"], _service.SelectionnerMorceaux(pool, tags: ["disney"], nombre: 4, []).Select(t => t.Id));
+        Assert.Equal(["film-serie", "film-serie-pop", "film-serie-rock"],
+            _service.SelectionnerMorceaux(pool, tags: ["film-serie"], nombre: 5, []).Select(t => t.Id).Order());
+    }
+
+    [Fact]
     public void DemarrerRound_ModeQcm_GenereQuatreOptions()
     {
         var correct = NouveauTrack("a", genres: ["pop"]);
@@ -360,6 +380,45 @@ public class RoundServiceTests
         }
     }
 
+    [Fact]
+    public void DemarrerRound_MorceauFilmSerie_CibleToujoursFilm()
+    {
+        var correct = NouveauTrack("a", tags: ["film-serie"]);
+        correct.Year = 1994;
+
+        for (var i = 0; i < 20; i++)
+        {
+            var round = new Round { TrackId = correct.Id, Mode = RoundMode.TapeReponse };
+            _service.DemarrerRound(round, correct, [correct], tags: [], new GameConfig(), DateTimeOffset.UtcNow);
+            Assert.Equal(RoundCible.Film, round.Cible);
+        }
+    }
+
+    [Fact]
+    public void DemarrerRound_MorceauFilmSerieDouble_CibleSelonLeThemeDeLaSerie()
+    {
+        // Eye of the Tiger : aussi connu que Rocky — Film en série Films & séries, morceau classique
+        // en série Rock ou aléatoire.
+        var correct = NouveauTrack("a", tags: ["film-serie", "rock"]);
+        var cibles = new HashSet<RoundCible>();
+
+        for (var i = 0; i < 50; i++)
+        {
+            var roundFilm = new Round { TrackId = correct.Id, Mode = RoundMode.TapeReponse };
+            _service.DemarrerRound(roundFilm, correct, [correct], tags: ["film-serie"], new GameConfig(), DateTimeOffset.UtcNow);
+            Assert.Equal(RoundCible.Film, roundFilm.Cible);
+
+            foreach (var tags in new List<string>[] { ["rock"], [] })
+            {
+                var round = new Round { TrackId = correct.Id, Mode = RoundMode.TapeReponse };
+                _service.DemarrerRound(round, correct, [correct], tags, new GameConfig(), DateTimeOffset.UtcNow);
+                cibles.Add(round.Cible);
+            }
+        }
+
+        Assert.DoesNotContain(RoundCible.Film, cibles);
+    }
+
     // Retour utilisateur : un auteur comme "50 Cent" (premier caractère normalisé = chiffre) ne
     // matche aucune des tuiles A-Z proposées côté joueur en Mode PremiereLettre — round injouable
     // pour ce joueur si Auteur était quand même tiré comme cible.
@@ -440,6 +499,32 @@ public class RoundServiceTests
         Assert.DoesNotContain("hors-theme-2", round.QcmOptionTrackIds!);
         var options = round.QcmOptionTrackIds!.Select(id => catalogue.First(t => t.Id == id));
         Assert.All(options, t => Assert.Contains("disney", t.Tags, StringComparer.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void DemarrerRound_CibleFilmSurFilmSerie_OptionsQcmUniquementDesMorceauxFilmSerie()
+    {
+        // Pool fermé par tag œuvre : un Disney parmi des séries télé serait éliminé d'office.
+        var correct = NouveauTrack("a", tags: ["film-serie"]);
+        var catalogue = new List<Track>
+        {
+            correct,
+            NouveauTrack("fs-b", tags: ["film-serie"]),
+            NouveauTrack("fs-c", tags: ["film-serie"]),
+            NouveauTrack("fs-d", tags: ["film-serie"]),
+            NouveauTrack("disney-a", tags: ["disney"]),
+            NouveauTrack("disney-b", tags: ["disney"]),
+            NouveauTrack("hors-theme"),
+        };
+        var config = new GameConfig { ProbabiliteQcmPiege = 0 };
+        var round = new Round { TrackId = correct.Id, Mode = RoundMode.Qcm };
+
+        _service.DemarrerRound(round, correct, catalogue, tags: [], config, DateTimeOffset.UtcNow);
+
+        Assert.Equal(RoundCible.Film, round.Cible);
+        Assert.Equal(4, round.QcmOptionTrackIds!.Count);
+        var options = round.QcmOptionTrackIds!.Select(id => catalogue.First(t => t.Id == id));
+        Assert.All(options, t => Assert.Contains("film-serie", t.Tags, StringComparer.OrdinalIgnoreCase));
     }
 
     [Fact]

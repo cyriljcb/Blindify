@@ -18,6 +18,7 @@ aujourd'hui.
 
 Usage :
     python sync_daily.py [--dry-run] [--ffmpeg-location CHEMIN] [--delay-seconds N]
+                         [--cookies FICHIER | --cookies-from-browser NAVIGATEUR]
 """
 
 from __future__ import annotations
@@ -90,6 +91,10 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Récupère les métadonnées mais ne télécharge aucun audio")
     parser.add_argument("--ffmpeg-location", default=None, help="Chemin vers ffmpeg si non présent sur le PATH")
     parser.add_argument("--delay-seconds", type=float, default=3.0, help="Pause entre chaque téléchargement (défaut 3s)")
+    parser.add_argument("--cookies", default=None, help="Fichier cookies.txt YouTube, transmis à download_audio.py")
+    parser.add_argument(
+        "--cookies-from-browser", default=None, help="Navigateur d'où lire les cookies YouTube, transmis à download_audio.py"
+    )
     args = parser.parse_args()
 
     load_dotenv(SCRIPTS_DIR / ".env")
@@ -123,6 +128,10 @@ def main() -> None:
     ]
     if args.ffmpeg_location:
         commande += ["--ffmpeg-location", args.ffmpeg_location]
+    if args.cookies:
+        commande += ["--cookies", args.cookies]
+    if args.cookies_from_browser:
+        commande += ["--cookies-from-browser", args.cookies_from_browser]
 
     resultat = subprocess.run(commande)
     sys.exit(resultat.returncode)

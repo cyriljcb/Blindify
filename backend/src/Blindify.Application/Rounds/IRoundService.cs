@@ -27,7 +27,9 @@ public interface IRoundService
     /// cible Film (morceaux "disney"), où seuls d'autres morceaux "disney" ont un nom de film
     /// cohérent à proposer — pas de repli catalogue complet dans ce cas précis.
     /// </summary>
-    void DemarrerRound(Round round, Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config, DateTimeOffset maintenant);
+    /// <param name="forcerAnnee">Décision du quota de questions Année (QuotaQuestionsAnnee.PourRound) :
+    /// true force la cible Année, false l'exclut, null garde le tirage pondéré.</param>
+    void DemarrerRound(Round round, Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config, DateTimeOffset maintenant, bool? forcerAnnee = null);
 
     /// <summary>
     /// Soumet la réponse d'un joueur. Retourne null si la soumission est invalide (partie en pause,

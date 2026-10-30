@@ -60,10 +60,10 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         return disponibles[^1]; // filet anti-arrondi flottant
     }
 
-    public void DemarrerRound(Round round, Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config, DateTimeOffset maintenant)
+    public void DemarrerRound(Round round, Track track, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags, GameConfig config, DateTimeOffset maintenant, bool? forcerAnnee = null)
     {
         round.DebutRound = maintenant;
-        round.Cible = ChoisirCible(answerMatcher, round.Mode, track, config);
+        round.Cible = ChoisirCible(answerMatcher, round.Mode, track, config, tags, forcerAnnee);
 
         // V2, section 12.5 : la combinaison PremiereLettre + Année n'a pas de sens (pas de "première
         // lettre" d'un nombre) — ChoisirCible ne le sait pas (le mode y sert seulement à filtrer
@@ -86,8 +86,10 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     /// <summary>Pool de tirage des distracteurs QCM — retour utilisateur : une question Film (Disney)
     /// proposait "Cœur de pirate" en option, sans aucun rapport, parce que les distracteurs étaient
     /// tirés du catalogue complet plutôt que du thème réellement sélectionné pour la partie/série.
-    /// Cible Film : restreint aux autres morceaux "disney" (seuls à avoir un nom de film cohérent) —
-    /// jamais de repli catalogue complet ici, mieux vaut moins d'options que des incohérentes.
+    /// Cible Film : restreint aux autres morceaux du même tag œuvre ("disney" ou "film-serie", voir
+    /// TagsOeuvre — seuls à avoir un nom de film cohérent, et un Disney parmi des séries télé serait
+    /// trop facile à éliminer) — jamais de repli catalogue complet ici, mieux vaut moins d'options
+    /// que des incohérentes.
     /// Sinon : respecte le thème (tags), avec repli sur le catalogue complet seulement si le pool
     /// filtré est trop restreint pour fournir les 3 distracteurs + la bonne réponse — restreint ne
     /// veut pas seulement dire "moins de 4 morceaux" : un thème niche peut avoir 4+ morceaux mais
@@ -101,7 +103,10 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     internal static IReadOnlyList<Track> PoolPourQcm(RoundCible cible, Track correct, IReadOnlyList<Track> catalogueComplet, IReadOnlyList<string> tags)
     {
         if (cible == RoundCible.Film)
-            return catalogueComplet.Where(t => t.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)).ToList();
+        {
+            var tagOeuvre = TagsOeuvre.DuMorceau(correct) ?? TagsOeuvre.Disney;
+            return catalogueComplet.Where(t => t.Tags.Contains(tagOeuvre, StringComparer.OrdinalIgnoreCase)).ToList();
+        }
 
         var filtre = FiltrerParTagsOuGenres(catalogueComplet, tags).ToList();
         var artistesAutresDistincts = filtre
@@ -112,10 +117,10 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         if (filtre.Count >= 4 && artistesAutresDistincts >= 3) return filtre;
 
         // Repli catalogue complet (thème trop niche pour fournir 4 options avec assez d'artistes
-        // distincts) : les morceaux "disney" restent exclus même ici (retour utilisateur : ils
-        // réapparaissaient comme distracteurs QCM dans une série hors thème "disney", faute d'être
-        // filtrés dans ce repli).
-        return catalogueComplet.Where(t => !t.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)).ToList();
+        // distincts) : les morceaux à tag œuvre exclusifs ("disney", "film-serie" seul) restent
+        // exclus même ici (retour utilisateur : ils réapparaissaient comme distracteurs QCM dans une
+        // série hors thème "disney", faute d'être filtrés dans ce repli).
+        return catalogueComplet.Where(t => !TagsOeuvre.EstExclusif(t)).ToList();
     }
 
     public RoundAnswer? SoumettreReponse(GameSession session, Round round, SeriesConfig seriesConfig, Track track, string playerId, Guid roundId, string reponse, DateTimeOffset maintenant, Func<string, Track?>? resolveTrack = null)
@@ -262,17 +267,16 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     // le filtre matchait bien la décennie, mais le résultat ne "sonnait" pas comme le thème
     // attendu. Disney a un univers musical trop particulier (comédies musicales, voix de
     // doublage) pour se mélanger à un thème générique : exclu de tout thème AUTRE que "disney"
-    // lui-même, quand bien même un morceau correspondrait par ailleurs (décennie, genre).
+    // lui-même, quand bien même un morceau correspondrait par ailleurs (décennie, genre). Même
+    // règle pour "film-serie", sauf morceau "double" sélectionné par un de ses autres tags (voir
+    // TagsOeuvre.AdmisDansTheme).
     private static IEnumerable<Track> FiltrerParTagsOuGenres(IReadOnlyList<Track> pool, IReadOnlyList<string> tags)
     {
         if (tags.Count == 0) return pool;
 
         var candidats = pool.Where(t => t.Tags.Intersect(tags).Any() || t.Genres.Intersect(tags).Any());
 
-        if (!tags.Contains("disney", StringComparer.OrdinalIgnoreCase))
-            candidats = candidats.Where(t => !t.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase));
-
-        return candidats;
+        return candidats.Where(t => TagsOeuvre.AdmisDansTheme(t, tags));
     }
 
     private static void AppliquerPoints(GameSession session, string playerId, int points)
@@ -300,7 +304,7 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     };
 
     /// <summary>Cible du round/question bonus — partagée avec BonusRoundService.CreerBonusRound.
-    /// Film forcé pour les morceaux "disney" (ni le titre réel ni l'artiste crédité n'y sont
+    /// Film forcé pour les morceaux à tag œuvre selon le thème de la série (TagsOeuvre.ForceCibleFilm ; ni le titre réel ni l'artiste crédité n'y sont
     /// devinables, voir DemarrerRound ci-dessus), sinon tirage pondéré (V2, GameConfig.PoidsCible*)
     /// parmi Titre/Auteur/Année, restreint aux cibles éligibles — longueur du titre
     /// (TitreVariantes.EstEligibleCommeCible), année connue (Track.Year) et, en Mode PremiereLettre,
@@ -309,15 +313,18 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     /// combinaison PremiereLettre+Année n'est pas filtrée ici, voir DemarrerRound qui bascule alors
     /// le Mode vers TapeReponse après coup). Jamais totalement bloquant : si aucune cible n'est
     /// éligible (rare), retombe sur Auteur quand même plutôt que d'empêcher le round, même
-    /// philosophie que le filet de sécurité de QcmGenerator.</summary>
-    internal static RoundCible ChoisirCible(IAnswerMatcher answerMatcher, RoundMode mode, Track track, GameConfig config)
+    /// philosophie que le filet de sécurité de QcmGenerator. `forcerAnnee` (quota par série, voir
+    /// QuotaQuestionsAnnee) : true impose l'Année si l'année est connue, false l'exclut du tirage,
+    /// null garde le tirage pondéré avec PoidsCibleAnnee.</summary>
+    internal static RoundCible ChoisirCible(IAnswerMatcher answerMatcher, RoundMode mode, Track track, GameConfig config, IReadOnlyList<string> tagsSerie, bool? forcerAnnee = null)
     {
-        if (track.Tags.Contains("disney", StringComparer.OrdinalIgnoreCase)) return RoundCible.Film;
+        if (TagsOeuvre.ForceCibleFilm(track, tagsSerie)) return RoundCible.Film;
+        if (forcerAnnee == true && track.Year is not null) return RoundCible.Annee;
 
         var titreEligible = TitreVariantes.EstEligibleCommeCible(track.Title)
             && (mode != RoundMode.PremiereLettre || EstEligiblePremiereLettre(answerMatcher, RoundCible.Titre, track));
         var auteurEligible = mode != RoundMode.PremiereLettre || EstEligiblePremiereLettre(answerMatcher, RoundCible.Auteur, track);
-        var anneeEligible = track.Year is not null;
+        var anneeEligible = track.Year is not null && forcerAnnee is null;
 
         var candidats = new List<(RoundCible Cible, int Poids)>();
         if (titreEligible) candidats.Add((RoundCible.Titre, config.PoidsCibleTitre));

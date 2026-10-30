@@ -10,6 +10,12 @@ public class Track
     public required string Title { get; set; }
     public required string Artist { get; set; }
     public string? Album { get; set; }
+
+    /// <summary>Nom du film/de la série dont est tiré le morceau, saisi à la main — prioritaire sur
+    /// la déduction depuis Album (voir FilmNameResolver) pour la cible Film. Indispensable pour le
+    /// tag "film-serie", où l'album est rarement la BO (ex. Friends -> album "L.P." des
+    /// Rembrandts) ; facultatif pour "disney", où il corrige les albums de compilation.</summary>
+    public string? Oeuvre { get; set; }
     public string? SpotifyId { get; set; }
     public string? YoutubeId { get; set; }
     public int DurationMs { get; set; }

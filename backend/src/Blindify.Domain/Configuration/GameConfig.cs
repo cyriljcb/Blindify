@@ -76,8 +76,15 @@ public class GameConfig
     public int PoidsCibleAuteur { get; set; } = 40;
 
     /// <summary>Éligible seulement si Track.Year est connu (voir ChoisirCible) — les morceaux
-    /// "disney" restent toujours forcés en cible Film, ce poids ne s'applique jamais à eux.</summary>
+    /// "disney" restent toujours forcés en cible Film, ce poids ne s'applique jamais à eux. Ignoré
+    /// tant que QuestionsAnneeParSerie est renseigné (le quota remplace alors le tirage).</summary>
     public int PoidsCibleAnnee { get; set; } = 20;
+
+    /// <summary>Nombre exact de questions Année par série, question bonus comprise (retour
+    /// utilisateur 2026-10-25 : l'Année tombait trop souvent avec le seul tirage pondéré) — voir
+    /// Rounds.QuotaQuestionsAnnee. null = ancien comportement (tirage pondéré PoidsCibleAnnee),
+    /// 0 = jamais de question Année.</summary>
+    public int? QuestionsAnneeParSerie { get; set; } = 1;
 
     /// <summary>V2, section 12.4 — un morceau avec un signalement "bloquant" non résolu
     /// (RaisonSignalementRules.EstBloquante) est exclu de RoundService.SelectionnerMorceaux au

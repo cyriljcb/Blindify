@@ -7,6 +7,7 @@ puis fusionne les entrées complètes dans data/tracks.json (la source de vérit
 
 Usage :
     python download_audio.py <export.json> [--limit N] [--tolerance-seconds 8]
+                             [--cookies FICHIER | --cookies-from-browser NAVIGATEUR]
 
 Validation du matching (architecture.md section 3, point 4) : parmi les candidats de
 recherche, ceux dont le titre sent la version live/acoustique/remix/cover sont écartés en
@@ -70,6 +71,12 @@ def sauvegarder_tracks_json(tracks: list[dict]) -> None:
 
 _RECHERCHE_NB_CANDIDATS = 5
 
+# Options d'authentification yt-dlp partagées par la recherche et le téléchargement (remplies
+# dans main() depuis --cookies / --cookies-from-browser). Sans cookies, YouTube finit par
+# répondre "Sign in to confirm you're not a bot" sur les gros lots (run du 2026-10-05 :
+# blocage total après ~2400 requêtes) et refuse les vidéos soumises à vérification d'âge.
+_OPTIONS_COOKIES: dict = {}
+
 
 def rechercher_sur_youtube(ffmpeg_location: str | None, requete: str) -> list[dict]:
     """Récupère les métadonnées des premiers résultats de recherche, sans télécharger.
@@ -88,6 +95,7 @@ def rechercher_sur_youtube(ffmpeg_location: str | None, requete: str) -> list[di
     }
     if ffmpeg_location:
         options["ffmpeg_location"] = ffmpeg_location
+    options.update(_OPTIONS_COOKIES)
 
     with yt_dlp.YoutubeDL(options) as ydl:
         resultat = ydl.extract_info(requete, download=False)
@@ -152,6 +160,7 @@ def telecharger_audio(ffmpeg_location: str | None, video_id: str, destination_sa
     }
     if ffmpeg_location:
         options["ffmpeg_location"] = ffmpeg_location
+    options.update(_OPTIONS_COOKIES)
 
     with yt_dlp.YoutubeDL(options) as ydl:
         ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
@@ -236,7 +245,21 @@ def main() -> None:
         default=3.0,
         help="Pause entre chaque morceau traité, pour limiter le risque de blocage YouTube (défaut 3s)",
     )
+    parser.add_argument(
+        "--cookies", default=None, help="Fichier cookies.txt (format Netscape) exporté depuis un navigateur connecté à YouTube"
+    )
+    parser.add_argument(
+        "--cookies-from-browser",
+        default=None,
+        help="Lit les cookies YouTube directement depuis un navigateur (ex. firefox, chrome, edge, firefox:NOM_PROFIL)",
+    )
     args = parser.parse_args()
+
+    if args.cookies:
+        _OPTIONS_COOKIES["cookiefile"] = args.cookies
+    if args.cookies_from_browser:
+        navigateur, _, profil = args.cookies_from_browser.partition(":")
+        _OPTIONS_COOKIES["cookiesfrombrowser"] = (navigateur, profil or None, None, None)
 
     entries = json.loads(Path(args.export).read_text(encoding="utf-8"))
     if args.limit:
@@ -297,12 +320,17 @@ def main() -> None:
 
             refrain_start_ms = estimer_refrain_start_ms(audio_path, entry["durationMs"])
 
+            # Nom du film/de la série (tag "film-serie", voir fetch_spotify_search.py) : seulement
+            # quand il est fourni, pour ne pas ajouter "oeuvre": null à tout le catalogue.
+            oeuvre = {"oeuvre": entry["oeuvre"]} if entry.get("oeuvre") else {}
+
             tracks.append(
                 {
                     "id": track_id,
                     "title": titre,
                     "artist": artiste,
                     "album": entry.get("album"),
+                    **oeuvre,
                     "spotifyId": entry.get("spotifyId"),
                     "youtubeId": youtube_id,
                     "durationMs": entry["durationMs"],

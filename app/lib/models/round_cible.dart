@@ -28,7 +28,7 @@ extension RoundCibleJson on RoundCible {
       case RoundCible.auteur:
         return 'Qui chante ?';
       case RoundCible.film:
-        return 'Quel film ?';
+        return 'Quel film ou série ?';
       case RoundCible.annee:
         return 'Quelle année ?';
     }
@@ -41,7 +41,7 @@ extension RoundCibleJson on RoundCible {
       case RoundCible.auteur:
         return "l'artiste";
       case RoundCible.film:
-        return 'le film';
+        return 'le film ou la série';
       case RoundCible.annee:
         return "l'année";
     }
