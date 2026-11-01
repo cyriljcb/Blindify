@@ -117,6 +117,9 @@ export function onRoundEnded(state, payload) {
     artist: payload.artist,
     cible: payload.cible,
     film: payload.film,
+    // Retour utilisateur (2026-11-01) : sans ce champ, libelleReveal (format.js) retombait sur le
+    // titre pour une question Année — l'écran public n'affichait jamais l'année, le téléphone si.
+    annee: payload.annee,
     coverPath: payload.coverPath,
     resultats: state.dernierResultats.map((r) => ({ playerId: r.playerId, estCorrecte: r.estCorrecte, aRepondu: !!r.reponse })),
   };
@@ -236,6 +239,9 @@ export function onBonusResult(state, payload) {
     artist: payload.artist,
     cible: payload.cible,
     film: payload.film,
+    // Retour utilisateur (2026-11-01) : sans ce champ, libelleReveal (format.js) retombait sur le
+    // titre pour une question Année — l'écran public n'affichait jamais l'année, le téléphone si.
+    annee: payload.annee,
     coverPath: payload.coverPath,
     serieLabel: labelSerieTerminee,
     resultats: payload.resultats.map((r) => ({ playerId: r.playerId, estCorrecte: r.estCorrecte, aRepondu: !!r.reponse })),

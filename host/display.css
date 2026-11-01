@@ -369,6 +369,18 @@ main.screen-shake {
   outline: 2px solid var(--ink);
   animation: answered-pop 320ms cubic-bezier(.34, 1.56, .64, 1);
 }
+.answered-avatar--off .avatar {
+  outline: 2px solid var(--bad);
+  opacity: 0.45;
+}
+.answered-attente {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--ink-dim);
+}
+.answered-attente b { color: var(--ink); font-weight: 700; }
+.answered-attente--off,
+.answered-attente--off b { color: var(--bad); }
 @keyframes answered-pop {
   from { transform: scale(0.6); }
   to { transform: scale(1); }

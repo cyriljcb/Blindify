@@ -137,17 +137,24 @@ function renderAnsweredBlock(container) {
   const repondus = new Set(state.playersAnswered.map((p) => p.playerId));
   const presents = joueursPresents();
   const total = presents.length;
+  // Retour utilisateur (2026-11-01) : savoir depuis la TV qui on attend encore, et qui est
+  // déconnecté (inutile de l'attendre) — l'info n'était qu'une infobulle, invisible sur une télé.
+  const etat = (p) => (repondus.has(p.playerId) ? "done" : p.estConnecte ? "wait" : "off");
   const avatars = presents
     .map((p) => {
-      const classe = repondus.has(p.playerId) ? "answered-avatar answered-avatar--done" : "answered-avatar";
       const titre = escapeHtml(p.nom) + (p.estConnecte ? "" : " (déconnecté)");
-      return `<span class="${classe}" title="${titre}">${avatarHtml(p.playerId, p.nom, undefined, roster())}</span>`;
+      return `<span class="answered-avatar answered-avatar--${etat(p)}" title="${titre}">${avatarHtml(p.playerId, p.nom, undefined, roster())}</span>`;
     })
     .join("");
+  const noms = (e) => presents.filter((p) => etat(p) === e).map((p) => escapeHtml(p.nom)).join(", ");
+  const attendus = noms("wait");
+  const horsLigne = noms("off");
   container.innerHTML = `
     <span class="answered-label">Ont répondu</span>
     <span class="answered-count">${presents.filter((p) => repondus.has(p.playerId)).length}<small> / ${total}</small></span>
-    <div class="answered-avatars">${avatars}</div>`;
+    <div class="answered-avatars">${avatars}</div>
+    ${attendus ? `<p class="answered-attente">On attend : <b>${attendus}</b></p>` : ""}
+    ${horsLigne ? `<p class="answered-attente answered-attente--off">Déconnecté${horsLigne.includes(",") ? "s" : ""} : <b>${horsLigne}</b></p>` : ""}`;
 }
 
 function renderAnsweredBlocks() {

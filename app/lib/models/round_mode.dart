@@ -20,7 +20,8 @@ extension RoundModeJson on RoundMode {
       case RoundMode.qcm:
         return 'QCM';
       case RoundMode.tapeReponse:
-        return 'Réponse tapée';
+        // Même libellé que l'écran public (host/shared/format.js:LIBELLES_MODE).
+        return 'Réponse libre';
       case RoundMode.premiereLettre:
         return 'Première lettre';
     }

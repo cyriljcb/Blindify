@@ -84,7 +84,7 @@ class _RoundEndedScreenState extends State<RoundEndedScreen> {
                 style: Theme.of(context).textTheme.titleLarge,
               ).animate().fadeIn(delay: 150.ms, duration: BlindifyMotion.normal).slideY(begin: 0.3),
               Text(
-                result.cible == 'Film' ? '${result.title} — ${result.artist}' : result.artist,
+                result.cible == 'Film' || (result.cible == 'Annee' && result.annee != null) ? '${result.title} — ${result.artist}' : result.artist,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ).animate().fadeIn(delay: 220.ms, duration: BlindifyMotion.normal).slideY(begin: 0.3),
