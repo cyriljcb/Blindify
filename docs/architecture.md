@@ -110,6 +110,16 @@ Retour utilisateur (2026-08-25) : taper l'IP du Pi depuis un iPhone est pénible
 - Config système sur le Pi, **aucun changement côté backend/Docker** : avahi tourne sur l'hôte, pas dans le conteneur, et n'a besoin de rien savoir du port publié.
 - Limite : dépend du support mDNS du réseau Wi-Fi — impeccable sur une box/routeur familial classique, plus capricieux si le réseau isole les clients entre eux (peu probable en usage domestique).
 
+### Découverte automatique du serveur (scan du sous-réseau)
+
+Retour utilisateur (2026-11-01) : `pi.local` n'est pas résolu sur certains Android, même avec le `MulticastLock`, et l'IP DHCP du Pi change d'un lieu à l'autre. L'app cherche donc le serveur toute seule sur le réseau local :
+
+- Backend : `GET /api/ping` → `{"service":"blindify"}` (réponse minimale, sans accès aux données).
+- App (`services/decouverte_serveur.dart`) : pour chaque interface IPv4 privée du téléphone, interroge en parallèle les 254 adresses du /24 sur `:5000/api/ping` (800 ms max par adresse, ~1-2 s au total) et garde la première qui répond `blindify`.
+- Déclenchement : automatiquement au démarrage si la dernière adresse connue ne répond pas (ou au premier lancement), et via le bouton « Chercher le serveur sur le Wi-Fi » de l'écran de connexion.
+- Pourquoi pas un broadcast UDP : le backend tourne en réseau Docker bridge, et un paquet broadcast n'est pas relayé au conteneur par un mapping de port (la règle DNAT de Docker ne vise que les adresses locales). Il aurait fallu `network_mode: host` ou un répondeur hors Docker ; le scan HTTP marche partout où l'app peut joindre le Pi, sans rien changer à `docker-compose.yml`.
+- Limite : suppose un masque /24 (le cas de quasiment toutes les box et du partage de connexion Android).
+
 ### Mettre à jour l'app Android sans câble
 
 Retour utilisateur (2026-08-27) : mettre à jour l'app sur les téléphones des joueurs obligeait à rebrancher chacun sur le poste qui fait tourner le serveur pendant les sessions. Puisque `host/` est déjà servi en statique à la racine (voir "Dockerisation" ci-dessus, actif aussi quand le serveur tourne en dev sur ce poste), il suffit d'y déposer l'APK.

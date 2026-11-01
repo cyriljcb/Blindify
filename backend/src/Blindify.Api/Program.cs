@@ -113,6 +113,13 @@ app.MapGet("/api/tags", (ITracksRepository tracksRepository) =>
         .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
         .ToList());
 
+// Découverte du serveur par l'app (retour utilisateur 2026-11-01, `pi.local` non résolu sur certains
+// Android) : l'app interroge en parallèle toutes les adresses de son sous-réseau /24 sur cette route
+// et garde celle qui répond "blindify" — pas de broadcast UDP, qui ne traverserait pas le mapping de
+// port du conteneur (réseau Docker bridge). Réponse minimale et sans accès aux données : appelée
+// ~254 fois par scan, sur toutes les machines du réseau.
+app.MapGet("/api/ping", () => new PingDto("blindify"));
+
 // V2, section 12.7 — pochette floutée pour l'indice de joker (TapeReponse + Titre/Auteur uniquement,
 // voir GameHub.UtiliserJoker). Le jeton (opaque, IJokerCoverTokenStore) est la seule protection : jamais
 // d'accès direct par trackId, sinon un joueur pourrait deviner la pochette d'un morceau pas encore joué.

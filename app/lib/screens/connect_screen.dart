@@ -60,11 +60,23 @@ class _ConnectScreenState extends State<ConnectScreen> {
                 Text('Scanne le QR code affiché sur la TV.', style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 20),
                 FilledButton.icon(
-                  onPressed: game.connecting
+                  onPressed: game.connecting || game.rechercheServeur
                       ? null
                       : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const QrScanScreen())),
                   icon: const Icon(Icons.qr_code_scanner_rounded),
                   label: const Text('Scanner le QR de la TV'),
+                ),
+                const SizedBox(height: 8),
+                // Retour utilisateur (2026-11-01) : sans QR à portée (ou pi.local non résolu sur ce
+                // téléphone), trouver le Pi tout seul sur le Wi-Fi — voir chercherServeur.
+                OutlinedButton.icon(
+                  onPressed: game.connecting || game.rechercheServeur
+                      ? null
+                      : () => context.read<GameConnection>().chercherEtConnecter(),
+                  icon: game.rechercheServeur
+                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.wifi_find_rounded),
+                  label: Text(game.rechercheServeur ? 'Recherche du serveur…' : 'Chercher le serveur sur le Wi-Fi'),
                 ),
                 if (game.errorMessage != null) ...[
                   const SizedBox(height: 12),

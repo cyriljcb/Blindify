@@ -11,7 +11,10 @@ void main() {
     SharedPreferences.setMockInitialValues({});
 
     await tester.pumpWidget(const BlindifyApp());
-    await tester.pumpAndSettle();
+    // Pas de pumpAndSettle : la recherche automatique du serveur lancée au démarrage (voir
+    // GameConnection.chercherEtConnecter) affiche un indicateur animé qui ne se stabilise jamais ici.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     // Refonte UI (lot 2) : le scan du QR de la TV est l'action principale du premier lancement.
     expect(find.text('Rejoindre la partie'), findsOneWidget);

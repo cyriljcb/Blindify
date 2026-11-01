@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 import 'haptique.dart';
+import 'decouverte_serveur.dart';
 import 'mdns_resolver.dart';
 
 import '../models/bonus_question_started.dart';
@@ -253,12 +254,43 @@ class GameConnection extends ChangeNotifier {
     // elle échoue ou traîne trop longtemps, on retombe sur l'écran de connexion manuelle avec
     // l'adresse déjà pré-remplie (voir ConnectScreen), sans message d'erreur alarmant puisque
     // rien n'a encore été tenté explicitement par le joueur.
-    if (serverUrl != null) {
-      await connect(serverUrl!, timeout: _delaiReconnexionAuto, silent: true);
-    } else {
-      screen = AppScreen.connect;
-      notifyListeners();
+    final connecte = serverUrl != null && await connect(serverUrl!, timeout: _delaiReconnexionAuto, silent: true);
+    if (!connecte) {
+      // Échec de connect() : il a déjà basculé sur l'écran de connexion s'il n'y avait pas de partie
+      // en cours (gameCode null) — sinon l'écran courant est volontairement conservé.
+      if (serverUrl == null) {
+        screen = AppScreen.connect;
+        notifyListeners();
+      }
+      // Premier lancement, ou Pi déplacé/IP changée depuis la dernière partie : recherche
+      // automatique sur le réseau local avant de laisser le joueur scanner le QR ou saisir l'adresse.
+      await chercherEtConnecter(silent: true);
     }
+  }
+
+  /// Vrai pendant un scan du réseau local ([chercherEtConnecter]) — l'écran de connexion affiche
+  /// alors « Recherche du serveur… » à la place des boutons.
+  bool rechercheServeur = false;
+
+  /// Cherche le serveur sur le sous-réseau du téléphone (voir [chercherServeur]) puis s'y connecte.
+  /// [silent] : même sens que pour [connect] — pas de message d'erreur pour la recherche lancée
+  /// automatiquement au démarrage, seulement pour celle déclenchée par le bouton du joueur.
+  Future<bool> chercherEtConnecter({bool silent = false}) async {
+    if (rechercheServeur || connecting) return false;
+    rechercheServeur = true;
+    errorMessage = null;
+    notifyListeners();
+
+    final url = await chercherServeur();
+    rechercheServeur = false;
+    if (url == null) {
+      if (!silent) {
+        errorMessage = 'Aucun serveur Blindify trouvé sur ce réseau — vérifie que tu es sur le même Wi-Fi que le Pi.';
+      }
+      notifyListeners();
+      return false;
+    }
+    return connect(url, silent: silent);
   }
 
   /// Identifiant stable persisté localement — jamais le connectionId SignalR, qui
