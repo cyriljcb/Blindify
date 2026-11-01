@@ -12,6 +12,7 @@ description: Procédure de déploiement de Blindify sur le Raspberry Pi de produ
 - Données runtime : `~/apps/blindify/data/` (chemin réel défini par `BLINDIFY_DATA_ROOT` dans `~/apps/blindify/.env` sur le Pi — **ne pas supposer** `/mnt/hdd2to/blindify`, c'est seulement le défaut documenté dans `docker-compose.yml`, écrasé ici par `.env`).
 - Secrets (mots de passe admin/restart) : dans `~/apps/blindify/.env` sur le Pi. Ne jamais les lire à voix haute dans le chat ni les recopier dans ce skill, un commit, ou un fichier du repo.
 - Backend accessible en HTTP depuis le LAN du poste de dev : `http://pi.local:5000` (CORS ouvert, `AllowAnyOrigin`).
+- Logs persistants (depuis le 2026-11-01) : `~/apps/blindify/data/logs/blindify-AAAA-MM-JJ.log`, un fichier par jour, heure de Paris, purgés après 30 jours — contrairement à `docker compose logs`, ils survivent aux rebuilds. Premier endroit où regarder après un retour de partie (`SubmitAnswer rejeté`, `Déconnexion`/`Reconnexion automatique` par joueur).
 - Conteneur : `docker compose` (service `backend`, conteneur `blindify-backend`). `docker compose version` sur le Pi : v5.4.0 (syntaxe `docker compose ...`, pas `docker-compose ...`).
 
 ## Architecture de déploiement (ce qui suit quel canal)
