@@ -1050,6 +1050,7 @@ public class GameHub(
 
             if (joueur is not null)
             {
+                logger.LogInformation("Reconnexion automatique — partie {Code}, joueur {PlayerId} ({Nom})", code, playerId, joueur.Nom);
                 Context.Items["playerId"] = playerId;
                 sessionStore.AssocierConnexion(Context.ConnectionId, code);
                 await Groups.AddToGroupAsync(Context.ConnectionId, code);
@@ -1087,6 +1088,10 @@ public class GameHub(
 
             if (playerId is not null)
             {
+                // Retour utilisateur (2026-11-01) : trace des coupures côté joueur, pour recouper un
+                // "je n'arrivais pas à répondre" avec une déconnexion réelle (voir FichierLoggerProvider).
+                logger.LogInformation("Déconnexion — partie {Code}, joueur {PlayerId}, cause : {Cause}", code, playerId, exception?.Message ?? "fermeture normale");
+
                 // Délai de grâce (V2, GameConfig.DelaiGraceDeconnexionMs) : une micro-coupure suivie
                 // d'une reconnexion automatique (OnConnectedAsync ci-dessus) ne doit pas faire clignoter
                 // l'indicateur de connexion côté host. On revérifie après coup plutôt que d'annuler une

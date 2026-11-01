@@ -344,7 +344,12 @@ class GameConnection extends ChangeNotifier {
     final hubUrl = gameCode != null && playerId != null
         ? '$resolvedUrl/hubs/game?code=$gameCode&playerId=$playerId'
         : '$resolvedUrl/hubs/game';
-    _hub = HubConnectionBuilder().withUrl(hubUrl).withAutomaticReconnect().build();
+    _hub = HubConnectionBuilder().withUrl(hubUrl).withAutomaticReconnect().build()
+      // Retour utilisateur (2026-11-01) : avec les défauts (ping 15 s, coupure après 30 s), une
+      // connexion morte sans fermeture propre (Wi-Fi en veille) passait pour active une demi-minute
+      // et les réponses partaient dans le vide — voir AddSignalR dans Program.cs côté serveur.
+      ..keepAliveIntervalInMilliseconds = 5000
+      ..serverTimeoutInMilliseconds = 15000;
 
     _registerHandlers();
 

@@ -16,6 +16,10 @@ export function creerConnexion(serverBaseUrl) {
   connection = new signalR.HubConnectionBuilder()
     .withUrl(`${serverBaseUrl}/hubs/game`, { withCredentials: false })
     .withAutomaticReconnect()
+    // Détection rapide d'une connexion morte — mêmes valeurs que l'app, voir AddSignalR dans
+    // Program.cs (le serveur coupe après 20 s sans ping).
+    .withKeepAliveInterval(5000)
+    .withServerTimeout(15000)
     .build();
   return connection;
 }

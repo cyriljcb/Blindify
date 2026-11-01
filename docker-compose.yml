@@ -47,6 +47,10 @@ services:
       - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/flags_resolutions.json:/data/flags_resolutions.json:ro
       - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/audio:/data/audio:ro
       - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/covers:/data/covers:ro
+      # Logs persistants (un fichier par jour, purgés après 30 jours) — les logs Docker
+      # (`docker compose logs`) disparaissent à chaque rebuild du conteneur. Dossier, pas fichier :
+      # Docker le crée tout seul s'il manque, sans le piège des montages de fichiers ci-dessus.
+      - ${BLINDIFY_DATA_ROOT:-/mnt/hdd2to/blindify}/logs:/data/logs
       # Relatif à ce fichier (racine du repo) : host/ est versionné avec Git, pas un point de montage
       # séparé comme le HDD de données ci-dessus.
       - ./host:/host:ro
@@ -64,6 +68,9 @@ services:
       - Data__AudioPath=/data/audio
       - Data__CoversPath=/data/covers
       - Data__RootPath=/data
+      - Logs__Path=/data/logs
+      # Horodatage des logs en heure locale (UTC par défaut dans le conteneur).
+      - TZ=Europe/Paris
       - Host__StaticPath=/host
       - Play__StaticPath=/play
       - Admin__RestartPassword=${BLINDIFY_RESTART_PASSWORD:-}

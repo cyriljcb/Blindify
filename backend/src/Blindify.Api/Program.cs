@@ -3,6 +3,7 @@ using System.Text;
 using Blindify.Api.Contracts;
 using Blindify.Api.Hubs;
 using Blindify.Api.Jokers;
+using Blindify.Api.Logging;
 using Blindify.Application.DependencyInjection;
 using Blindify.Infrastructure.DependencyInjection;
 using Blindify.Infrastructure.Tracks;
@@ -13,13 +14,32 @@ using SixLabors.ImageSharp.Processing;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Logs persistants (voir FichierLoggerProvider) — clé absente ou vide = désactivé (dev local, tests
+// d'intégration), seule la console reste alors active.
+var logsPath = builder.Configuration["Logs:Path"];
+if (!string.IsNullOrWhiteSpace(logsPath))
+{
+    var retentionJours = builder.Configuration.GetValue("Logs:RetentionDays", 30);
+    builder.Logging.AddProvider(new FichierLoggerProvider(Path.GetFullPath(logsPath, builder.Environment.ContentRootPath), retentionJours));
+}
+
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSingleton<RoundTimerCoordinator>();
 builder.Services.AddSingleton<BonusTimerCoordinator>();
 builder.Services.AddSingleton<IJokerCoverTokenStore, JokerCoverTokenStore>();
 
-builder.Services.AddSignalR().AddJsonProtocol(options =>
+// Retour utilisateur (2026-11-01, réponses à valider plusieurs fois) : avec les valeurs par défaut
+// (ping toutes les 15 s, coupure après 30 s de silence), une connexion morte sans fermeture propre
+// (Wi-Fi d'un téléphone en veille) restait "connectée" une demi-minute — les envois partaient dans
+// le vide. Les clients (app, host) pingent désormais toutes les 5 s et coupent après 15 s sans
+// nouvelles du serveur ; 20 s côté serveur plutôt que 15 pour tolérer les APK antérieurs à la 1.0.14,
+// qui pingent encore toutes les 15 s.
+builder.Services.AddSignalR(options =>
+{
+    options.KeepAliveInterval = TimeSpan.FromSeconds(5);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(20);
+}).AddJsonProtocol(options =>
 {
     options.PayloadSerializerOptions.PropertyNamingPolicy = ContractJsonOptions.Instance.PropertyNamingPolicy;
     options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
