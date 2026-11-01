@@ -40,6 +40,11 @@ public class RoundTimerCoordinator(
         return true;
     }
 
+    /// <summary>Vrai si ce round a déjà été terminé (minuteur ou « Révéler maintenant ») — à lire
+    /// sous session.Lock, comme MarquerTermine.</summary>
+    public bool EstTermine(string code, Round round) =>
+        _roundsTermines.TryGetValue(code, out var dernier) && dernier == round.Id;
+
     public void DemarrerSurveillance(string code, SeriesConfig config)
     {
         Annuler(code);

@@ -271,6 +271,18 @@ public class GameHub(
                 throw new HubException("Plus de round classique à démarrer dans cette série.");
 
             round = serie.Rounds[session.RoundCourantIndex];
+
+            // Retour utilisateur (2026-11-01, « le téléphone demande l'artiste, la TV le titre ») :
+            // un second StartRound sur un round encore en cours (démarrage automatique après l'intro
+            // de série + clic, bouton « Lancer » de la TV, télécommande admin...) retirait la cible au
+            // sort en pleine question. Ignoré désormais ; rejouer un round TERMINÉ reste possible.
+            if (round.DebutRound is not null && !timerCoordinator.EstTermine(session.Id, round))
+            {
+                logger.LogWarning("StartRound ignoré — round déjà en cours (partie {Code}, série {Serie}, round {Index}, cible {Cible})",
+                    session.Id, serie.Index, session.RoundCourantIndex, round.Cible);
+                return;
+            }
+
             track = tracksRepository.GetById(round.TrackId) ?? throw new HubException("Morceau introuvable dans le catalogue.");
 
             var forcerAnnee = QuotaQuestionsAnnee.PourRound(serie, session.RoundCourantIndex, tracksRepository.GetById, session.Config, Random.Shared);
@@ -281,6 +293,11 @@ public class GameHub(
             (qcmOptions, round.Options) = ConstruireQcmOptions(round.QcmOptionTrackIds, track, round.Cible, session.Config, tracksRepository);
             anneeOptions = round.AnneeOptions?.Select(a => a.ToString()).ToList();
         }
+
+        // Trace de ce qui a réellement été demandé — à recouper avec un retour du type « la TV ne
+        // posait pas la même question que le téléphone » (voir FichierLoggerProvider).
+        logger.LogInformation("Round démarré — partie {Code}, série {Serie}, round {Index}, cible {Cible}, mode {Mode}, morceau {TrackId}",
+            session.Id, serie.Index, session.RoundCourantIndex, round.Cible, round.Mode, track.Id);
 
         if (session.HostConnectionId is not null)
         {

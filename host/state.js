@@ -99,8 +99,17 @@ export function subscribe(fn) {
   return () => listeners.delete(fn);
 }
 
+// Chaque abonné isolé (retour utilisateur 2026-11-01, TV qui ne posait pas la même question que les
+// téléphones) : une exception dans le rendu du panneau empêchait les abonnés suivants de tourner —
+// dont la synchro de l'écran public, qui restait alors sur l'état précédent.
 export function notify() {
-  for (const fn of listeners) fn(state);
+  for (const fn of listeners) {
+    try {
+      fn(state);
+    } catch (err) {
+      console.error("notify:", err);
+    }
+  }
 }
 
 // ----- Persistance de session host (V2, reconnexion) -----

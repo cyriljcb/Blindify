@@ -162,6 +162,28 @@ public class GameHubReconnectionIntegrationTests : IClassFixture<GameHubTestFact
         Assert.True(reponseCourante.Points != 0 || reponseCourante.EstCorrecte);
     }
 
+    // Retour utilisateur (2026-11-01) : un second StartRound pendant le round retirait la cible au sort
+    // (le téléphone et la TV pouvaient alors ne plus poser la même question).
+    [Fact]
+    public async Task StartRound_RoundDejaEnCours_EstIgnoreSansRediffuserNiRetirerLaCible()
+    {
+        var code = await CreerEtConfigurerPartie(config: new GameConfig { DelaiGraceDeconnexionMs = 0 });
+
+        await using var playerConnection = _factory.CreateHubConnection();
+        await playerConnection.StartAsync();
+        await playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", code, "Alice", "player-double-start-1");
+
+        var recus = new List<RoundStartedForPlayersDto>();
+        playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => { lock (recus) recus.Add(payload); });
+
+        await _hostConnection.InvokeAsync("StartRound");
+        await AttendreAsync(() => recus.Count == 1);
+        await _hostConnection.InvokeAsync("StartRound");
+        await Task.Delay(300);
+
+        Assert.Single(recus);
+    }
+
     private static async Task AttendreAsync(Func<bool> condition, int timeoutMs = 5000)
     {
         var depart = DateTime.UtcNow;

@@ -257,7 +257,10 @@ export function registerHandlers(connection, callbacks) {
     console.warn("SignalR onreconnecting:", err);
     callbacks.onConnectionChanged(false);
   });
-  connection.onreconnected(() => callbacks.onConnectionChanged(true));
+  connection.onreconnected(() => {
+    callbacks.onConnectionChanged(true);
+    callbacks.onReconnected?.();
+  });
 
   connection.on("PlayerJoined", (payload) => callbacks.onEvent("PlayerJoined", payload));
   connection.on("PlayerReconnected", (payload) => callbacks.onEvent("PlayerReconnected", payload));

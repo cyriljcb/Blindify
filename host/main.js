@@ -44,7 +44,7 @@ async function tenterConnexion(url, { silencieux = false, timeoutMs = null } = {
   state.serverBaseUrl = url;
 
   const connection = transport.creerConnexion(url);
-  registerHandlers(connection, { onConnectionChanged: setConnected, onEvent: handleEvent });
+  registerHandlers(connection, { onConnectionChanged: setConnected, onEvent: handleEvent, onReconnected: reprendreControleApresReconnexion });
 
   try {
     await transport.demarrerConnexion(timeoutMs);
@@ -58,6 +58,25 @@ async function tenterConnexion(url, { silencieux = false, timeoutMs = null } = {
     if (!silencieux) errorEl.textContent = "Connexion impossible : vérifiez l'adresse et que le serveur tourne.";
     showScreen("screen-connect");
     return false;
+  }
+}
+
+// Retour utilisateur (2026-11-01) : une reconnexion automatique de SignalR donne une nouvelle
+// connexion, que le serveur ne connaît pas comme host (HostConnectionId) ni comme membre du groupe de
+// la partie — le panneau ne recevait plus RoundStarted/PlayerAnswered et ses actions étaient refusées
+// (« Seul le host… »). On se ré-annonce, sans changer d'écran ; si un round tourne, sa cible et son
+// mode sont resynchronisés au cas où un RoundStarted aurait été manqué pendant la coupure.
+async function reprendreControleApresReconnexion() {
+  if (!state.gameCode || !state.hostSecret) return;
+  try {
+    const snapshot = await transport.invoke.rejoinAsHost(state.gameCode, state.hostSecret);
+    state.jeuEnPause = snapshot.enPause;
+    if (state.currentScreen === "round" && snapshot.cibleCourante) {
+      state.currentRoundInfo = { ...state.currentRoundInfo, cible: snapshot.cibleCourante, mode: snapshot.modeCourant };
+    }
+    notify();
+  } catch (err) {
+    console.error("RejoinAsHost après reconnexion :", err);
   }
 }
 
