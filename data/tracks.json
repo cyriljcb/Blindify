@@ -33332,5 +33332,163 @@
     "coverPath": "covers/3yuCAw61jqfyv2KzMoVdXA.jpg",
     "refrainStartMs": null,
     "addedAt": "2026-10-28T18:43:11.379800+00:00"
+  },
+  {
+    "id": "0UREO3QWbXJW3gOUXpK1am",
+    "title": "The Fresh Prince of Bel-Air",
+    "artist": "DJ Jazzy Jeff & The Fresh Prince",
+    "album": "Greatest Hits",
+    "oeuvre": "Le Prince de Bel-Air",
+    "spotifyId": "0UREO3QWbXJW3gOUXpK1am",
+    "youtubeId": "1nCqRmx3Dnw",
+    "durationMs": 138112,
+    "genres": [
+      "old school hip hop"
+    ],
+    "tags": [
+      "film-serie"
+    ],
+    "trapWith": [],
+    "year": 1990,
+    "filePath": "audio/0UREO3QWbXJW3gOUXpK1am.mp3",
+    "coverPath": "covers/0UREO3QWbXJW3gOUXpK1am.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-11-01T17:38:28.560795+00:00"
+  },
+  {
+    "id": "5BaiXy8DYen0edy8uJQRd5",
+    "title": "Prison Break Theme",
+    "artist": "Ramin Djawadi",
+    "album": "Breaking Bad - The Greatest Crime and Punishment",
+    "oeuvre": "Prison Break",
+    "spotifyId": "5BaiXy8DYen0edy8uJQRd5",
+    "youtubeId": "nWogB4p9NuI",
+    "durationMs": 146065,
+    "genres": [
+      "score",
+      "soundtrack"
+    ],
+    "tags": [
+      "film-serie"
+    ],
+    "trapWith": [],
+    "year": 2005,
+    "filePath": "audio/5BaiXy8DYen0edy8uJQRd5.mp3",
+    "coverPath": "covers/5BaiXy8DYen0edy8uJQRd5.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-11-01T17:38:29.225473+00:00"
+  },
+  {
+    "id": "2d1nfG7UK2x2hv1iNf1w8D",
+    "title": "Mac Gyver (Générique)",
+    "artist": "Randy Edelman",
+    "album": "This is 80's",
+    "oeuvre": "MacGyver",
+    "spotifyId": "2d1nfG7UK2x2hv1iNf1w8D",
+    "youtubeId": "_3bdDnOHTdA",
+    "durationMs": 93263,
+    "genres": [],
+    "tags": [
+      "film-serie"
+    ],
+    "trapWith": [],
+    "year": 1985,
+    "filePath": "audio/2d1nfG7UK2x2hv1iNf1w8D.mp3",
+    "coverPath": "covers/2d1nfG7UK2x2hv1iNf1w8D.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-11-01T17:38:29.633191+00:00"
+  },
+  {
+    "id": "1KjNFfNZT8QMSIsBnuANQE",
+    "title": "Albator, le corsaire de l'espace (Bande originale du feuilleton)",
+    "artist": "Eric Charden",
+    "album": "Albator, le corsaire de l'espace (Bande originale du feuilleton) - Single",
+    "oeuvre": "Albator",
+    "spotifyId": "1KjNFfNZT8QMSIsBnuANQE",
+    "youtubeId": "y4rQbwN9e8g",
+    "durationMs": 99486,
+    "genres": [
+      "chanson",
+      "french pop",
+      "variété française"
+    ],
+    "tags": [
+      "film-serie"
+    ],
+    "trapWith": [],
+    "year": 1980,
+    "filePath": "audio/1KjNFfNZT8QMSIsBnuANQE.mp3",
+    "coverPath": "covers/1KjNFfNZT8QMSIsBnuANQE.jpg",
+    "refrainStartMs": null,
+    "addedAt": "2026-11-01T17:38:30.026844+00:00"
+  },
+  {
+    "id": "04hbeyUOBVThhWDKqN7qax",
+    "title": "La chanson de Candy",
+    "artist": "Dorothée",
+    "album": "L'essentiel",
+    "oeuvre": "Candy",
+    "spotifyId": "04hbeyUOBVThhWDKqN7qax",
+    "youtubeId": "X_PfzEIvuNY",
+    "durationMs": 180768,
+    "genres": [
+      "chanson",
+      "variété française"
+    ],
+    "tags": [
+      "film-serie"
+    ],
+    "trapWith": [],
+    "year": 2016,
+    "filePath": "audio/04hbeyUOBVThhWDKqN7qax.mp3",
+    "coverPath": "covers/04hbeyUOBVThhWDKqN7qax.jpg",
+    "refrainStartMs": 113212,
+    "addedAt": "2026-11-01T17:38:30.881392+00:00"
+  },
+  {
+    "id": "5AMvBCtX2rspUdoeJ9IsPN",
+    "title": "Wild Wild West",
+    "artist": "Will Smith, Dru Hill, Kool Moe Dee",
+    "album": "Willennium",
+    "oeuvre": "Wild Wild West",
+    "spotifyId": "5AMvBCtX2rspUdoeJ9IsPN",
+    "youtubeId": "_zXKtfKnfT8",
+    "durationMs": 278547,
+    "genres": [
+      "east coast hip hop",
+      "new jack swing",
+      "old school hip hop",
+      "quiet storm",
+      "r&b"
+    ],
+    "tags": [
+      "film-serie"
+    ],
+    "trapWith": [],
+    "year": 1999,
+    "filePath": "audio/5AMvBCtX2rspUdoeJ9IsPN.mp3",
+    "coverPath": "covers/5AMvBCtX2rspUdoeJ9IsPN.jpg",
+    "refrainStartMs": 162671,
+    "addedAt": "2026-11-01T17:38:32.401216+00:00"
+  },
+  {
+    "id": "4NG4Ugserf2ocBe4eqKPli",
+    "title": "Chanson des jumelles - From \"Les demoiselles de Rochefort\"",
+    "artist": "Anne Germain, Claude Parent",
+    "album": "Les demoiselles de Rochefort (Bande originale du film)",
+    "oeuvre": "Les Demoiselles de Rochefort",
+    "spotifyId": "4NG4Ugserf2ocBe4eqKPli",
+    "youtubeId": "CND8EFCE58k",
+    "durationMs": 235982,
+    "genres": [],
+    "tags": [
+      "film-serie"
+    ],
+    "trapWith": [],
+    "year": 1967,
+    "filePath": "audio/4NG4Ugserf2ocBe4eqKPli.mp3",
+    "coverPath": "covers/4NG4Ugserf2ocBe4eqKPli.jpg",
+    "refrainStartMs": 165614,
+    "addedAt": "2026-11-01T17:38:33.528895+00:00"
   }
 ]
