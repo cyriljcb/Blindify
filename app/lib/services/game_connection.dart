@@ -873,25 +873,40 @@ class GameConnection extends ChangeNotifier {
     }
 
     paused = etat.enPause;
-    reponseChoisie = null;
-    repondants.clear();
+
+    // Retour utilisateur (2026-11-01, "il faut appuyer plusieurs fois pour que ça soit pris en
+    // compte") : une reconnexion survenue pendant l'envoi d'une réponse (submitAnswer en attente de
+    // connexion dans _invoquerAvecReprise) renvoie dejaRepondu=false, le serveur n'ayant encore rien
+    // reçu — l'écran se déverrouillait alors que l'envoi aboutissait juste après, et le joueur devait
+    // réappuyer. Sur la même question, l'état local verrouillé est conservé : en cas d'échec réel de
+    // l'envoi, c'est submitAnswer/selectStake/submitBonusAnswer qui rend la main.
+    final memeQuestion = switch (etat.phase) {
+      PhaseJoueur.roundClassique => etat.round != null && etat.round!.roundId == currentRound?.roundId,
+      PhaseJoueur.bonusMise => etat.bonusMise != null && etat.bonusMise!.roundId == bonusStakeOptions?.roundId,
+      PhaseJoueur.bonusQuestion => etat.bonusQuestion != null && etat.bonusQuestion!.roundId == bonusQuestion?.roundId,
+      PhaseJoueur.aucune => false,
+    };
+    if (!memeQuestion) {
+      reponseChoisie = null;
+      repondants.clear();
+    }
 
     switch (etat.phase) {
       case PhaseJoueur.roundClassique:
+        roundAnswered = etat.dejaRepondu || (memeQuestion && roundAnswered);
         currentRound = etat.round;
-        roundAnswered = etat.dejaRepondu;
         // V2, section 12.7 : non null seulement si ce joueur avait déjà utilisé son joker sur ce
         // round avant la coupure — rejoue alors le même indice plutôt qu'un nouveau tirage.
         jokerIndiceActuel = etat.round?.jokerIndice;
         lastRoundResult = null;
         screen = AppScreen.round;
       case PhaseJoueur.bonusMise:
+        bonusStakeEnvoyee = etat.dejaRepondu || (memeQuestion && bonusStakeEnvoyee);
         bonusStakeOptions = etat.bonusMise;
-        bonusStakeEnvoyee = etat.dejaRepondu;
         screen = AppScreen.bonusStake;
       case PhaseJoueur.bonusQuestion:
+        bonusAnswered = etat.dejaRepondu || (memeQuestion && bonusAnswered);
         bonusQuestion = etat.bonusQuestion;
-        bonusAnswered = etat.dejaRepondu;
         screen = AppScreen.bonusQuestion;
       case PhaseJoueur.aucune:
         // Jamais renvoyé par le serveur en pratique (GameHub.ConstruireEtatCourantJoueur renvoie
@@ -1144,8 +1159,13 @@ class GameConnection extends ChangeNotifier {
   }
 
   static const _tentativesEnvoi = 3;
+
+  /// 8 s par tentative (24 s au total, plus qu'une fenêtre de réponse usuelle) plutôt que 4 s
+  /// (retour utilisateur 2026-11-01) : la reconnexion automatique de SignalR espace ses essais de
+  /// 0, 2, 10 puis 30 s — au-delà du 2e essai, les 12 s précédentes expiraient avant le retour de
+  /// la connexion, l'envoi était déclaré en échec et le joueur devait réappuyer.
   @visibleForTesting
-  Duration delaiAttenteConnexion = const Duration(seconds: 4);
+  Duration delaiAttenteConnexion = const Duration(seconds: 8);
 
   /// Retour utilisateur (2026-09-27, joueur "incapable de répondre", pénalité d'absence à chaque
   /// round) : l'envoi d'une réponse passait par un simple `_hub?.invoke`, qui ne faisait rien si

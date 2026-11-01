@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../motion.dart';
 import '../theme.dart';
+import 'appui_tolerant.dart';
 
 /// Forme associée à une position d'option QCM — identique sur l'écran public (host/display.js,
 /// même ordre) pour que le joueur retrouve son choix d'un coup d'œil sur la TV, et lisible sans
@@ -110,9 +111,9 @@ class _QcmTileState extends State<QcmTile> {
       ),
     );
 
-    return GestureDetector(
-      onTapDown: (_) => _setPressed(true),
-      onTapUp: (_) => _setPressed(false),
+    return AppuiTolerant(
+      onTapDown: () => _setPressed(true),
+      onTapUp: () => _setPressed(false),
       onTapCancel: () => _setPressed(false),
       onTap: widget.onPressed,
       child: AnimatedScale(

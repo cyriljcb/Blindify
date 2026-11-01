@@ -62,6 +62,45 @@ void main() {
       expect(game.roundAnswered, isTrue);
     });
 
+    test('reconnexion pendant l\'envoi d\'une réponse (même round) : reste verrouillé, tuile choisie conservée', () {
+      final game = GameConnection()
+        ..currentRound = round
+        ..roundAnswered = true
+        ..reponseChoisie = 'trackA';
+      final etat = EtatCourantJoueur(phase: PhaseJoueur.roundClassique, enPause: false, dejaRepondu: false, round: round);
+
+      game.appliquerEtatCourant(etat, actualiserEcran: false);
+
+      expect(game.roundAnswered, isTrue);
+      expect(game.reponseChoisie, 'trackA');
+    });
+
+    test('reconnexion sur un round différent : l\'état verrouillé local n\'est pas reporté', () {
+      final ancien = RoundStarted(
+          mode: RoundMode.qcm, cible: RoundCible.titre, roundId: 'round-0', dureeFenetreReponseMs: 20000, serieIndex: 1);
+      final game = GameConnection()
+        ..currentRound = ancien
+        ..roundAnswered = true
+        ..reponseChoisie = 'trackA';
+      final etat = EtatCourantJoueur(phase: PhaseJoueur.roundClassique, enPause: false, dejaRepondu: false, round: round);
+
+      game.appliquerEtatCourant(etat, actualiserEcran: false);
+
+      expect(game.roundAnswered, isFalse);
+      expect(game.reponseChoisie, isNull);
+    });
+
+    test('reconnexion pendant l\'envoi d\'une réponse bonus (même question) : reste verrouillé', () {
+      final game = GameConnection()
+        ..bonusQuestion = bonusQuestion
+        ..bonusAnswered = true;
+      final etat = EtatCourantJoueur(phase: PhaseJoueur.bonusQuestion, enPause: false, dejaRepondu: false, bonusQuestion: bonusQuestion);
+
+      game.appliquerEtatCourant(etat, actualiserEcran: false);
+
+      expect(game.bonusAnswered, isTrue);
+    });
+
     test('appliqué même avec actualiserEcran=false : la phase réelle a pu changer pendant la coupure', () {
       final game = GameConnection()..screen = AppScreen.lobby;
       final etat = EtatCourantJoueur(phase: PhaseJoueur.roundClassique, enPause: false, dejaRepondu: false, round: round);

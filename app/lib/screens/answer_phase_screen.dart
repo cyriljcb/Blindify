@@ -13,6 +13,7 @@ import '../services/game_connection.dart';
 import '../services/haptique.dart';
 import '../theme.dart';
 import '../widgets/answer_banner.dart';
+import '../widgets/appui_tolerant.dart';
 import '../widgets/cover_art.dart';
 import '../widgets/qcm_tile.dart';
 import '../widgets/joker_button.dart';
@@ -497,6 +498,9 @@ class _LetterAnswer extends StatelessWidget {
         final tileHeight = (constraints.maxHeight - _spacing * (rows - 1)) / rows;
 
         return GridView.builder(
+          // Grille dimensionnée pour tenir entière à l'écran : sans défilement, aucun geste de
+          // glissement ne vient annuler l'appui sur une lettre (voir AppuiTolerant).
+          physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             mainAxisSpacing: _spacing,
@@ -513,20 +517,16 @@ class _LetterAnswer extends StatelessWidget {
             return AnimatedOpacity(
               opacity: etat == EtatTuileQcm.estompee ? 0.3 : 1,
               duration: BlindifyMotion.fast,
-              child: Material(
-                color: choisie ? BlindifyColors.cobalt : BlindifyColors.surfaceAlt,
-                borderRadius: BorderRadius.circular(8),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: disabled ? null : () => onSubmit(letter),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: BlindifyColors.ink, width: choisie ? 4 : 2),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(letter, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+              child: AppuiTolerant(
+                onTap: disabled ? null : () => onSubmit(letter),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: choisie ? BlindifyColors.cobalt : BlindifyColors.surfaceAlt,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: BlindifyColors.ink, width: choisie ? 4 : 2),
                   ),
+                  alignment: Alignment.center,
+                  child: Text(letter, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
                 ),
               ),
             );
