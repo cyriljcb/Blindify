@@ -34,7 +34,7 @@ public class TitresServiceTests
 
         for (var i = 0; i < 3; i++)
             serie.Rounds.Add(new Round
-            {
+            { DebutRound = DateTimeOffset.UnixEpoch,
                 TrackId = $"t{i}",
                 Reponses =
                 [
@@ -59,7 +59,7 @@ public class TitresServiceTests
 
         for (var i = 0; i < 2; i++)
             serie.Rounds.Add(new Round
-            {
+            { DebutRound = DateTimeOffset.UnixEpoch,
                 TrackId = $"t{i}",
                 Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = true, TempsReponseMs = 100 }],
             });
@@ -80,7 +80,7 @@ public class TitresServiceTests
 
         for (var i = 0; i < 3; i++)
             serie.Rounds.Add(new Round
-            {
+            { DebutRound = DateTimeOffset.UnixEpoch,
                 TrackId = $"t{i}",
                 Reponses =
                 [
@@ -110,7 +110,7 @@ public class TitresServiceTests
         {
             var reponses = new List<RoundAnswer> { new() { PlayerId = "p1", Reponse = "x", EstCorrecte = true } };
             if (i < 2) reponses.Add(new RoundAnswer { PlayerId = "p2", Reponse = "x", EstCorrecte = i == 0 });
-            serie.Rounds.Add(new Round { TrackId = $"t{i}", Reponses = reponses });
+            serie.Rounds.Add(new Round { DebutRound = DateTimeOffset.UnixEpoch, TrackId = $"t{i}", Reponses = reponses });
         }
         session.SeriesList.Add(serie);
 
@@ -143,7 +143,7 @@ public class TitresServiceTests
         // faire consommer son plafond de 2 titres avant d'atteindre SPECIALISTE.
         foreach (var trackId in tracks.Keys)
             serie.Rounds.Add(new Round
-            {
+            { DebutRound = DateTimeOffset.UnixEpoch,
                 TrackId = trackId,
                 Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = true, TempsReponseMs = 200 }],
             });
@@ -152,11 +152,11 @@ public class TitresServiceTests
         // place, sans jamais toucher au tag "rock" (donc jamais candidat SPECIALISTE).
         for (var i = 0; i < 3; i++)
             serie.Rounds.Add(new Round
-            {
+            { DebutRound = DateTimeOffset.UnixEpoch,
                 TrackId = $"autre{i}",
                 Reponses = [new RoundAnswer { PlayerId = "p2", Reponse = "x", EstCorrecte = true, TempsReponseMs = 50 }],
             });
-        serie.Rounds.Add(new Round { TrackId = "autre3", Reponses = [] });
+        serie.Rounds.Add(new Round { DebutRound = DateTimeOffset.UnixEpoch, TrackId = "autre3", Reponses = [] });
         session.SeriesList.Add(serie);
 
         var resultat = TitresService.CalculerTitres(session, id => tracks.GetValueOrDefault(id));
@@ -178,7 +178,7 @@ public class TitresServiceTests
 
         for (var i = 0; i < 2; i++)
             serie.Rounds.Add(new Round
-            {
+            { DebutRound = DateTimeOffset.UnixEpoch,
                 TrackId = $"t{i}",
                 Cible = RoundCible.Annee,
                 Reponses =
@@ -287,7 +287,7 @@ public class TitresServiceTests
         // Une seule unité comptée à mi-partie (2 rounds -> plafond ceil(2/2)=1) : ce round fixe le
         // classement de mi-partie, très différent du classement final (Player.Score ci-dessus).
         serie.Rounds.Add(new Round
-        {
+        { DebutRound = DateTimeOffset.UnixEpoch,
             TrackId = "t0",
             Reponses =
             [
@@ -296,7 +296,7 @@ public class TitresServiceTests
                 new RoundAnswer { PlayerId = "p3", Reponse = "x", EstCorrecte = false, Points = 100 },
             ],
         });
-        serie.Rounds.Add(new Round { TrackId = "t1", Reponses = [] });
+        serie.Rounds.Add(new Round { DebutRound = DateTimeOffset.UnixEpoch, TrackId = "t1", Reponses = [] });
         session.SeriesList.Add(serie);
 
         var resultat = TitresService.CalculerTitres(session, ResolveurVide);
@@ -317,7 +317,7 @@ public class TitresServiceTests
 
         for (var i = 0; i < 2; i++)
             serie.Rounds.Add(new Round
-            {
+            { DebutRound = DateTimeOffset.UnixEpoch,
                 TrackId = $"t{i}",
                 Reponses =
                 [
@@ -343,14 +343,14 @@ public class TitresServiceTests
         var session = CreerSession(p1, p2);
         var serie = NouvelleSerie(0);
 
-        serie.Rounds.Add(new Round { TrackId = "t0", Reponses = [] });
+        serie.Rounds.Add(new Round { DebutRound = DateTimeOffset.UnixEpoch, TrackId = "t0", Reponses = [] });
         serie.Rounds.Add(new Round
-        {
+        { DebutRound = DateTimeOffset.UnixEpoch,
             TrackId = "t1",
             Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = false, AvecJoker = true }],
         });
         serie.Rounds.Add(new Round
-        {
+        { DebutRound = DateTimeOffset.UnixEpoch,
             TrackId = "t2",
             Reponses = [new RoundAnswer { PlayerId = "p2", Reponse = "x", EstCorrecte = false, AvecJoker = true }],
         });
@@ -369,7 +369,7 @@ public class TitresServiceTests
         var session = CreerSession(p1);
         var serie = NouvelleSerie(0);
         serie.Rounds.Add(new Round
-        {
+        { DebutRound = DateTimeOffset.UnixEpoch,
             TrackId = "t0",
             Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = true, AvecJoker = true }],
         });
@@ -387,7 +387,7 @@ public class TitresServiceTests
         var session = CreerSession(p1);
         var serie = NouvelleSerie(0);
         serie.Rounds.Add(new Round
-        {
+        { DebutRound = DateTimeOffset.UnixEpoch,
             TrackId = "t0",
             Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = false }],
         });
@@ -409,7 +409,7 @@ public class TitresServiceTests
         var serie = NouvelleSerie(0);
 
         serie.Rounds.Add(new Round
-        {
+        { DebutRound = DateTimeOffset.UnixEpoch,
             TrackId = "t0",
             Reponses =
             [
@@ -418,7 +418,7 @@ public class TitresServiceTests
             ],
         });
         serie.Rounds.Add(new Round
-        {
+        { DebutRound = DateTimeOffset.UnixEpoch,
             TrackId = "t1",
             Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = false, Points = -50 }],
         });
@@ -460,13 +460,13 @@ public class TitresServiceTests
         // unique gagnant (rareté 1 chacun) ; l'ordre du catalogue les départage à égalité de rareté.
         for (var i = 0; i < 3; i++)
             serie.Rounds.Add(new Round
-            {
+            { DebutRound = DateTimeOffset.UnixEpoch,
                 TrackId = $"ok{i}",
                 Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = true, TempsReponseMs = 100 }],
             });
         for (var i = 0; i < 2; i++)
             serie.Rounds.Add(new Round
-            {
+            { DebutRound = DateTimeOffset.UnixEpoch,
                 TrackId = $"ko{i}",
                 Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = false, Points = -20 }],
             });
@@ -490,7 +490,7 @@ public class TitresServiceTests
         var session = CreerSession(p1, p2);
         var serie = NouvelleSerie(0);
         serie.Rounds.Add(new Round
-        {
+        { DebutRound = DateTimeOffset.UnixEpoch,
             TrackId = "t0",
             Reponses = [new RoundAnswer { PlayerId = "p1", Reponse = "x", EstCorrecte = true, TempsReponseMs = 100 }],
         });

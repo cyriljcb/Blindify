@@ -28,6 +28,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSingleton<RoundTimerCoordinator>();
 builder.Services.AddSingleton<BonusTimerCoordinator>();
 builder.Services.AddSingleton<IJokerCoverTokenStore, JokerCoverTokenStore>();
+builder.Services.AddHostedService<SessionCleanupService>();
 
 // Retour utilisateur (2026-11-01, réponses à valider plusieurs fois) : avec les valeurs par défaut
 // (ping toutes les 15 s, coupure après 30 s de silence), une connexion morte sans fermeture propre
@@ -47,9 +48,16 @@ builder.Services.AddSignalR(options =>
         options.PayloadSerializerOptions.Converters.Add(converter);
 });
 
-// Réseau local uniquement (voir architecture.md section 2) : CORS ouvert aux clients LAN, pas de credentials.
+// Réseau local uniquement (voir architecture.md section 2). Audit 2026-11-10 : AllowAnyOrigin laissait
+// n'importe quelle page web ouverte dans un navigateur du réseau (origine Internet) ouvrir le hub ou
+// appeler /api/admin/restart. Seules les origines locales sont acceptées : adresses privées, localhost,
+// noms .local, et "null" (host/ ouvert en fichier local). Les pages servies par le backend lui-même
+// (host/, /play) sont de même origine et ne passent pas par CORS ; l'app native non plus.
 builder.Services.AddCors(options =>
-    options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+    options.AddDefaultPolicy(policy => policy
+        .SetIsOriginAllowed(OriginesLocales.EstAutorisee)
+        .AllowAnyMethod()
+        .AllowAnyHeader()));
 
 var app = builder.Build();
 
@@ -59,12 +67,21 @@ app.UseCors();
 
 // Sert audio/ et covers/ sous /files — les chemins de tracks.json (ex. "audio/xxx.mp3") sont déjà
 // relatifs à cette racine. Seul le host consomme ces fichiers, jamais les joueurs (voir CLAUDE.md).
+// Audit 2026-11-10 : la racine /data entière était servie — tracks.json, stats.json, flags.json et
+// les logs du jour (TrackId de chaque round) étaient téléchargeables depuis n'importe quel téléphone.
+// Seuls les deux dossiers de médias sont exposés désormais ; les téléphones ne reçoivent plus aucun
+// TrackId avant le reveal (options QCM opaques, voir QcmOptionDto).
 var dataRootPath = Path.GetFullPath(app.Configuration["Data:RootPath"]!, app.Environment.ContentRootPath);
-app.UseStaticFiles(new StaticFileOptions
+foreach (var (dossier, cle) in new[] { ("audio", "Data:AudioPath"), ("covers", "Data:CoversPath") })
 {
-    FileProvider = new PhysicalFileProvider(dataRootPath),
-    RequestPath = "/files"
-});
+    var chemin = Path.GetFullPath(app.Configuration[cle] ?? Path.Combine(dataRootPath, dossier), app.Environment.ContentRootPath);
+    if (!Directory.Exists(chemin)) continue;
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(chemin),
+        RequestPath = $"/files/{dossier}"
+    });
+}
 
 // Sert host/ (index.html, display.html, app.js...) à la racine — retour utilisateur du 2026-08-24 :
 // évite d'avoir à recopier/servir ce dossier séparément sur le PC du host, un simple navigateur
@@ -191,3 +208,22 @@ app.MapHub<GameHub>("/hubs/game");
 app.Run();
 
 public partial class Program;
+
+/// <summary>Origines acceptées par CORS — voir AddCors ci-dessus.</summary>
+internal static class OriginesLocales
+{
+    public static bool EstAutorisee(string origine)
+    {
+        if (origine == "null") return true;
+        if (!Uri.TryCreate(origine, UriKind.Absolute, out var uri)) return false;
+        var hote = uri.Host;
+        if (hote is "localhost" || hote.EndsWith(".local", StringComparison.OrdinalIgnoreCase)) return true;
+        if (!System.Net.IPAddress.TryParse(hote, out var ip)) return false;
+        if (System.Net.IPAddress.IsLoopback(ip)) return true;
+        var o = ip.MapToIPv4().GetAddressBytes();
+        return o[0] == 10
+            || (o[0] == 172 && o[1] >= 16 && o[1] <= 31)
+            || (o[0] == 192 && o[1] == 168)
+            || (o[0] == 169 && o[1] == 254);
+    }
+}

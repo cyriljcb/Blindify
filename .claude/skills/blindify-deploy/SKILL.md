@@ -22,7 +22,9 @@ description: Procédure de déploiement de Blindify sur le Raspberry Pi de produ
 | Backend (`backend/`) | `git pull` + `docker compose up -d --build` | Oui (image Docker) |
 | Host web (`host/*.js`, `*.html`, `*.css`) | `git pull` seul | Non — servi en fichiers statiques (bind-mount `./host:/host:ro`, relatif au repo) |
 | APK Android (`host/blindify.apk`, `apk_version.json`) | **PAS git** (gitignoré) — `scp` depuis le poste de dev | Oui, en LOCAL (`flutter build apk`), jamais sur le Pi |
-| `tracks.json` / `flags_resolutions.json` | Scripts `data/scripts/` uniquement | — (le backend ne les écrit jamais, voir CLAUDE.md) |
+| `tracks.json` / `flags_resolutions.json` | Scripts `data/scripts/` uniquement, puis commit + `git pull` sur le Pi | Redémarrage du conteneur (`docker compose restart backend`) — le backend ne relit `tracks.json` qu'au démarrage et ne l'écrit jamais, voir CLAUDE.md |
+
+**Attention (audit 2026-11-10)** : `tracks.json` est versionné et le dossier de données du Pi est le repo lui-même — un `git pull` l'écrase, et bloque en conflit si un script lancé sur le Pi (cron `sync_daily`) l'a modifié entre-temps. Toujours commiter/pousser depuis un seul endroit, et vérifier que les fichiers audio des nouveaux morceaux sont présents sur le Pi avant de pousser leur entrée (sinon round muet, signalé côté host).
 
 ## Procédure — déployer un changement backend/host
 

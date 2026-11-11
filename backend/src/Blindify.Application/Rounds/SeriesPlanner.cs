@@ -8,7 +8,6 @@ namespace Blindify.Application.Rounds;
 /// docs/refactor-decisions.md section 1.</summary>
 public static class SeriesPlanner
 {
-    private static readonly int[] PaliersBase = [10, 20, 30, 50];
     private static readonly RoundMode[] ModesPossibles = [RoundMode.Qcm, RoundMode.TapeReponse, RoundMode.PremiereLettre];
 
     /// <summary>Vote des thèmes (retour utilisateur 2026-10-17) : choisit nombreSeries thèmes distincts
@@ -88,10 +87,10 @@ public static class SeriesPlanner
     /// pour la raison du changement (V2) par rapport à l'ancien calcul "viser 3000 pts à la dernière
     /// série", qui dépendait du nombre total de séries et produisait une progression trop brusque avec
     /// peu de séries.</summary>
-    public static int[] PaliersPourSerie(int indexSerie, double facteurProgression)
+    public static int[] PaliersPourSerie(int indexSerie, double facteurProgression, IReadOnlyList<int>? paliersBase = null)
     {
         var facteur = Math.Pow(facteurProgression, indexSerie);
-        return PaliersBase.Select(v => (int)Math.Round(v * facteur)).ToArray();
+        return (paliersBase ?? new Blindify.Domain.Configuration.GameConfig().PaliersMiseBase).Select(v => (int)Math.Round(v * facteur)).ToArray();
     }
 
     /// <summary>Tiré aléatoirement par round plutôt que configuré manuellement.</summary>

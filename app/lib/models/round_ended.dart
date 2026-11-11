@@ -34,6 +34,7 @@ class RoundEnded {
     required this.film,
     required this.resultats,
     this.annee,
+    this.bonneOptionId,
   });
 
   final String trackId;
@@ -55,6 +56,9 @@ class RoundEnded {
   /// 'Annee'`, jamais transmise avant le reveal (voir RoundEndedDto côté backend).
   final int? annee;
 
+  /// Identifiant de la bonne option en mode QCM (null sinon).
+  final String? bonneOptionId;
+
   factory RoundEnded.fromJson(Map<String, dynamic> json) => RoundEnded(
         trackId: json['trackId'] as String,
         title: json['title'] as String,
@@ -66,5 +70,6 @@ class RoundEnded {
             .map((e) => RoundResultEntry.fromJson(e as Map<String, dynamic>))
             .toList(),
         annee: json['annee'] as int?,
+        bonneOptionId: json['bonneOptionId'] as String?,
       );
 }

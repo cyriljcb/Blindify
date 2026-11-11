@@ -167,8 +167,11 @@ public class RoundServiceTests
     [Fact]
     public void DemarrerRound_ModeQcm_GenereQuatreOptions()
     {
-        var correct = NouveauTrack("a", genres: ["pop"]);
-        var catalogue = new List<Track> { correct, NouveauTrack("b", genres: ["pop"]), NouveauTrack("c", genres: ["pop"]), NouveauTrack("d", genres: ["pop"]) };
+        // Artistes distincts : en cible Auteur, des options au même libellé sont désormais écartées
+        // (audit 2026-11-10) — avec un artiste commun, il ne resterait qu'une option.
+        Track AvecArtiste(Track t) { t.Artist = $"Artiste {t.Id}"; return t; }
+        var correct = AvecArtiste(NouveauTrack("a", genres: ["pop"]));
+        var catalogue = new List<Track> { correct, AvecArtiste(NouveauTrack("b", genres: ["pop"])), AvecArtiste(NouveauTrack("c", genres: ["pop"])), AvecArtiste(NouveauTrack("d", genres: ["pop"])) };
         var config = new GameConfig { ProbabiliteQcmPiege = 0 };
         var round = new Round { TrackId = correct.Id, Mode = RoundMode.Qcm };
 
@@ -844,14 +847,14 @@ public class RoundServiceTests
             QcmOptionTrackIds = ["a", "b", "c", "d"],
             Options =
             [
-                new RoundOption { TrackId = "a", TexteAffiche = "Titre a", EstFeinte = false, EstPiege = false },
-                new RoundOption { TrackId = "b", TexteAffiche = "Titre b", EstFeinte = true, EstPiege = false },
-                new RoundOption { TrackId = "c", TexteAffiche = "Titre c", EstFeinte = false, EstPiege = true },
-                new RoundOption { TrackId = "d", TexteAffiche = "Titre d", EstFeinte = false, EstPiege = false },
+                new RoundOption { TrackId = "a", OptionId = "oa", TexteAffiche = "Titre a", EstFeinte = false, EstPiege = false },
+                new RoundOption { TrackId = "b", OptionId = "ob", TexteAffiche = "Titre b", EstFeinte = true, EstPiege = false },
+                new RoundOption { TrackId = "c", OptionId = "oc", TexteAffiche = "Titre c", EstFeinte = false, EstPiege = true },
+                new RoundOption { TrackId = "d", OptionId = "od", TexteAffiche = "Titre d", EstFeinte = false, EstPiege = false },
             ],
         };
 
-        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "c", round.DebutRound!.Value);
+        var reponse = _service.SoumettreReponse(session, round, NouveauConfig(), track, "p1", round.Id, "oc", round.DebutRound!.Value);
 
         Assert.Equal("c", reponse!.OptionChoisieTrackId);
         Assert.False(reponse.OptionChoisieEstFeinte);

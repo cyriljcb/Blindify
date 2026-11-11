@@ -31,18 +31,40 @@ import 'update_checker.dart';
 enum AppScreen { loading, connect, join, lobby, serieIntro, round, roundEnded, bonusStake, bonusCourseIntro, bonusQuestion, bonusResult, ended }
 
 class PlayerInfo {
-  PlayerInfo({required this.playerId, required this.nom, this.estConnecte = true, this.teamId});
+  PlayerInfo({required this.playerId, required this.nom, this.estConnecte = true, this.teamId, this.aQuitte = false});
 
   final String playerId;
   final String nom;
   bool estConnecte;
   String? teamId;
+
+  /// Parti volontairement en cours de partie (QuitterPartie) : gardé au classement, plus attendu.
+  bool aQuitte;
 }
 
 const _prefsPlayerId = 'blindify_player_id';
 const _prefsServerUrl = 'blindify_server_url';
 const _prefsNom = 'blindify_nom';
 const _prefsGameCode = 'blindify_game_code';
+
+/// Jeton du joueur pour le salon en cours, sous la forme « CODE:jeton » (audit 2026-11-10) — exigé
+/// par le serveur pour reprendre ce playerId (JoinGame, reconnexion automatique).
+const _prefsJeton = 'blindify_jeton';
+
+/// Longueur maximale d'un pseudo — même borne que le serveur (GameHub.LongueurMaxNomJoueur).
+const longueurMaxNom = 24;
+
+/// Message lisible d'une erreur d'appel au hub : le texte de la HubException côté serveur plutôt
+/// que la trace SignalR brute (audit 2026-11-10).
+String messageErreur(Object e) {
+  final texte = e.toString();
+  final marqueur = texte.lastIndexOf('HubException:');
+  if (marqueur >= 0) return texte.substring(marqueur + 'HubException:'.length).trim();
+  if (texte.contains('Cannot send data') || texte.contains('not in the') || e is StateError) {
+    return 'Connexion au serveur indisponible — réessaie dans un instant.';
+  }
+  return 'Une erreur est survenue — réessaie.';
+}
 
 /// Pré-remplissage du champ adresse serveur tant qu'aucune connexion n'a encore été
 /// enregistrée (voir docs/architecture.md "Nom local au lieu de l'IP" — hostname `pi`
@@ -69,6 +91,26 @@ class GameConnection extends ChangeNotifier {
   String? serverUrl;
   String? nom;
   String? gameCode;
+
+  /// Jeton remis par le serveur pour [gameCode] (voir [_prefsJeton]).
+  String? _jeton;
+
+  /// Code porté par l'URL du hub en cours (?code=) — si on rejoint un AUTRE salon sur la même
+  /// connexion, une reconnexion transport rattacherait l'ancien : la connexion est alors recréée.
+  String? _codeDansUrlHub;
+
+  /// La partie du salon courant est terminée (GameEnded, ou join renvoyant Etat=Termine) : le code
+  /// n'est plus persisté ni rejoint automatiquement au prochain lancement (audit 2026-11-10 : un
+  /// lobby fantôme réapparaissait), jusqu'à GameRestarted ou un join explicite.
+  bool partieTerminee = false;
+
+  /// Partie lancée mais aucune phase active (entre deux rounds) au moment du join : le salon
+  /// affiche « Partie en cours » au lieu de « Salle d'attente ».
+  bool partieEnCours = false;
+
+  /// Instant de réception de la phase chronométrée courante (round, mise ou question bonus) — base
+  /// du décompte côté écran (voir AnswerPhaseScreen), indépendante des tics du minuteur local.
+  DateTime? phaseRecueA;
 
   /// Adresse effectivement joignable pour les requêtes réseau (hub SignalR, images) —
   /// identique à [serverUrl] sauf quand celui-ci est un hostname `.local` résolu en IP via
@@ -195,7 +237,7 @@ class GameConnection extends ChangeNotifier {
   /// désormais aussi à chaque reconnexion, au retour au premier plan, et périodiquement.
   void _demarrerVerificationsMiseAJour() {
     _verificationMiseAJourTimer ??= Timer.periodic(_intervalleVerificationMiseAJour, (_) => _verifierMiseAJour());
-    _cycleDeVie ??= AppLifecycleListener(onResume: _verifierMiseAJour);
+    _cycleDeVie ??= AppLifecycleListener(onResume: _auRetourAuPremierPlan);
   }
 
   void _verifierMiseAJour() {
@@ -249,6 +291,7 @@ class GameConnection extends ChangeNotifier {
     // ce code + le playerId stable déjà persisté, [connect] retente automatiquement de rejoindre
     // la même partie ci-dessous, sans ressaisie.
     gameCode = _prefs!.getString(_prefsGameCode);
+    _jeton = _jetonPersistePour(gameCode);
 
     // Tentative silencieuse avec la dernière adresse connue pendant l'écran de chargement — si
     // elle échoue ou traîne trop longtemps, on retombe sur l'écran de connexion manuelle avec
@@ -264,8 +307,41 @@ class GameConnection extends ChangeNotifier {
       }
       // Premier lancement, ou Pi déplacé/IP changée depuis la dernière partie : recherche
       // automatique sur le réseau local avant de laisser le joueur scanner le QR ou saisir l'adresse.
-      await chercherEtConnecter(silent: true);
+      final trouve = await chercherEtConnecter(silent: true);
+      // Audit 2026-11-10 (critique) : avec une partie mémorisée et un serveur injoignable (Pi qui
+      // démarre, Wi-Fi pas encore connecté), l'écran de chargement restait affiché pour toujours,
+      // sans aucune nouvelle tentative. On passe à l'écran de connexion — avec un message — et on
+      // continue de réessayer en arrière-plan : la partie est rejointe dès que le serveur répond.
+      if (!trouve && !connected) {
+        if (screen == AppScreen.loading) {
+          screen = AppScreen.connect;
+          if (gameCode != null) errorMessage = 'Serveur injoignable — nouvelle tentative automatique en cours…';
+          notifyListeners();
+        }
+        _planifierReconnexion();
+      }
     }
+  }
+
+  /// Bouton « Choisir un autre serveur » de l'écran de chargement : abandonne l'attente de la
+  /// reconnexion automatique (qui continue en arrière-plan) et laisse la main au joueur.
+  void afficherEcranConnexion() {
+    screen = AppScreen.connect;
+    notifyListeners();
+  }
+
+  String? _jetonPersistePour(String? code) {
+    final brut = _prefs?.getString(_prefsJeton);
+    if (code == null || brut == null) return null;
+    final separateur = brut.indexOf(':');
+    return separateur > 0 && brut.substring(0, separateur) == code ? brut.substring(separateur + 1) : null;
+  }
+
+  Future<void> _oublierPartie() async {
+    await _prefs?.remove(_prefsGameCode);
+    await _prefs?.remove(_prefsJeton);
+    gameCode = null;
+    _jeton = null;
   }
 
   /// Vrai pendant un scan du réseau local ([chercherEtConnecter]) — l'écran de connexion affiche
@@ -341,9 +417,13 @@ class GameConnection extends ChangeNotifier {
     // peut alors rattacher automatiquement ce joueur (score, phase en cours) sans attendre le
     // rappel explicite à JoinGame fait plus bas par le handler onreconnected (qui reste en place
     // comme filet de sécurité si cette voie plus rapide échoue pour une raison quelconque).
-    final hubUrl = gameCode != null && playerId != null
-        ? '$resolvedUrl/hubs/game?code=$gameCode&playerId=$playerId'
+    // Le jeton (audit 2026-11-10) est exigé par le serveur pour ce rattachement automatique.
+    final hubUrl = gameCode != null && playerId != null && _jeton != null && !partieTerminee
+        ? '$resolvedUrl/hubs/game?code=${Uri.encodeQueryComponent(gameCode!)}&playerId=${Uri.encodeQueryComponent(playerId!)}&jeton=${Uri.encodeQueryComponent(_jeton!)}'
         : '$resolvedUrl/hubs/game';
+    _codeDansUrlHub = hubUrl.contains('?code=') ? gameCode : null;
+    // Droits admin : portés par le joueur côté serveur, relus à chaque join/EtatCourant.
+    isAdmin = false;
     _hub = HubConnectionBuilder().withUrl(hubUrl).withAutomaticReconnect().build()
       // Retour utilisateur (2026-11-01) : avec les défauts (ping 15 s, coupure après 30 s), une
       // connexion morte sans fermeture propre (Wi-Fi en veille) passait pour active une demi-minute
@@ -369,15 +449,22 @@ class GameConnection extends ChangeNotifier {
       // écraser son intention avec l'ancien gameCode. Le serveur réassocie via playerId
       // (GameHub.JoinGame), donc aucune perte de score.
       if (pendingJoinCode == null && gameCode != null && nom != null) {
-        final rejoint = await joinGame(gameCode!, nom!);
-        if (!rejoint) {
-          // Code stocké devenu invalide (partie terminée entre-temps, etc.) — ne pas rester
-          // bloqué : repli sur l'écran de connexion manuelle plutôt que de retenter en boucle.
-          await _prefs?.remove(_prefsGameCode);
-          gameCode = null;
-          errorMessage = null;
+        final codeTente = gameCode!;
+        // Partie terminée (écran de fin) : on reste dans le salon pour recevoir un éventuel
+        // « Rejouer », sans quitter l'écran de fin (audit 2026-11-10).
+        final rejoint = await joinGame(codeTente, nom!, actualiserEcran: !partieTerminee);
+        if (!rejoint && _dernierJoinRefuseParServeur) {
+          // Code stocké devenu invalide (salon fermé, serveur redémarré : l'état est en mémoire) —
+          // repli sur l'écran « rejoindre » avec une explication plutôt qu'un champ vide muet.
+          await _oublierPartie();
+          errorMessage = _dernierMessageJoin == 'Partie introuvable.'
+              ? 'La partie $codeTente n\'existe plus (serveur redémarré ?) — rejoins le nouveau code.'
+              : _dernierMessageJoin;
           screen = AppScreen.join;
           notifyListeners();
+        } else if (!rejoint) {
+          // Échec réseau juste après la connexion : on garde le code et on réessaie.
+          _planifierRejoinApresReconnexionCourte();
         }
       } else {
         screen = AppScreen.join;
@@ -452,8 +539,28 @@ class GameConnection extends ChangeNotifier {
       teamId = etat.teamId;
       jokerDisponible = etat.jokerDisponible;
       afficherEcart = etat.afficherEcart;
+      isAdmin = etat.estAdmin;
+      // Audit 2026-11-10 : l'état de pause est renvoyé même entre deux rounds — une reprise
+      // survenue pendant la coupure laissait sinon le téléphone bloqué « en pause ».
+      paused = etat.enPause;
+      partieEnCours = etat.etat == 'EnCours';
       if (etat.voteThemes != null) voteThemes = etat.voteThemes;
       appliquerEtatCourant(etat.etatCourant, actualiserEcran: false);
+      notifyListeners();
+    });
+
+    // Audit 2026-11-10 — ce joueur vient d'être repris sur un autre appareil (même playerId et
+    // jeton) : cette connexion n'est plus la sienne. On arrête de se reconnecter automatiquement.
+    hub.on('SessionRemplacee', (_) {
+      _rejoinRetryTimer?.cancel();
+      _rejoinRetryTimer = null;
+      _reinitialiserEtatPartie();
+      unawaited(_oublierPartie());
+      players.clear();
+      isAdmin = false;
+      showLeaderboard = false;
+      errorMessage = 'Ta partie a été reprise sur un autre appareil.';
+      screen = AppScreen.join;
       notifyListeners();
     });
 
@@ -466,6 +573,9 @@ class GameConnection extends ChangeNotifier {
         players.removeWhere((p) => p.playerId == id);
         notifyListeners();
       } else {
+        for (final p in players.where((p) => p.playerId == id)) {
+          p.aQuitte = true;
+        }
         _updatePlayerConnection(id, false);
       }
     });
@@ -497,7 +607,11 @@ class GameConnection extends ChangeNotifier {
 
     hub.on('PlayerReconnected', (args) {
       final data = args![0] as Map<String, dynamic>;
-      _updatePlayerConnection(data['playerId'] as String, true);
+      final id = data['playerId'] as String;
+      for (final p in players.where((p) => p.playerId == id)) {
+        p.aQuitte = false;
+      }
+      _updatePlayerConnection(id, true);
     });
 
     hub.on('PlayerDisconnected', (args) {
@@ -545,6 +659,12 @@ class GameConnection extends ChangeNotifier {
       jokerIndiceActuel = currentRound!.jokerIndice;
       lastRoundResult = null;
       errorMessage = null;
+      phaseRecueA = DateTime.now();
+      // Le serveur refuse StartRound en pause : un round qui démarre lève toute pause locale restée
+      // bloquée (audit 2026-11-10), et referme le classement resté affiché par-dessus.
+      paused = false;
+      showLeaderboard = false;
+      partieEnCours = true;
       screen = AppScreen.round;
       unawaited(Haptique.depart());
       notifyListeners();
@@ -613,6 +733,8 @@ class GameConnection extends ChangeNotifier {
       // le code. Bug retour utilisateur (2026-09-13) : gameCode remis à null ici faisait
       // apparaître le code vide sur l'écran de salon après un "rejouer" côté host.
       _prefs?.remove(_prefsGameCode);
+      partieTerminee = true;
+      partieEnCours = false;
       notifyListeners();
     });
 
@@ -620,6 +742,12 @@ class GameConnection extends ChangeNotifier {
     // scores remis à zéro côté serveur. Pas de bouton côté joueur : seul le host décide.
     hub.on('GameRestarted', (_) {
       _reinitialiserEtatPartie();
+      partieTerminee = false;
+      // Audit 2026-11-10 (régression du correctif du playtest 2026-09-06) : GameEnded avait oublié
+      // le code persisté — sans le réécrire ici, un redémarrage de l'app pendant la 2e manche
+      // retombait sur un champ de code vide.
+      final code = gameCode;
+      if (code != null) unawaited(_prefs?.setString(_prefsGameCode, code));
       screen = AppScreen.lobby;
       notifyListeners();
     });
@@ -633,8 +761,7 @@ class GameConnection extends ChangeNotifier {
       votesDecompte = null;
       _rejoinRetryTimer?.cancel();
       _rejoinRetryTimer = null;
-      _prefs?.remove(_prefsGameCode);
-      gameCode = null;
+      unawaited(_oublierPartie());
       teamId = null;
       teams = [];
       players.clear();
@@ -650,6 +777,10 @@ class GameConnection extends ChangeNotifier {
       bonusPalierSelectionne = null;
       bonusStakeEnvoyee = false;
       envoiReponseEchoue = false;
+      phaseRecueA = DateTime.now();
+      paused = false;
+      showLeaderboard = false;
+      partieEnCours = true;
       screen = AppScreen.bonusStake;
       unawaited(Haptique.depart());
       notifyListeners();
@@ -667,6 +798,8 @@ class GameConnection extends ChangeNotifier {
   void _reinitialiserEtatPartie() {
     score = 0;
     paused = false;
+    partieEnCours = false;
+    phaseRecueA = null;
     serieIntro = null;
     currentRound = null;
     roundAnswered = false;
@@ -699,6 +832,11 @@ class GameConnection extends ChangeNotifier {
     reponseChoisie = null;
     repondants.clear();
     envoiReponseEchoue = false;
+    // Point de départ du décompte : l'écran d'intro du mode course en consomme une partie, déduite
+    // à l'affichage de la question (voir AnswerPhaseScreen).
+    phaseRecueA = DateTime.now();
+    paused = false;
+    showLeaderboard = false;
     _introCourseTimer?.cancel();
     unawaited(Haptique.depart());
 
@@ -752,6 +890,7 @@ class GameConnection extends ChangeNotifier {
   /// reconnexion ou fermeture de l'appli.
   void _planifierReconnexion() {
     if (_reconnectTimer != null || serverUrl == null) return;
+    _cycleDeVie ??= AppLifecycleListener(onResume: _auRetourAuPremierPlan);
     _reconnectTimer = Timer.periodic(_delaiRetryReconnexion, (_) async {
       // Une tentative précédente encore en cours : ne pas en lancer une deuxième en parallèle, qui
       // remplacerait [_hub] pendant que la première peut encore aboutir (voir catch de [connect]).
@@ -807,8 +946,7 @@ class GameConnection extends ChangeNotifier {
       if (tentatives >= _maxTentativesRejoinCourt) {
         timer.cancel();
         _rejoinRetryTimer = null;
-        await _prefs?.remove(_prefsGameCode);
-        gameCode = null;
+        await _oublierPartie();
         errorMessage = "Impossible de retrouver la partie — le salon n'existe peut-être plus.";
         screen = AppScreen.join;
         notifyListeners();
@@ -852,30 +990,48 @@ class GameConnection extends ChangeNotifier {
   /// utilisateur (playtest 2026-09-06, "pouvoir rejoindre au moins le prochain round").
   Future<bool> joinGame(String code, String pseudo, {bool actualiserEcran = true}) async {
     errorMessage = null;
+    _dernierJoinRefuseParServeur = false;
+    _dernierMessageJoin = null;
     if (actualiserEcran) notifyListeners();
 
+    final codeNormalise = code.trim().toUpperCase();
+    final pseudoNettoye = pseudo.trim();
+    final jetonConnu = codeNormalise == gameCode ? _jeton : _jetonPersistePour(codeNormalise);
+
     try {
-      final result = await _hub!.invoke('JoinGame', args: [code, pseudo, playerId!]);
+      final result = await _hub!.invoke('JoinGame', args: [codeNormalise, pseudoNettoye, playerId!, jetonConnu ?? '']);
       final joinResult = JoinResult.fromJson(result as Map<String, dynamic>);
 
       if (!joinResult.success) {
+        _dernierJoinRefuseParServeur = true;
+        _dernierMessageJoin = joinResult.errorMessage ?? 'Impossible de rejoindre la partie.';
         if (actualiserEcran) {
-          errorMessage = joinResult.errorMessage ?? 'Impossible de rejoindre la partie.';
+          errorMessage = _dernierMessageJoin;
           notifyListeners();
         }
         return false;
       }
 
-      gameCode = code;
-      nom = pseudo;
+      final changementDeSalon = gameCode != codeNormalise;
+      gameCode = codeNormalise;
+      nom = pseudoNettoye;
+      _jeton = joinResult.jeton ?? jetonConnu;
       score = joinResult.score;
       teamId = joinResult.teamId;
       teams = joinResult.teams;
       jokerDisponible = joinResult.jokerDisponible;
       afficherEcart = joinResult.afficherEcart;
       voteThemes = joinResult.voteThemes;
-      await _prefs?.setString(_prefsNom, pseudo);
-      await _prefs?.setString(_prefsGameCode, code);
+      isAdmin = joinResult.estAdmin;
+      paused = joinResult.enPause;
+      partieEnCours = joinResult.etat == 'EnCours';
+      // Une partie terminée n'est jamais re-persistée (audit 2026-11-10, lobby fantôme) — sauf join
+      // explicite d'un salon terminé, qui attend alors un « Rejouer » du host.
+      partieTerminee = joinResult.etat == 'Termine';
+      await _prefs?.setString(_prefsNom, pseudoNettoye);
+      if (!partieTerminee) await _prefs?.setString(_prefsGameCode, codeNormalise);
+      if (_jeton != null) await _prefs?.setString(_prefsJeton, '$codeNormalise:$_jeton');
+      if (changementDeSalon) _rafraichirUrlHubApresChangementDeSalon();
 
       // Le serveur ne diffuse PlayerJoined qu'aux AUTRES joueurs déjà présents (GameHub.JoinGame)
       // — sans le roster complet renvoyé ici, un joueur ne voyait ni lui-même (retour
@@ -883,17 +1039,46 @@ class GameConnection extends ChangeNotifier {
       players
         ..clear()
         ..addAll(joinResult.joueurs.map(
-          (j) => PlayerInfo(playerId: j.playerId, nom: j.nom, estConnecte: j.estConnecte, teamId: j.teamId),
+          (j) => PlayerInfo(playerId: j.playerId, nom: j.nom, estConnecte: j.estConnecte, teamId: j.teamId, aQuitte: j.aPartie),
         ));
+      // Sur l'écran de fin, une micro-coupure ne doit pas ramener au salon.
+      if (partieTerminee && screen == AppScreen.ended) {
+        notifyListeners();
+        return true;
+      }
       appliquerEtatCourant(joinResult.etatCourant, actualiserEcran: actualiserEcran);
       notifyListeners();
       return true;
     } catch (e) {
       if (actualiserEcran) {
-        errorMessage = 'Erreur : ${e.toString()}';
+        errorMessage = messageErreur(e);
         notifyListeners();
       }
       return false;
+    }
+  }
+
+  /// Vrai si le dernier [joinGame] a été refusé par le serveur (salon introuvable, jeton...) plutôt
+  /// qu'interrompu par le réseau — seul ce cas justifie d'oublier le code mémorisé.
+  bool _dernierJoinRefuseParServeur = false;
+  String? _dernierMessageJoin;
+
+  /// Rejoint un autre salon que celui porté par l'URL du hub : la connexion est recréée pour que
+  /// les reconnexions transport suivantes rattachent bien CE salon (audit 2026-11-10).
+  void _rafraichirUrlHubApresChangementDeSalon() {
+    if (_codeDansUrlHub == null || _codeDansUrlHub == gameCode) return;
+    final url = serverUrl;
+    if (url == null) return;
+    unawaited(Future<void>.delayed(Duration.zero, () => connect(url, timeout: _delaiReconnexionAuto, silent: true)));
+  }
+
+  /// Retour au premier plan : relance tout de suite une connexion perdue plutôt que d'attendre le
+  /// prochain essai périodique (audit 2026-11-10).
+  void _auRetourAuPremierPlan() {
+    _verifierMiseAJour();
+    final url = serverUrl;
+    if (!connected && !connecting && url != null) {
+      unawaited(connect(url, timeout: _delaiReconnexionAuto, silent: true));
     }
   }
 
@@ -926,7 +1111,14 @@ class GameConnection extends ChangeNotifier {
     if (!memeQuestion) {
       reponseChoisie = null;
       repondants.clear();
+      // Restes de la question précédente (audit 2026-11-10) : bandeau d'erreur rouge, tuile de mise
+      // « verrouillée » d'un ancien bonus.
+      envoiReponseEchoue = false;
+      jokerErreur = null;
+      bonusPalierSelectionne = null;
+      phaseRecueA = DateTime.now();
     }
+    partieEnCours = true;
 
     switch (etat.phase) {
       case PhaseJoueur.roundClassique:
@@ -995,9 +1187,9 @@ class GameConnection extends ChangeNotifier {
     _introCourseTimer?.cancel();
     _rejoinRetryTimer?.cancel();
     _rejoinRetryTimer = null;
-    await _prefs?.remove(_prefsGameCode);
+    await _oublierPartie();
     _reinitialiserEtatPartie();
-    gameCode = null;
+    partieTerminee = false;
     teamId = null;
     teams = [];
     players.clear();
@@ -1023,7 +1215,7 @@ class GameConnection extends ChangeNotifier {
     try {
       await _hub!.invoke('JoinTeam', args: [teamId]);
     } catch (e) {
-      errorMessage = 'Erreur : ${e.toString()}';
+      errorMessage = messageErreur(e);
       notifyListeners();
     }
   }
@@ -1043,7 +1235,7 @@ class GameConnection extends ChangeNotifier {
       notifyListeners();
       return success;
     } catch (e) {
-      adminError = 'Erreur : ${e.toString()}';
+      adminError = messageErreur(e);
       notifyListeners();
       return false;
     }
@@ -1058,7 +1250,7 @@ class GameConnection extends ChangeNotifier {
     try {
       await _hub?.invoke('PauseGame');
     } catch (e) {
-      adminError = 'Erreur : ${e.toString()}';
+      adminError = messageErreur(e);
       notifyListeners();
     }
   }
@@ -1068,7 +1260,7 @@ class GameConnection extends ChangeNotifier {
     try {
       await _hub?.invoke('ResumeGame');
     } catch (e) {
-      adminError = 'Erreur : ${e.toString()}';
+      adminError = messageErreur(e);
       notifyListeners();
     }
   }
@@ -1078,7 +1270,7 @@ class GameConnection extends ChangeNotifier {
     try {
       await _hub?.invoke('ShowLeaderboard');
     } catch (e) {
-      adminError = 'Erreur : ${e.toString()}';
+      adminError = messageErreur(e);
       notifyListeners();
     }
   }
@@ -1088,7 +1280,7 @@ class GameConnection extends ChangeNotifier {
     try {
       await _hub?.invoke('EndGame');
     } catch (e) {
-      adminError = 'Erreur : ${e.toString()}';
+      adminError = messageErreur(e);
       notifyListeners();
     }
   }
@@ -1107,7 +1299,7 @@ class GameConnection extends ChangeNotifier {
     try {
       await _hub?.invoke('EnvoyerCommandeHost', args: [commande]);
     } catch (e) {
-      adminError = 'Erreur : ${e.toString()}';
+      adminError = messageErreur(e);
       notifyListeners();
     }
   }
@@ -1157,7 +1349,7 @@ class GameConnection extends ChangeNotifier {
       ]);
       return true;
     } catch (e) {
-      flagError = 'Erreur : ${e.toString()}';
+      flagError = messageErreur(e);
       notifyListeners();
       return false;
     }
@@ -1167,7 +1359,8 @@ class GameConnection extends ChangeNotifier {
   /// mais l'UI doit refléter l'état immédiatement pour ne pas laisser croire qu'une
   /// deuxième soumission est possible.
   Future<void> submitAnswer(String reponse) async {
-    if (roundAnswered || paused) return;
+    // Une réponse vide consommait l'unique essai avec pénalité (audit 2026-11-10).
+    if (roundAnswered || paused || reponse.trim().isEmpty) return;
 
     roundAnswered = true;
     envoiReponseEchoue = false;
@@ -1242,10 +1435,13 @@ class GameConnection extends ChangeNotifier {
   /// (jamais en bonus, voir AnswerPhaseScreen qui n'affiche le bouton que côté classique). Un refus
   /// serveur (déjà répondu/déjà utilisé/en pause/round périmé) reste une HubException : jokerDisponible
   /// n'est mis à jour qu'en cas de succès, pour ne pas rouvrir le bouton sur un état qui restera refusé.
+  bool _jokerEnCours = false;
+
   Future<void> utiliserJoker() async {
-    if (!jokerDisponible || roundAnswered || paused || currentRound == null) return;
+    if (!jokerDisponible || roundAnswered || paused || currentRound == null || _jokerEnCours) return;
 
     jokerErreur = null;
+    _jokerEnCours = true;
     final roundId = currentRound!.roundId;
     try {
       // Pas de reprise automatique (contrairement à submitAnswer) : un premier appel réussi dont
@@ -1262,9 +1458,11 @@ class GameConnection extends ChangeNotifier {
       if (currentRound?.roundId == roundId) {
         jokerErreur = e is StateError
             ? 'Joker non envoyé (connexion) — réessaie.'
-            : 'Joker refusé par le serveur.';
+            : 'Joker refusé : ${messageErreur(e)}';
         notifyListeners();
       }
+    } finally {
+      _jokerEnCours = false;
     }
   }
 
@@ -1300,7 +1498,7 @@ class GameConnection extends ChangeNotifier {
   }
 
   Future<void> submitBonusAnswer(String reponse) async {
-    if (bonusAnswered || paused) return;
+    if (bonusAnswered || paused || reponse.trim().isEmpty) return;
 
     bonusAnswered = true;
     envoiReponseEchoue = false;

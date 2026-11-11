@@ -60,7 +60,7 @@ public class GameHubJokerIntegrationTests : IClassFixture<GameHubTestFactory>, I
         {
             roundStartedHost = null;
             var creation = await CreerEtConfigurerPartie(_hostConnection, []);
-            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", $"joker-qcm-{tentative}");
+            await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", $"joker-qcm-{tentative}");
             await _hostConnection.InvokeAsync("StartRound");
             await AttendreAsync(() => roundStartedHost is not null);
             if (roundStartedHost!.Mode == RoundMode.Qcm) break;
@@ -82,7 +82,7 @@ public class GameHubJokerIntegrationTests : IClassFixture<GameHubTestFactory>, I
     public async Task UtiliserJoker_DeuxiemeAppelDuMemeJoueur_LeveHubException()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, []);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Bob", "joker-deuxieme");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Bob", "joker-deuxieme");
 
         RoundStartedForHostDto? roundStartedHost = null;
         using var s1 = _hostConnection.On<RoundStartedForHostDto>("RoundStarted", p => roundStartedHost = p);
@@ -99,7 +99,7 @@ public class GameHubJokerIntegrationTests : IClassFixture<GameHubTestFactory>, I
     public async Task UtiliserJoker_DiffuseEvenementJokerUtiliseATousLesClientsDuGroupe()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, []);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Carla", "joker-broadcast");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Carla", "joker-broadcast");
 
         RoundStartedForHostDto? roundStartedHost = null;
         using var s1 = _hostConnection.On<RoundStartedForHostDto>("RoundStarted", p => roundStartedHost = p);
@@ -130,7 +130,7 @@ public class GameHubJokerIntegrationTests : IClassFixture<GameHubTestFactory>, I
         {
             roundStartedHost = null;
             var creation = await CreerEtConfigurerPartie(_hostConnection, ["test-cover"]);
-            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Dan", $"joker-cover-{tentative}");
+            await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Dan", $"joker-cover-{tentative}");
             await _hostConnection.InvokeAsync("StartRound");
             await AttendreAsync(() => roundStartedHost is not null);
             if (roundStartedHost!.Mode == RoundMode.TapeReponse) break;
@@ -167,7 +167,7 @@ public class GameHubJokerIntegrationTests : IClassFixture<GameHubTestFactory>, I
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, []);
         var playerId = "joker-reco-" + Guid.NewGuid().ToString("N")[..6];
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Eve", playerId);
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Eve", playerId);
 
         RoundStartedForHostDto? roundStartedHost = null;
         using var s1 = _hostConnection.On<RoundStartedForHostDto>("RoundStarted", p => roundStartedHost = p);

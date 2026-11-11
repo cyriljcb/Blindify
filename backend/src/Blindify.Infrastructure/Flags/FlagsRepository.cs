@@ -27,9 +27,7 @@ public class FlagsRepository : IFlagsRepository
     public FlagsRepository(IOptions<DataPathsOptions> dataPaths)
     {
         _flagsPath = dataPaths.Value.FlagsPath;
-        _flags = File.Exists(_flagsPath)
-            ? JsonSerializer.Deserialize<List<FlagEntryDto>>(File.ReadAllText(_flagsPath), JsonOptions) ?? []
-            : [];
+        _flags = AtomicJsonFile.Read<List<FlagEntryDto>>(_flagsPath, JsonOptions, () => []);
 
         var resolutionsPath = dataPaths.Value.FlagsResolutionsPath;
         _idsResolus = File.Exists(resolutionsPath)

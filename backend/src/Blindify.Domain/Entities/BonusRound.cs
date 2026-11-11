@@ -40,6 +40,9 @@ public class BonusRound
     public DateTimeOffset? DebutPhaseMise { get; set; }
     public DateTimeOffset? DebutPhaseQuestion { get; set; }
 
+    /// <summary>Voir Round.TermineA — posé par BonusRoundService.TerminerParTimeout.</summary>
+    public DateTimeOffset? TermineA { get; set; }
+
     /// <summary>Pause écoulée pendant la phase actuellement active (remise à 0 au passage à la phase question).</summary>
     public long DureeEnPauseMs { get; set; }
 

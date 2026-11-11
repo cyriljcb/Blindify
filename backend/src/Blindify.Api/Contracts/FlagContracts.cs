@@ -11,4 +11,3 @@ public record SignalementResultDto(string FlagId, bool DejaSignale);
 
 /// <summary>Diffusé uniquement au host et aux admins authentifiés (jamais Clients.Group, jamais aux
 /// joueurs) — simple confirmation visuelle qu'un signalement a bien été enregistré.</summary>
-public record MorceauSignaleDto(string TrackId, string Titre, string Artiste, RaisonSignalement Raison);

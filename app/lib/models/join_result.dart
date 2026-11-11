@@ -35,6 +35,10 @@ class JoinResult {
     this.jokerDisponible = false,
     this.afficherEcart = true,
     this.voteThemes,
+    this.jeton,
+    this.enPause = false,
+    this.etat = 'Lobby',
+    this.estAdmin = false,
   });
 
   final bool success;
@@ -62,6 +66,19 @@ class JoinResult {
   /// Retour utilisateur (2026-10-17) — état du vote des thèmes si le host en a ouvert un, sinon null.
   final VoteThemesEtat? voteThemes;
 
+  /// Secret du joueur pour ce salon (audit 2026-11-10) — à conserver et à repasser à chaque
+  /// JoinGame et dans l'URL du hub pour reprendre ce playerId. Jamais diffusé aux autres.
+  final String? jeton;
+
+  /// État de la partie au moment du join, même entre deux rounds (etatCourant est alors null).
+  final bool enPause;
+
+  /// "Lobby", "EnCours" ou "Termine" (GameState côté serveur).
+  final String etat;
+
+  /// Droits admin déjà accordés à ce joueur (portés par le joueur côté serveur, pas par la connexion).
+  final bool estAdmin;
+
   factory JoinResult.fromJson(Map<String, dynamic> json) => JoinResult(
         success: json['success'] as bool,
         errorMessage: json['errorMessage'] as String?,
@@ -78,5 +95,9 @@ class JoinResult {
         jokerDisponible: json['jokerDisponible'] as bool? ?? false,
         afficherEcart: json['afficherEcart'] as bool? ?? true,
         voteThemes: json['voteThemes'] != null ? VoteThemesEtat.fromJson(json['voteThemes'] as Map<String, dynamic>) : null,
+        jeton: json['jeton'] as String?,
+        enPause: json['enPause'] as bool? ?? false,
+        etat: json['etat'] as String? ?? 'Lobby',
+        estAdmin: json['estAdmin'] as bool? ?? false,
       );
 }

@@ -78,6 +78,8 @@ export function onRoundStarted(state, payload) {
   state.dernierModeRound = payload.mode;
   state.refrainCourantMs = payload.refrainStartMs ?? null;
   state.roundsDemarres++;
+  state.roundSuivantDejaAvance = false;
+  state.questionIdCourante = payload.roundId;
   state.currentScreen = "round";
   state.currentDisplayScreen = "round";
   // qcmOptions : retour utilisateur — affiche aussi les choix sur l'écran public en mode QCM
@@ -185,6 +187,7 @@ export function onGameRestarted(state) {
 
 export function onBonusStakeOptions(state, payload) {
   state.misesEnregistrees = [];
+  state.questionIdCourante = payload.roundId;
   state.currentScreen = "bonus-stake";
   state.currentDisplayScreen = "bonus-stake";
   state.currentBonusInfo = {
@@ -200,6 +203,7 @@ export function onBonusQuestionStarted(state, payload) {
   state.jokersRound = [];
   // Seul le host reçoit filePath/refrainStartMs/ralentissement (jamais envoyés aux joueurs).
   state.refrainCourantMs = payload.refrainStartMs ?? null;
+  state.questionIdCourante = payload.roundId;
   state.currentScreen = "bonus-question";
   state.currentDisplayScreen = "bonus-question";
   // cible/qcmOptions : Mode tiré aléatoirement comme un round classique (QCM/Première lettre en
@@ -244,6 +248,8 @@ export function onBonusResult(state, payload) {
     annee: payload.annee,
     coverPath: payload.coverPath,
     serieLabel: labelSerieTerminee,
+    // Audit 2026-11-10 : jamais posé, le bandeau « course » du résultat bonus ne s'affichait pas.
+    estCourse: payload.estCourse,
     resultats: payload.resultats.map((r) => ({ playerId: r.playerId, estCorrecte: r.estCorrecte, aRepondu: !!r.reponse })),
   };
 }
@@ -284,6 +290,7 @@ export function registerHandlers(connection, callbacks) {
   connection.on("BonusQuestionStarted", (payload) => callbacks.onEvent("BonusQuestionStarted", payload));
   connection.on("BonusResult", (payload) => callbacks.onEvent("BonusResult", payload));
   connection.on("CommandeHost", (payload) => callbacks.onEvent("CommandeHost", payload));
+  connection.on("VoteThemesOuvert", () => {});
 }
 
 // Table de dispatch utilisée par main.js — associe chaque nom d'événement à sa fonction de mutation

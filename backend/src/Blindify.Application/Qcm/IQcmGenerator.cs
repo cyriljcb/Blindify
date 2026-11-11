@@ -1,5 +1,6 @@
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
+using Blindify.Domain.Enums;
 
 namespace Blindify.Application.Qcm;
 
@@ -7,9 +8,10 @@ namespace Blindify.Application.Qcm;
 public interface IQcmGenerator
 {
     /// <summary>
-    /// 3 distracteurs tirés du pool genre/tag par défaut, avec une chance (ProbabiliteQcmPiege) qu'un
-    /// distracteur soit un piège (trapWith) plutôt qu'aléatoire. Si le pool genre/tag est insuffisant,
-    /// complète avec le pool global — garantit toujours 4 options valides.
+    /// GameConfig.NombreDistracteursQcm distracteurs (3 par défaut) tirés du pool genre/tag, avec une
+    /// chance (ProbabiliteQcmPiege) qu'un distracteur soit un piège (trapWith) plutôt qu'aléatoire.
+    /// Jamais deux options au même libellé affiché pour <paramref name="cible"/> — si le pool ne le
+    /// permet pas, moins d'options plutôt qu'un doublon.
     /// </summary>
-    QcmOptions GenererOptions(Track correct, IReadOnlyList<Track> pool, GameConfig config, Random random);
+    QcmOptions GenererOptions(Track correct, IReadOnlyList<Track> pool, GameConfig config, Random random, RoundCible cible = RoundCible.Titre);
 }

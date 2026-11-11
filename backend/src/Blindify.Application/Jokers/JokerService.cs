@@ -34,17 +34,26 @@ public class JokerService(IAnswerMatcher answerMatcher) : IJokerService
     {
         var mauvaisesValeurs = cible == RoundCible.Annee
             ? (anneeOptions ?? []).Where(a => a != track.Year).Select(a => a.ToString())
-            : (options ?? []).Where(o => o.TrackId != track.Id).Select(o => o.TrackId);
+            : (options ?? []).Where(o => o.TrackId != track.Id).Select(o => o.OptionId);
 
-        // Tire 2 des 3 mauvaises valeurs — ne retire jamais la bonne réponse, absente de cette liste par
-        // construction.
-        return [.. mauvaisesValeurs.OrderBy(_ => Random.Shared.Next()).Take(2)];
+        // Retire la moitié des mauvaises valeurs (2 sur 3 avec 4 options) — ne retire jamais la bonne
+        // réponse, absente de cette liste par construction. Identifiants opaques d'option (jamais de
+        // TrackId côté client, voir RoundOption.OptionId).
+        var liste = mauvaisesValeurs.ToList();
+        var aRetirer = Math.Max(1, (liste.Count + 1) / 2);
+        return [.. liste.OrderBy(_ => Random.Shared.Next()).Take(Math.Min(aRetirer, Math.Max(0, liste.Count - 1)))];
     }
 
     private List<string> ChoisirTuilesRestantes(RoundCible cible, Track track)
     {
-        var texteReference = RoundService.ReponsesAcceptables(cible, track).First();
-        var lettreCorrecte = char.ToUpperInvariant(answerMatcher.Normaliser(texteReference)[0]);
+        // Audit 2026-11-10 : prendre toujours la première variante ("24kGoldn, iann dior" -> "2")
+        // pouvait retirer la seule tuile valable ("I") et rendre le round impossible. On garde la
+        // lettre d'une variante qui commence effectivement par une lettre A-Z.
+        var lettreCorrecte = RoundService.ReponsesAcceptables(cible, track)
+            .Select(answerMatcher.Normaliser)
+            .Where(n => n.Length > 0 && char.IsLetter(n[0]))
+            .Select(n => char.ToUpperInvariant(n[0]))
+            .FirstOrDefault(c => Alphabet.Contains(c), 'A');
 
         var autresLettres = Alphabet.Where(l => l != lettreCorrecte).OrderBy(_ => Random.Shared.Next()).Take(NombreLettresRestantes - 1);
         return [.. new[] { lettreCorrecte }.Concat(autresLettres).OrderBy(l => l).Select(l => l.ToString())];

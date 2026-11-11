@@ -80,9 +80,10 @@ def rechercher_albums(token: str, title: str, artist: str) -> list[dict]:
     artiste_normalise = artist.casefold()
 
     for item in data.get("tracks", {}).get("items", []):
-        item_titre = nettoyer_titre(item.get("name", "")).casefold()
-        item_artistes = [a["name"].casefold() for a in item.get("artists", [])]
-        if item_titre != titre_normalise:
+        noms_item = [a["name"] for a in item.get("artists", [])]
+        item_titre = nettoyer_titre(item.get("name", ""), noms_item).casefold()
+        item_artistes = [a.casefold() for a in noms_item]
+        if item_titre != titre_normalise and item_titre != nettoyer_titre(title, noms_item).casefold():
             continue
         if not any(artiste_normalise == a or artiste_normalise in a or a in artiste_normalise for a in item_artistes):
             continue

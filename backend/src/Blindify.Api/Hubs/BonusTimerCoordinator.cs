@@ -14,14 +14,16 @@ namespace Blindify.Api.Hubs;
 
 /// <summary>
 /// Enchaîne les deux phases de la question bonus (mise à l'aveugle puis question, sans dégressivité) —
-/// voir architecture.md section 7. Même logique de polling que RoundTimerCoordinator.
+/// voir architecture.md section 7. Même logique de polling que RoundTimerCoordinator, même filet de
+/// sécurité (audit 2026-11-10 : une exception tuait la tâche en silence et figeait la question bonus).
 /// </summary>
 public class BonusTimerCoordinator(
     IHubContext<GameHub> hubContext,
     IGameSessionStore sessionStore,
     IBonusRoundService bonusRoundService,
     ITracksRepository tracksRepository,
-    IStatsRepository statsRepository)
+    IStatsRepository statsRepository,
+    ILogger<BonusTimerCoordinator> logger)
 {
     private const int IntervalleVerificationMs = 250;
 
@@ -51,36 +53,64 @@ public class BonusTimerCoordinator(
             if (!await AttendreFinPhaseAsync(code, config.DureePhaseMiseMs, br => br.DebutPhaseMise, token)) return;
 
             var session = sessionStore.Get(code);
-            var bonusRound = session?.SerieCourante().BonusRound;
-            if (session is null || bonusRound is null) return;
+            if (session is null) return;
 
+            DebutQuestion? debut;
             lock (session.Lock)
             {
+                var bonusRound = BonusCourant(session);
+                if (bonusRound is null) return;
                 bonusRoundService.AppliquerPaliersParDefaut(session, bonusRound);
+                // Options QCM construites AVANT d'ouvrir la phase question (audit 2026-11-10) : un
+                // joueur qui se reconnectait dans l'intervalle recevait un QCM sans options.
+                debut = PreparerQuestion(session, bonusRound, config);
                 bonusRoundService.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
             }
-            await DiffuserDebutPhaseQuestionAsync(session, bonusRound, config);
+            if (debut is not null) await DiffuserDebutPhaseQuestionAsync(session, debut);
 
             // finAnticipee : en mode course, la phase se termine dès qu'un joueur a répondu (juste ou
             // faux) plutôt que d'attendre la durée complète — voir BonusRoundService.SoumettreReponse.
             if (!await AttendreFinPhaseAsync(code, config.DureePhaseQuestionMs, br => br.DebutPhaseQuestion, token, br => br.EstCourse && br.Reponses.Count > 0)) return;
 
             session = sessionStore.Get(code);
-            bonusRound = session?.SerieCourante().BonusRound;
-            if (session is null || bonusRound is null) return;
+            if (session is null) return;
 
-            lock (session.Lock) { bonusRoundService.TerminerParTimeout(session, bonusRound, config); }
-            await DiffuserResultatAsync(session, bonusRound);
+            BonusResultDto resultat;
+            ScoreUpdateDto scores;
+            Blindify.Domain.Statistics.RoundStatsUpdate stats;
+            lock (session.Lock)
+            {
+                var bonusRound = BonusCourant(session);
+                if (bonusRound is null || bonusRound.TermineA is not null) return;
+                bonusRoundService.TerminerParTimeout(session, bonusRound, config);
+                session.DerniereActiviteA = DateTimeOffset.UtcNow;
+                stats = RoundStatsAggregator.PourBonus(bonusRound);
+                resultat = RevealDtoBuilder.BonusResult(bonusRound, tracksRepository);
+                scores = ScoreDtoBuilder.Construire(session);
+            }
+
+            await hubContext.Clients.Group(session.Id).SendAsync("BonusResult", resultat);
+            await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", scores);
+
+            try { statsRepository.EnregistrerResultatsRound(stats); }
+            catch (Exception ex) { logger.LogError(ex, "Écriture des statistiques du bonus impossible — partie {Code}", code); }
         }
         catch (OperationCanceledException)
         {
             // Annulé volontairement (host a interrompu la partie avant l'échéance naturelle).
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Chrono de la question bonus interrompu par une erreur — partie {Code}", code);
         }
         finally
         {
             _timers.TryRemove(code, out _);
         }
     }
+
+    private static BonusRound? BonusCourant(GameSession session) =>
+        session.SeriesList.Count == 0 ? null : session.SerieCourante().BonusRound;
 
     private async Task<bool> AttendreFinPhaseAsync(string code, int dureeMs, Func<BonusRound, DateTimeOffset?> debutSelector, CancellationToken token, Func<BonusRound, bool>? finAnticipee = null)
     {
@@ -89,62 +119,51 @@ public class BonusTimerCoordinator(
             await Task.Delay(IntervalleVerificationMs, token);
 
             var session = sessionStore.Get(code);
-            var bonusRound = session?.SerieCourante().BonusRound;
-            var debut = bonusRound is null ? null : debutSelector(bonusRound);
-            if (session is null || bonusRound is null || debut is null) return false;
+            if (session is null) return false;
 
-            if (finAnticipee is not null && finAnticipee(bonusRound)) return true;
+            lock (session.Lock)
+            {
+                var bonusRound = BonusCourant(session);
+                var debut = bonusRound is null ? null : debutSelector(bonusRound);
+                if (bonusRound is null || debut is null || bonusRound.TermineA is not null) return false;
 
-            var pauseEnCoursMs = session.EnPause && session.PauseDemarreeA is not null
-                ? (DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds
-                : 0;
-            var tempsEcouleMs = (DateTimeOffset.UtcNow - debut.Value).TotalMilliseconds - (bonusRound.DureeEnPauseMs + pauseEnCoursMs);
+                if (finAnticipee is not null && finAnticipee(bonusRound)) return true;
 
-            if (tempsEcouleMs >= dureeMs) return true;
+                var pauseEnCoursMs = session.EnPause && session.PauseDemarreeA is not null
+                    ? (DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds
+                    : 0;
+                var tempsEcouleMs = (DateTimeOffset.UtcNow - debut.Value).TotalMilliseconds - (bonusRound.DureeEnPauseMs + pauseEnCoursMs);
+
+                if (tempsEcouleMs >= dureeMs) return true;
+            }
         }
     }
 
-    private async Task DiffuserDebutPhaseQuestionAsync(GameSession session, BonusRound bonusRound, SeriesConfig config)
+    private sealed record DebutQuestion(string? HostConnectionId, BonusQuestionStartedForHostDto PourHost, List<string> Joueurs, BonusQuestionStartedForPlayersDto PourJoueurs);
+
+    /// <summary>Appelé sous session.Lock. Même construction que GameHub.StartRound pour les rounds
+    /// classiques — Mode Qcm tiré au hasard côté BonusRoundService.CreerBonusRound, feintes appliquées
+    /// ici (retour utilisateur 2026-08-27 : QCM/Première lettre aussi en question bonus).</summary>
+    private DebutQuestion? PreparerQuestion(GameSession session, BonusRound bonusRound, SeriesConfig config)
     {
         var track = tracksRepository.GetById(bonusRound.TrackId);
-        if (track is null) return;
+        if (track is null) return null;
 
-        // Même construction que GameHub.StartRound pour les rounds classiques — Mode Qcm tiré au
-        // hasard côté BonusRoundService.CreerBonusRound, feintes appliquées ici au moment de la
-        // diffusion (retour utilisateur 2026-08-27 : QCM/Première lettre aussi en question bonus).
         var (qcmOptions, roundOptions) = GameHub.ConstruireQcmOptions(bonusRound.QcmOptionTrackIds, track, bonusRound.Cible, session.Config, tracksRepository);
         bonusRound.Options = roundOptions;
         var anneeOptions = bonusRound.AnneeOptions?.Select(a => a.ToString()).ToList();
 
-        if (session.HostConnectionId is not null)
-        {
-            await hubContext.Clients.Client(session.HostConnectionId).SendAsync("BonusQuestionStarted",
-                new BonusQuestionStartedForHostDto(track.Id, track.FilePath, track.RefrainStartMs, bonusRound.Id, config.DureePhaseQuestionMs, session.Config.RalentissementBonusActive, session.Config.FacteurRalentissementBonus, bonusRound.Mode, bonusRound.Cible, qcmOptions, bonusRound.EstCourse, anneeOptions));
-        }
-
-        var joueursConnectes = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
-        await hubContext.Clients.Clients(joueursConnectes).SendAsync("BonusQuestionStarted",
-            new BonusQuestionStartedForPlayersDto(bonusRound.Id, config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, TempsEcouleMs: 0, AnneeOptions: anneeOptions));
+        var pourHost = GameHub.BonusQuestionPourHost(session, bonusRound, track, config, qcmOptions, anneeOptions);
+        var joueurs = session.Players.Where(p => p.ConnectionId is not null).Select(p => p.ConnectionId!).ToList();
+        var pourJoueurs = new BonusQuestionStartedForPlayersDto(bonusRound.Id, config.DureePhaseQuestionMs, bonusRound.Cible, session.SerieCourante().Index, bonusRound.Mode, qcmOptions, bonusRound.EstCourse, TempsEcouleMs: 0, AnneeOptions: anneeOptions);
+        return new DebutQuestion(session.HostConnectionId, pourHost, joueurs, pourJoueurs);
     }
 
-    private async Task DiffuserResultatAsync(GameSession session, BonusRound bonusRound)
+    private async Task DiffuserDebutPhaseQuestionAsync(GameSession session, DebutQuestion debut)
     {
-        var track = tracksRepository.GetById(bonusRound.TrackId);
+        if (debut.HostConnectionId is not null)
+            await hubContext.Clients.Client(debut.HostConnectionId).SendAsync("BonusQuestionStarted", debut.PourHost);
 
-        // V2 (socle statistiques) — après TerminerParTimeout (appelé par l'appelant juste avant),
-        // donc Reponses contient déjà les entrées synthétiques EstAbsent pour les non-répondants.
-        // Ne tient pas compte d'un ValidateAnswerManually ultérieur (round classique uniquement,
-        // pas applicable au bonus de toute façon) — limitation assumée, voir RoundStatsAggregator.
-        statsRepository.EnregistrerResultatsRound(RoundStatsAggregator.PourBonus(bonusRound));
-
-        var resultats = bonusRound.Reponses
-            .Select(r => new BonusResultEntryDto(r.PlayerId, Math.Abs(r.Points), r.Reponse, r.EstCorrecte, r.Points, r.EcartAnnee))
-            .ToList();
-        var film = track is not null ? FilmNameResolver.Resoudre(track) : "?";
-
-        await hubContext.Clients.Group(session.Id)
-            .SendAsync("BonusResult", new BonusResultDto(bonusRound.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, bonusRound.Cible, film, resultats, bonusRound.EstCourse, track?.Year));
-
-        await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
+        await hubContext.Clients.Clients(debut.Joueurs).SendAsync("BonusQuestionStarted", debut.PourJoueurs);
     }
 }

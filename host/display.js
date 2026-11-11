@@ -55,13 +55,11 @@ function roster() {
   return { joueurs: state.players, equipes: state.equipes };
 }
 
-// Un seul champ affiché par option (titre, premier auteur, ou film) — même règle que côté
-// Flutter (round_screen.dart:_QcmAnswers) : un morceau à plusieurs auteurs listés en entier
-// rendrait le QCM illisible sur grand écran.
-function libelleOptionQcm(option, cible) {
-  if (cible === "Auteur") return option.artist.split(",")[0].trim();
-  if (cible === "Film") return option.film;
-  return option.title;
+// Texte affiché par option, déjà calculé par le serveur pour la cible (titre, premier artiste
+// crédité ou film) — audit 2026-11-10 : plus de découpage local sur la virgule ("Earth, Wind &
+// Fire"), et plus de TrackId côté clients.
+function libelleOptionQcm(option) {
+  return option.texte ?? "";
 }
 
 // Options QCM sur l'écran public (retour utilisateur) — masqué pour les autres modes (première
@@ -73,7 +71,7 @@ function renderQcmOptionsDisplay(container, round) {
   const libelles =
     round?.cible === "Annee" && round?.anneeOptions?.length
       ? round.anneeOptions
-      : (round?.qcmOptions ?? []).map((o) => libelleOptionQcm(o, round.cible));
+      : (round?.qcmOptions ?? []).map((o) => libelleOptionQcm(o));
   if (libelles.length === 0 || round?.mode !== "Qcm") {
     container.classList.add("hidden");
     container.innerHTML = "";
@@ -146,7 +144,12 @@ function renderAnsweredBlock(container) {
       return `<span class="answered-avatar answered-avatar--${etat(p)}" title="${titre}">${avatarHtml(p.playerId, p.nom, undefined, roster())}</span>`;
     })
     .join("");
-  const noms = (e) => presents.filter((p) => etat(p) === e).map((p) => escapeHtml(p.nom)).join(", ");
+  // Au-delà de quelques noms, « +N » plutôt qu'une ligne qui déborde de la TV (audit 2026-11-10).
+  const NOMS_MAX = 6;
+  const noms = (e) => {
+    const liste = presents.filter((p) => etat(p) === e).map((p) => escapeHtml(p.nom));
+    return liste.length > NOMS_MAX ? `${liste.slice(0, NOMS_MAX).join(", ")} +${liste.length - NOMS_MAX}` : liste.join(", ");
+  };
   const attendus = noms("wait");
   const horsLigne = noms("off");
   container.innerHTML = `
@@ -689,11 +692,20 @@ function appliquerEtat(msg) {
   state.scoreHistory = msg.scoreHistory ?? [];
   state.misesEnregistrees = msg.misesEnregistrees ?? [];
   state.votesThemes = msg.votesThemes ?? null;
+  // Écran public rechargé en plein round (audit 2026-11-10) : sans ça, « 0/N ont répondu » et
+  // « On attend : tout le monde ». Les événements player-answered suivants complètent la liste.
+  if (Array.isArray(msg.repondants)) {
+    for (const r of msg.repondants) {
+      if (!state.playersAnswered.some((p) => p.playerId === r.playerId)) state.playersAnswered.push(r);
+    }
+  }
 
   render();
 }
 
 window.addEventListener("message", (event) => {
+  // Seul le panneau host qui a ouvert cette fenêtre pilote l'écran public (audit 2026-11-10).
+  if (window.opener && event.source !== window.opener) return;
   const msg = event.data;
   if (!msg || typeof msg !== "object") return;
 

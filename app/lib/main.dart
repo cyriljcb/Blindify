@@ -167,7 +167,10 @@ class _RootScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: KeyedSubtree(key: ValueKey(game.screen), child: body),
+                        // Clé incluant l'identifiant de la question (audit 2026-11-10) : une reconnexion
+                        // qui passe directement au round suivant recrée l'écran (chrono, saisie) au
+                        // lieu de réutiliser l'état du round précédent.
+                        child: KeyedSubtree(key: ValueKey((game.screen, _idPhase(game))), child: body),
                       ),
                     ),
                     if (game.showLeaderboard) const LeaderboardOverlay(),
@@ -181,6 +184,13 @@ class _RootScreen extends StatelessWidget {
     );
   }
 }
+
+Object? _idPhase(GameConnection game) => switch (game.screen) {
+      AppScreen.round => game.currentRound?.roundId,
+      AppScreen.bonusQuestion || AppScreen.bonusCourseIntro => game.bonusQuestion?.roundId,
+      AppScreen.bonusStake => game.bonusStakeOptions?.roundId,
+      _ => null,
+    };
 
 /// Bandeau affiché uniquement quand la connexion au serveur est perdue (refonte UI, lot 1). Le
 /// score et la partie sont conservés côté serveur (playerId stable) : le message rassure plutôt

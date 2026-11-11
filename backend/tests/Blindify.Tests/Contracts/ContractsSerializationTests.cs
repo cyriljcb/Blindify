@@ -72,10 +72,12 @@ public class ContractsSerializationTests
     [Fact]
     public void HostStateSnapshotDto_Golden()
     {
-        var dto = new HostStateSnapshotDto(false, RoundMode.Qcm, RoundCible.Titre, "t1", "audio/t1.mp3", 30000, 5200, 20000);
+        var dto = new HostStateSnapshotDto(false, PhaseHost.Lobby, true, 2, 8, 0, 0, [["rock"], ["pop"]],
+            [new PlayerSummaryDto("p1", "Alice", true, null)], [], new ScoreUpdateDto([], null), null,
+            null, null, null, null, null, null, null, null, null, null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"enPause":false,"modeCourant":"Qcm","cibleCourante":"Titre","trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"positionAudioMs":5200,"dureeFenetreReponseMs":20000,"votesThemes":null}""",
+            """{"enPause":false,"phase":"Lobby","partieConfiguree":true,"nombreSeries":2,"nombreRoundsParSerie":8,"serieCouranteIndex":0,"roundsDemarresDansSerie":0,"tagsParSerie":[["rock"],["pop"]],"joueurs":[{"playerId":"p1","nom":"Alice","estConnecte":true,"teamId":null,"aPartie":false}],"equipes":[],"scores":{"joueurs":[],"equipes":null},"votesThemes":null,"round":null,"roundEnded":null,"bonusMise":null,"misesEnregistrees":null,"bonusQuestion":null,"bonusResult":null,"gameEnded":null,"positionAudioMs":null,"tempsEcouleMs":null,"repondants":null}""",
             json);
     }
 
@@ -97,7 +99,7 @@ public class ContractsSerializationTests
             null);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1","aPartie":false}],"etatCourant":null,"jokerDisponible":false,"afficherEcart":true,"voteThemes":null}""",
+            """{"success":true,"errorMessage":null,"score":120,"teamId":"team-1","teams":[{"id":"team-1","nom":"Rouge"}],"joueurs":[{"playerId":"player-1","nom":"Alice","estConnecte":true,"teamId":"team-1","aPartie":false}],"etatCourant":null,"jokerDisponible":false,"afficherEcart":true,"voteThemes":null,"jeton":null,"enPause":false,"etat":"Lobby","estAdmin":false}""",
             json);
     }
 
@@ -140,7 +142,7 @@ public class ContractsSerializationTests
     {
         var dto = new EtatCourantConnexionDto(120, "team-1", null, true);
         var json = Serialize(dto);
-        Assert.Equal("""{"score":120,"teamId":"team-1","etatCourant":null,"jokerDisponible":true,"afficherEcart":true,"voteThemes":null}""", json);
+        Assert.Equal("""{"score":120,"teamId":"team-1","etatCourant":null,"jokerDisponible":true,"afficherEcart":true,"voteThemes":null,"enPause":false,"etat":"Lobby","estAdmin":false}""", json);
     }
 
     [Fact]
@@ -170,8 +172,8 @@ public class ContractsSerializationTests
     [Fact]
     public void QcmOptionDto_Golden()
     {
-        var json = Serialize(new QcmOptionDto("t1", "Under the Sea", "Samuel E. Wright", "La Petite Sirene"));
-        Assert.Equal("""{"trackId":"t1","title":"Under the Sea","artist":"Samuel E. Wright","film":"La Petite Sirene"}""", json);
+        var json = Serialize(new QcmOptionDto("a1b2c3d4", "Under the Sea"));
+        Assert.Equal("""{"optionId":"a1b2c3d4","texte":"Under the Sea"}""", json);
     }
 
     [Fact]
@@ -179,10 +181,10 @@ public class ContractsSerializationTests
     {
         var roundId = Guid.Parse("00000000-0000-0000-0000-000000000003");
         var dto = new RoundStartedForHostDto(RoundMode.Qcm, RoundCible.Titre, roundId, "t1", "audio/t1.mp3", 30000, 20000,
-            [new QcmOptionDto("t1", "Under the Sea", "Samuel E. Wright", "La Petite Sirene")]);
+            [new QcmOptionDto("a1b2c3d4", "Under the Sea")]);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"mode":"Qcm","cible":"Titre","roundId":"00000000-0000-0000-0000-000000000003","trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"dureeFenetreReponseMs":20000,"qcmOptions":[{"trackId":"t1","title":"Under the Sea","artist":"Samuel E. Wright","film":"La Petite Sirene"}],"anneeOptions":null}""",
+            """{"mode":"Qcm","cible":"Titre","roundId":"00000000-0000-0000-0000-000000000003","trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"dureeFenetreReponseMs":20000,"qcmOptions":[{"optionId":"a1b2c3d4","texte":"Under the Sea"}],"anneeOptions":null}""",
             json);
     }
 
@@ -224,7 +226,7 @@ public class ContractsSerializationTests
             [new RoundResultEntryDto("player-1", "Let It Go", true, 85)]);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"trackId":"t3","title":"Let It Go","artist":"Idina Menzel","coverPath":"covers/t3.jpg","cible":"Titre","film":"?","resultats":[{"playerId":"player-1","reponse":"Let It Go","estCorrecte":true,"points":85,"ecartAnnee":null}],"annee":null}""",
+            """{"trackId":"t3","title":"Let It Go","artist":"Idina Menzel","coverPath":"covers/t3.jpg","cible":"Titre","film":"?","resultats":[{"playerId":"player-1","reponse":"Let It Go","estCorrecte":true,"points":85,"ecartAnnee":null}],"annee":null,"bonneOptionId":null}""",
             json);
     }
 
@@ -314,10 +316,10 @@ public class ContractsSerializationTests
     {
         var roundId = Guid.Parse("00000000-0000-0000-0000-000000000008");
         var dto = new BonusQuestionStartedForHostDto("t1", "audio/t1.mp3", 30000, roundId, 20000, true, 0.65, RoundMode.Qcm, RoundCible.Film,
-            [new QcmOptionDto("t1", "Under the Sea", "Samuel E. Wright", "La Petite Sirene")], false);
+            [new QcmOptionDto("a1b2c3d4", "La Petite Sirene")], false);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"roundId":"00000000-0000-0000-0000-000000000008","dureePhaseQuestionMs":20000,"ralentissementActive":true,"facteurRalentissement":0.65,"mode":"Qcm","cible":"Film","qcmOptions":[{"trackId":"t1","title":"Under the Sea","artist":"Samuel E. Wright","film":"La Petite Sirene"}],"estCourse":false,"anneeOptions":null}""",
+            """{"trackId":"t1","filePath":"audio/t1.mp3","refrainStartMs":30000,"roundId":"00000000-0000-0000-0000-000000000008","dureePhaseQuestionMs":20000,"ralentissementActive":true,"facteurRalentissement":0.65,"mode":"Qcm","cible":"Film","qcmOptions":[{"optionId":"a1b2c3d4","texte":"La Petite Sirene"}],"estCourse":false,"anneeOptions":null}""",
             json);
     }
 
@@ -359,7 +361,7 @@ public class ContractsSerializationTests
             [new BonusResultEntryDto("player-1", 50, "Le Roi Lion", true, 50)], false);
         var json = Serialize(dto);
         Assert.Equal(
-            """{"trackId":"t2","title":"Circle of Life","artist":"Elton John","coverPath":"covers/t2.jpg","cible":"Film","film":"Le Roi Lion","resultats":[{"playerId":"player-1","mise":50,"reponse":"Le Roi Lion","estCorrecte":true,"points":50,"ecartAnnee":null}],"estCourse":false,"annee":null}""",
+            """{"trackId":"t2","title":"Circle of Life","artist":"Elton John","coverPath":"covers/t2.jpg","cible":"Film","film":"Le Roi Lion","resultats":[{"playerId":"player-1","mise":50,"reponse":"Le Roi Lion","estCorrecte":true,"points":50,"ecartAnnee":null}],"estCourse":false,"annee":null,"bonneOptionId":null}""",
             json);
     }
 
@@ -377,13 +379,6 @@ public class ContractsSerializationTests
     {
         var json = Serialize(new SignalementResultDto("flag-1", false));
         Assert.Equal("""{"flagId":"flag-1","dejaSignale":false}""", json);
-    }
-
-    [Fact]
-    public void MorceauSignaleDto_Golden()
-    {
-        var json = Serialize(new MorceauSignaleDto("t1", "Circle of Life", "Elton John", RaisonSignalement.AudioDefectueux));
-        Assert.Equal("""{"trackId":"t1","titre":"Circle of Life","artiste":"Elton John","raison":"AudioDefectueux"}""", json);
     }
 
     // ----- JokerContracts.cs -> app/lib/models/joker_indice.dart, host (annonce transitoire uniquement,

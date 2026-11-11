@@ -61,7 +61,9 @@ class _RoundEndedScreenState extends State<RoundEndedScreen> {
       children: [
         GameCard(
           accentColor: monResultat == null ? null : (correct ? BlindifyColors.good : BlindifyColors.bad),
-          child: Column(
+          // Défilable sur petit écran (audit 2026-11-10) — plus de Spacer, qui exige une hauteur bornée.
+          child: SingleChildScrollView(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text('Résultat', style: Theme.of(context).textTheme.headlineSmall),
@@ -93,7 +95,8 @@ class _RoundEndedScreenState extends State<RoundEndedScreen> {
                 _ResultIcon(correct: correct),
                 const SizedBox(height: 8),
                 Text(
-                  correct ? 'Bonne réponse !' : 'Mauvaise réponse',
+                  // estCorrecte null = absence de réponse (audit 2026-11-10 : affichait « Mauvaise réponse »).
+                  correct ? 'Bonne réponse !' : monResultat.estCorrecte == null ? 'Pas de réponse' : 'Mauvaise réponse',
                   style: Theme.of(context).textTheme.titleLarge,
                 ).animate().fadeIn(delay: 400.ms),
                 _PointsCountUp(points: monResultat.points, color: correct ? BlindifyColors.good : BlindifyColors.bad),
@@ -109,7 +112,7 @@ class _RoundEndedScreenState extends State<RoundEndedScreen> {
                   ),
                 ],
               ],
-              const Spacer(),
+              const SizedBox(height: 24),
               // Refonte UI (lot 3) : écart avec le joueur devant (si activé pour la partie).
               const CarteEcart(),
               const SizedBox(height: 12),
@@ -118,6 +121,7 @@ class _RoundEndedScreenState extends State<RoundEndedScreen> {
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
               ),
             ],
+          ),
           ),
         ),
         // Confettis tirés depuis le haut de l'écran — pas depuis l'icône (qui bouge encore à cet

@@ -111,7 +111,15 @@ class _QcmTileState extends State<QcmTile> {
       ),
     );
 
-    return AppuiTolerant(
+    // Rôle bouton et libellé lisible pour les lecteurs d'écran (audit 2026-11-10) — la forme
+    // décorative (▲◆●■) n'est pas lue.
+    return Semantics(
+      button: true,
+      enabled: widget.onPressed != null,
+      selected: choisie,
+      label: 'Réponse ${widget.index + 1} : ${widget.label}',
+      excludeSemantics: true,
+      child: AppuiTolerant(
       onTapDown: () => _setPressed(true),
       onTapUp: () => _setPressed(false),
       onTapCancel: () => _setPressed(false),
@@ -122,6 +130,7 @@ class _QcmTileState extends State<QcmTile> {
         curve: Curves.easeOut,
         child: tuile,
       ),
+    ),
     )
         .animate(delay: Duration(milliseconds: 60 * widget.ordreApparition))
         .fadeIn(duration: BlindifyMotion.normal)

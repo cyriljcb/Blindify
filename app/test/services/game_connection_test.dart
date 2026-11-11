@@ -9,6 +9,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app/models/bonus_question_started.dart';
+import 'package:app/models/qcm_option.dart';
 import 'package:app/models/bonus_stake_options.dart';
 import 'package:app/models/etat_courant_joueur.dart';
 import 'package:app/models/round_cible.dart';
@@ -314,6 +315,52 @@ void main() {
           equipes: [TeamScore(teamId: 'rouge', nom: 'Rouge', score: 200), TeamScore(teamId: 'bleu', nom: 'Bleu', score: 260)],
         );
       expect(game.ecartAvecJoueurDevant, 60);
+    });
+  });
+
+  group('Audit 2026-11-10', () {
+    test('submitAnswer : une réponse vide ne consomme pas l’essai', () async {
+      final game = GameConnection()..delaiAttenteConnexion = Duration.zero;
+      await game.submitAnswer('   ');
+      expect(game.roundAnswered, isFalse);
+    });
+
+    test('submitBonusAnswer : une réponse vide ne consomme pas l’essai', () async {
+      final game = GameConnection()..delaiAttenteConnexion = Duration.zero;
+      await game.submitBonusAnswer('');
+      expect(game.bonusAnswered, isFalse);
+    });
+
+    test('messageErreur : extrait le texte de la HubException serveur', () {
+      expect(messageErreur(Exception('HubException: An unexpected error occurred invoking X on the server. HubException: Partie en pause.')), 'Partie en pause.');
+      expect(messageErreur(StateError('x')), contains('Connexion'));
+    });
+
+    test('QcmOption : identifiant opaque et texte affiché, sans TrackId', () {
+      final option = QcmOption.fromJson({'optionId': 'a1b2', 'texte': 'Earth, Wind & Fire'});
+      expect(option.optionId, 'a1b2');
+      expect(option.texte, 'Earth, Wind & Fire');
+    });
+
+    test('appliquerEtatCourant sur une nouvelle question : efface les restes de la précédente', () {
+      final game = GameConnection()
+        ..envoiReponseEchoue = true
+        ..jokerErreur = 'Joker refusé'
+        ..bonusPalierSelectionne = 2;
+      game.appliquerEtatCourant(
+        EtatCourantJoueur(
+          phase: PhaseJoueur.roundClassique,
+          enPause: false,
+          dejaRepondu: false,
+          round: RoundStarted(mode: RoundMode.qcm, cible: RoundCible.titre, roundId: 'r-2', dureeFenetreReponseMs: 20000, serieIndex: 0),
+        ),
+        actualiserEcran: false,
+      );
+      expect(game.envoiReponseEchoue, isFalse);
+      expect(game.jokerErreur, isNull);
+      expect(game.bonusPalierSelectionne, isNull);
+      expect(game.phaseRecueA, isNotNull);
+      expect(game.partieEnCours, isTrue);
     });
   });
 }

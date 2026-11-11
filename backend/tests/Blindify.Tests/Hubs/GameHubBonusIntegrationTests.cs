@@ -63,8 +63,8 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
                 DureePhaseMiseMs: 400,
                 DureePhaseQuestionMs: 800));
 
-        await _alice.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-alice");
-        await _bob.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Bob", "player-bob");
+        await JoinDeTest.JoinAsync(_alice, creation.Code, "Alice", "player-alice");
+        await JoinDeTest.JoinAsync(_bob, creation.Code, "Bob", "player-bob");
 
         await _hostConnection.InvokeAsync("StartBonusRound");
 
@@ -103,14 +103,15 @@ public class GameHubBonusIntegrationTests : IClassFixture<GameHubTestFactory>, I
             ["t5"] = "Queen"
         };
         // Mode tiré aléatoirement (Qcm/TapeReponse/PremiereLettre) depuis le retour utilisateur du
-        // 2026-08-27 — voir BonusRoundService.CreerBonusRound. En Qcm la bonne réponse est le
-        // TrackId (comme en round classique), pas le texte ; en TapeReponse/PremiereLettre le texte
-        // complet reste accepté (une première lettre correcte suffit à valider PremiereLettre).
+        // 2026-08-27 — voir BonusRoundService.CreerBonusRound. En Qcm la bonne réponse est
+        // l'identifiant opaque de l'option qui affiche le bon texte (audit 2026-11-10 : plus de TrackId
+        // côté joueurs) ; en TapeReponse/PremiereLettre le texte complet reste accepté.
+        var texteCorrect = questionPlayer.Cible == RoundCible.Auteur
+            ? artistesConnus[questionHost.TrackId]
+            : titresConnus[questionHost.TrackId];
         var bonneReponse = questionPlayer.Mode == RoundMode.Qcm
-            ? questionHost.TrackId
-            : questionPlayer.Cible == RoundCible.Auteur
-                ? artistesConnus[questionHost.TrackId]
-                : titresConnus[questionHost.TrackId];
+            ? questionPlayer.QcmOptions!.First(o => o.Texte == texteCorrect).OptionId
+            : texteCorrect;
 
         var reponseAlice = await _alice.InvokeAsync<BonusAnswerResultDto>("SubmitBonusAnswer", new SubmitBonusAnswerRequestDto(questionPlayer.RoundId, bonneReponse));
         Assert.True(reponseAlice.EstCorrecte);

@@ -10,6 +10,12 @@ public class RoundOption
 {
     public required string TrackId { get; set; }
 
+    /// <summary>Identifiant opaque de l'option, seul identifiant transmis aux clients (audit
+    /// 2026-11-10) : envoyer le TrackId permettait à un téléphone de télécharger le MP3/la pochette
+    /// de chaque option via /files et d'en déduire la réponse. Les joueurs renvoient cet identifiant
+    /// dans SubmitAnswer, le serveur le résout en TrackId (RoundService/BonusRoundService).</summary>
+    public string OptionId { get; set; } = Guid.NewGuid().ToString("N")[..8];
+
     /// <summary>Texte affiché pour LA cible de ce round (Titre/Auteur/Film) — un seul champ, pas les
     /// trois de QcmOptionDto, puisque la cible du round est déjà fixée et que les deux autres champs
     /// ne sont jamais montrés au joueur. Reflète une éventuelle feinte (voir EstFeinte).</summary>

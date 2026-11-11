@@ -49,7 +49,7 @@ public class BonusRoundServiceTests
         var session = NouvelleSession(new Player { PlayerId = "p1", Nom = "Alice" });
         var bonusRound = CreerBonusRound(NouveauTrack());
 
-        var succes = _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,1);
+        var succes = _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,1);
 
         Assert.True(succes);
         Assert.Single(bonusRound.Mises);
@@ -60,9 +60,9 @@ public class BonusRoundServiceTests
     {
         var session = NouvelleSession(new Player { PlayerId = "p1", Nom = "Alice" });
         var bonusRound = CreerBonusRound(NouveauTrack());
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,1);
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,1);
 
-        var succes = _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2);
+        var succes = _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2);
 
         Assert.False(succes);
         Assert.Single(bonusRound.Mises);
@@ -75,7 +75,7 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(NouveauTrack());
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var succes = _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,1);
+        var succes = _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,1);
 
         Assert.False(succes);
     }
@@ -90,7 +90,7 @@ public class BonusRoundServiceTests
         session.EnPause = true;
         var bonusRound = CreerBonusRound(NouveauTrack());
 
-        var succes = _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,1);
+        var succes = _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,1);
 
         Assert.False(succes);
         Assert.Empty(bonusRound.Mises);
@@ -103,7 +103,7 @@ public class BonusRoundServiceTests
         var bob = new Player { PlayerId = "p2", Nom = "Bob" };
         var session = NouvelleSession(alice, bob);
         var bonusRound = CreerBonusRound(NouveauTrack());
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,3);
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,3);
 
         _service.AppliquerPaliersParDefaut(session, bonusRound);
 
@@ -121,7 +121,7 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Cible = RoundCible.Titre; // cible tirée aléatoirement depuis le retour utilisateur du 2026-08-24 — fixée ici pour isoler le scoring testé
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le scoring testé
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"Under the Sea", DateTimeOffset.UtcNow);
@@ -139,7 +139,7 @@ public class BonusRoundServiceTests
         var track = NouveauTrack();
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le scoring testé
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"Autre Chose", DateTimeOffset.UtcNow);
@@ -173,8 +173,8 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Cible = RoundCible.Titre; // cible tirée aléatoirement depuis le retour utilisateur du 2026-08-24 — fixée ici pour isoler le comportement testé
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,0); // palier 10
-        _service.EnregistrerMise(session, bonusRound, "p2", bonusRound.Id,3); // palier 50
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,0); // palier 10
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p2", bonusRound.Id,3); // palier 50
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"Under the Sea", DateTimeOffset.UtcNow);
@@ -256,7 +256,7 @@ public class BonusRoundServiceTests
         };
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         var reponseAvecTitreReel = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"If I Didn't Have You", DateTimeOffset.UtcNow);
@@ -272,7 +272,7 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Cible = RoundCible.Titre; // cible tirée aléatoirement depuis le retour utilisateur du 2026-08-24 — fixée ici pour isoler le comportement testé
         bonusRound.Mode = RoundMode.TapeReponse; // Mode tiré aléatoirement depuis le 2026-08-27 — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"Sweat", DateTimeOffset.UtcNow);
@@ -325,7 +325,7 @@ public class BonusRoundServiceTests
         var track = NouveauTrack();
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.Qcm; // tiré aléatoirement — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         var bonneReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,track.Id, DateTimeOffset.UtcNow);
@@ -347,7 +347,7 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(correct);
         bonusRound.Cible = RoundCible.Auteur;
         bonusRound.Mode = RoundMode.Qcm;
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2);
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2);
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), correct, "p1", bonusRound.Id,"b", DateTimeOffset.UtcNow, id => catalogue.GetValueOrDefault(id));
@@ -364,7 +364,7 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Cible = RoundCible.Titre;
         bonusRound.Mode = RoundMode.PremiereLettre; // tiré aléatoirement — fixé ici pour isoler le comportement testé
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         var bonneReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"U", DateTimeOffset.UtcNow);
@@ -433,8 +433,8 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.Qcm;
         bonusRound.EstCourse = true;
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
-        _service.EnregistrerMise(session, bonusRound, "p2", bonusRound.Id,3); // palier 50
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p2", bonusRound.Id,3); // palier 50
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         var premiereReponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,"autre-id", DateTimeOffset.UtcNow);
@@ -457,8 +457,8 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.Qcm;
         bonusRound.EstCourse = true;
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
-        _service.EnregistrerMise(session, bonusRound, "p2", bonusRound.Id,3); // palier 50
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p2", bonusRound.Id,3); // palier 50
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id,track.Id, DateTimeOffset.UtcNow);
@@ -477,7 +477,7 @@ public class BonusRoundServiceTests
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.Qcm;
         bonusRound.EstCourse = true;
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id,2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id,2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         _service.TerminerParTimeout(session, bonusRound, NouveauConfig());
@@ -497,13 +497,13 @@ public class BonusRoundServiceTests
         bonusRound.Mode = RoundMode.Qcm;
         bonusRound.Options =
         [
-            new RoundOption { TrackId = track.Id, TexteAffiche = "Under the Sea", EstFeinte = false, EstPiege = false },
-            new RoundOption { TrackId = "b", TexteAffiche = "Autre", EstFeinte = false, EstPiege = true },
+            new RoundOption { TrackId = track.Id, OptionId = "o1", TexteAffiche = "Under the Sea", EstFeinte = false, EstPiege = false },
+            new RoundOption { TrackId = "b", OptionId = "ob", TexteAffiche = "Autre", EstFeinte = false, EstPiege = true },
         ];
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id, 2);
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id, 2);
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
-        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id, "b", DateTimeOffset.UtcNow);
+        var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id, "ob", DateTimeOffset.UtcNow);
 
         Assert.Equal("b", reponse!.OptionChoisieTrackId);
         Assert.True(reponse.OptionChoisieEstPiege);
@@ -518,8 +518,8 @@ public class BonusRoundServiceTests
         var track = NouveauTrack();
         var bonusRound = CreerBonusRound(track);
         bonusRound.Mode = RoundMode.TapeReponse;
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id, 0);
-        _service.EnregistrerMise(session, bonusRound, "p2", bonusRound.Id, 0);
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id, 0);
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p2", bonusRound.Id, 0);
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id, "Under the Sea", DateTimeOffset.UtcNow);
@@ -568,7 +568,7 @@ public class BonusRoundServiceTests
         var session = NouvelleSession(alice);
         var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
         var bonusRound = new BonusRound { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Annee };
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id, 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id, 2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
         var config = NouveauConfig(); // ToleranceAnneeBonus = 1 par défaut
 
@@ -586,7 +586,7 @@ public class BonusRoundServiceTests
         var session = NouvelleSession(alice);
         var track = new Track { Id = "a", Title = "T", Artist = "Artiste", FilePath = "audio/a.mp3", Year = 1990 };
         var bonusRound = new BonusRound { TrackId = "a", Mode = RoundMode.TapeReponse, Cible = RoundCible.Annee };
-        _service.EnregistrerMise(session, bonusRound, "p1", bonusRound.Id, 2); // palier 30
+        _service.EnregistrerMise(session, bonusRound, NouveauConfig(), "p1", bonusRound.Id, 2); // palier 30
         _service.DemarrerPhaseQuestion(bonusRound, DateTimeOffset.UtcNow);
 
         var reponse = _service.SoumettreReponse(session, bonusRound, NouveauConfig(), track, "p1", bonusRound.Id, "1985", DateTimeOffset.UtcNow);

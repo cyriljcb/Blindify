@@ -27,6 +27,12 @@ export const state = {
   nombreSeriesTotal: 0,
   serieCouranteIndex: 0,
   roundsDemarres: 0, // rounds démarrés DANS LA SÉRIE COURANTE — remis à 0 à chaque changement de série
+  // NextRound déjà appelé côté serveur, StartRound pas encore (reprise après rechargement, phase
+  // « RoundPret » du snapshot) : le prochain enchaînement ne doit appeler que StartRound.
+  roundSuivantDejaAvance: false,
+  // Identifiant de la question en cours (round ou bonus) — sert à savoir si une reprise de contrôle
+  // après reconnexion concerne toujours la même question (main.js:appliquerSnapshot).
+  questionIdCourante: null,
   tagsDisponibles: [], // thèmes connus du catalogue (GET /api/tags), pour les cases à cocher
   // Thèmes réellement assignés à chaque série (index -> liste de tags), reçus série par série via
   // l'événement SerieAnnoncee (le serveur calcule désormais la répartition — voir

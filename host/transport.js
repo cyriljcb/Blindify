@@ -12,10 +12,34 @@ export function getConnection() {
 
 // Crée la connexion sans la démarrer — laisse l'appelant enregistrer ses handlers `connection.on(...)`
 // avant `demarrerConnexion`, pour ne manquer aucun événement émis juste après le handshake.
+// Audit 2026-11-10 : les délais par défaut (0/2/10/30 s puis abandon) laissaient le host déconnecté
+// pour de bon après ~40 s de coupure, sans écran de reconnexion. On réessaie indéfiniment, toutes
+// les 5 s au-delà des premiers essais rapprochés.
+const DELAIS_RECONNEXION_MS = [0, 1000, 2000, 5000];
+const politiqueReconnexion = {
+  nextRetryDelayInMilliseconds: ({ previousRetryCount }) =>
+    DELAIS_RECONNEXION_MS[Math.min(previousRetryCount, DELAIS_RECONNEXION_MS.length - 1)],
+};
+
+// Arrête la connexion précédente avant d'en créer une autre (audit 2026-11-10 : une tentative
+// expirée qui aboutissait plus tard laissait une connexion orpheline qui recevait encore les
+// événements).
+export async function arreterConnexion() {
+  const precedente = connection;
+  connection = null;
+  if (precedente) {
+    try {
+      await precedente.stop();
+    } catch {
+      // Sans importance : la connexion est abandonnée.
+    }
+  }
+}
+
 export function creerConnexion(serverBaseUrl) {
   connection = new signalR.HubConnectionBuilder()
     .withUrl(`${serverBaseUrl}/hubs/game`, { withCredentials: false })
-    .withAutomaticReconnect()
+    .withAutomaticReconnect(politiqueReconnexion)
     // Détection rapide d'une connexion morte — mêmes valeurs que l'app, voir AddSignalR dans
     // Program.cs (le serveur coupe après 20 s sans ping).
     .withKeepAliveInterval(5000)

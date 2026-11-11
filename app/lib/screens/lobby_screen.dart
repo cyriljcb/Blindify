@@ -18,11 +18,22 @@ class LobbyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final game = context.watch<GameConnection>();
 
+    // Joueurs encore attendus (connectés, pas partis) — audit 2026-11-10 : le compteur incluait les
+    // déconnectés et les joueurs partis.
+    final connectes = game.players.where((p) => p.estConnecte && !p.aQuitte).length;
+
+    // Tout le haut défile (bloc code, joker, équipes, vote, joueurs) : sur un petit écran, le panneau
+    // de vote pouvait pousser la liste et le bouton « Quitter » hors de l'écran (audit 2026-11-10).
     return GameCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Salle d'attente", style: Theme.of(context).textTheme.headlineSmall),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+          Text(game.partieEnCours ? 'Partie en cours' : "Salle d'attente", style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
@@ -103,14 +114,18 @@ class LobbyScreen extends StatelessWidget {
             const VoteThemesPanel(),
           ],
           const SizedBox(height: 20),
-          Text('JOUEURS CONNECTÉS (${game.players.length})', style: Theme.of(context).textTheme.titleSmall),
+          Text('JOUEURS CONNECTÉS ($connectes)', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
-          Expanded(
-            child: game.players.isEmpty
-                ? Center(
-                    child: Text('En attente des autres joueurs...', style: Theme.of(context).textTheme.bodyMedium),
+          game.players.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Text('En attente des autres joueurs...', style: Theme.of(context).textTheme.bodyMedium),
+                    ),
                   )
                 : ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: game.players.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
@@ -118,7 +133,7 @@ class LobbyScreen extends StatelessWidget {
                       final nomEquipe = game.teams.where((t) => t.id == p.teamId).map((t) => t.nom).firstOrNull;
                       final sousTitre = [
                         ?nomEquipe,
-                        if (!p.estConnecte) 'déconnecté',
+                        if (p.aQuitte) 'a quitté la partie' else if (!p.estConnecte) 'déconnecté',
                       ].join(' — ');
 
                       return Container(
@@ -157,13 +172,16 @@ class LobbyScreen extends StatelessWidget {
                           .slideX(begin: 0.15, curve: BlindifyMotion.pop);
                     },
                   ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: Text(
-                  'En attente que le host démarre le round...',
+                  game.partieEnCours ? 'Partie en cours — tu joueras dès le prochain round.' : 'En attente que le host démarre le round...',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
                 ),
               ),

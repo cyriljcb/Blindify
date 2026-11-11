@@ -21,6 +21,7 @@ import csv
 import json
 import sys
 from pathlib import Path
+from tracks_io import ecrire_json_atomique
 
 SCRIPTS_DIR = Path(__file__).parent
 DATA_DIR = SCRIPTS_DIR.parent
@@ -36,7 +37,7 @@ def charger_tracks_json() -> list[dict]:
 
 
 def sauvegarder_tracks_json(tracks: list[dict]) -> None:
-    TRACKS_JSON_PATH.write_text(json.dumps(tracks, ensure_ascii=False, indent=2), encoding="utf-8")
+    ecrire_json_atomique(TRACKS_JSON_PATH, tracks)  # atomique, voir tracks_io.py
 
 
 def tag_decennie(year: int) -> str:

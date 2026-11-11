@@ -37,7 +37,7 @@ public class GameHubRegieIntegrationTests : IClassFixture<GameHubTestFactory>, I
         await _host.InvokeAsync("ConfigurerPartie", new ConfigurerPartieRequestDto(
             NombreSeries: 1, NombreRoundsClassiques: 1, DureeFenetreReponseMs: 800, ThemesVivier: [], Config: null,
             AfficherEcart: afficherEcart));
-        await _joueur.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_joueur, creation.Code, "Alice", "player-1");
         return creation.Code;
     }
 
@@ -130,7 +130,7 @@ public class GameHubRegieIntegrationTests : IClassFixture<GameHubTestFactory>, I
         var creation = await _host.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(false, null));
         await _host.InvokeAsync("ConfigurerPartie", new ConfigurerPartieRequestDto(
             NombreSeries: 1, NombreRoundsClassiques: 1, DureeFenetreReponseMs: 800, ThemesVivier: [], Config: null, AfficherEcart: false));
-        var join = await _joueur.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        var join = await JoinDeTest.JoinAsync(_joueur, creation.Code, "Alice", "player-1");
         Assert.False(join.AfficherEcart);
 
         await _host.InvokeAsync("AnnoncerSerieCourante");

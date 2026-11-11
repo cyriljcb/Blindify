@@ -74,7 +74,9 @@ public static class TitresService
 
         foreach (var serie in session.SeriesList)
         {
-            foreach (var round in serie.Rounds)
+            // Audit 2026-11-10 : après une fin de partie anticipée (EndGame), les rounds jamais joués
+            // gonflaient le total et faussaient SNIPER/SPÉCIALISTE.
+            foreach (var round in serie.Rounds.Where(r => r.DebutRound is not null))
             {
                 totalRoundsClassiques++;
                 var track = resolveTrack(round.TrackId);

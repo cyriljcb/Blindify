@@ -45,4 +45,5 @@ public record BonusResultEntryDto(string PlayerId, int Mise, string? Reponse, bo
 /// de Resultats lors d'une course n'ont ni gagné ni perdu (mise rendue intacte), à distinguer d'une
 /// absence de réponse hors course (qui, elle, perd la mise et apparaît dans Resultats).</summary>
 /// <summary>Annee : voir RoundEndedDto.</summary>
-public record BonusResultDto(string TrackId, string Title, string Artist, string? CoverPath, RoundCible Cible, string Film, List<BonusResultEntryDto> Resultats, bool EstCourse, int? Annee = null);
+/// <summary>BonneOptionId : voir RoundEndedDto.</summary>
+public record BonusResultDto(string TrackId, string Title, string Artist, string? CoverPath, RoundCible Cible, string Film, List<BonusResultEntryDto> Resultats, bool EstCourse, int? Annee = null, string? BonneOptionId = null);

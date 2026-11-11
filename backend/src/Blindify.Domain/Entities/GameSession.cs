@@ -19,13 +19,13 @@ public class GameSession
     /// <summary>ConnectionId SignalR courant du client host (mutable, réassocié à chaque RejoinAsHost).</summary>
     public string? HostConnectionId { get; set; }
 
-    /// <summary>ConnectionIds authentifiés via GameHub.AuthenticateAdmin (mot de passe partagé,
-    /// Admin:RemoteControlPassword) — permet à un ou plusieurs clients Flutter (app joueur) de
-    /// déclencher pause/reprise/tableau général/fin de partie EN PLUS du host web, sans jamais lui
-    /// retirer la main (contrairement à HostConnectionId, réassocié en un seul exemplaire par
-    /// RejoinAsHost). Volontairement limité aux actions sans effet sur la lecture audio (qui reste
-    /// exclusive au host web, voir CLAUDE.md) — jamais StartRound/ConfigurerPartie/CreateGame.</summary>
-    public HashSet<string> AdminConnectionIds { get; set; } = [];
+    /// <summary>Connexions courantes des joueurs authentifiés admin (Player.EstAdmin, via
+    /// GameHub.AuthenticateAdmin) — calculé plutôt que stocké : depuis l'audit 2026-11-10 le rôle est
+    /// rattaché au joueur, pas à une connexion SignalR qui change à chaque micro-coupure. Les admins
+    /// déclenchent pause/reprise/tableau général/fin de partie/télécommande en plus du host web, sans
+    /// jamais lui retirer la main ; jamais StartRound/ConfigurerPartie/CreateGame.</summary>
+    public List<string> AdminConnectionIds() =>
+        [.. Players.Where(p => p.EstAdmin && p.ConnectionId is not null).Select(p => p.ConnectionId!)];
 
     /// <summary>Refonte UI (lot 3) — dernier état de régie publié par la page host (libellé de
     /// l'action suivante et disponibilité), renvoyé à un admin dès son authentification pour que sa
@@ -44,6 +44,11 @@ public class GameSession
     public VoteThemes? VoteThemes { get; set; }
 
     public int SerieCouranteIndex { get; set; }
+
+    /// <summary>Dernière action host/joueur sur ce salon — sert à purger les salons abandonnés
+    /// (audit 2026-11-10 : les sessions n'étaient jamais retirées, l'app rejoignait
+    /// automatiquement un salon zombie au redémarrage). Voir Api.Hubs.SessionCleanupService.</summary>
+    public DateTimeOffset DerniereActiviteA { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>Index du round courant dans Series[SerieCouranteIndex].Rounds. -1 = aucun round démarré.</summary>
     public int RoundCourantIndex { get; set; } = -1;

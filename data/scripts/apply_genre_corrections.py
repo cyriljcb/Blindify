@@ -28,6 +28,7 @@ import json
 import sys
 from collections import defaultdict
 from pathlib import Path
+from tracks_io import ecrire_json_atomique
 
 SCRIPTS_DIR = Path(__file__).parent
 DATA_DIR = SCRIPTS_DIR.parent
@@ -153,7 +154,7 @@ def main() -> None:
         print("--dry-run : tracks.json non modifié.", file=sys.stderr)
         return
 
-    TRACKS_JSON_PATH.write_text(json.dumps(tracks, ensure_ascii=False, indent=2), encoding="utf-8")
+    ecrire_json_atomique(TRACKS_JSON_PATH, tracks)  # atomique, voir tracks_io.py
     print(f"{TRACKS_JSON_PATH} mis à jour.", file=sys.stderr)
 
 

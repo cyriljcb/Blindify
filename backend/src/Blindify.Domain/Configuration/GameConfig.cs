@@ -44,6 +44,23 @@ public class GameConfig
     /// beaucoup trop strict pour une simple faute de frappe sur un nom de cette longueur.</summary>
     public int ToleranceFixeReponseCourte { get; set; } = 2;
 
+    /// <summary>Audit 2026-11-10 (nice-to-have « seuil Levenshtein titres courts ») : 2 caractères
+    /// d'écart sur un texte de 4-5 caractères acceptait presque n'importe quoi ("Mike" pour "Muse",
+    /// "ABBA" pour "Aqua"). En dessous de cette longueur (et au-dessus de
+    /// LongueurMinimalePourToleranceFixe), seule ToleranceFixeReponseTresCourte s'applique.</summary>
+    public int LongueurMinimalePourToleranceFixeComplete { get; set; } = 6;
+
+    public int ToleranceFixeReponseTresCourte { get; set; } = 1;
+
+    /// <summary>Paliers de mise de la première série (safe / moyen / moyen+ / risqué) — les séries
+    /// suivantes les multiplient par FacteurProgressionPaliers^index (SeriesPlanner.PaliersPourSerie).
+    /// Exactement 4 valeurs strictement positives (validé par ConfigurerPartie).</summary>
+    public int[] PaliersMiseBase { get; set; } = [10, 20, 30, 50];
+
+    /// <summary>Nombre de distracteurs d'un QCM (titre/auteur/film/année) — 3 par défaut, soit 4
+    /// options. Validé entre 1 et 5 par ConfigurerPartie (l'interface affiche au plus 6 tuiles).</summary>
+    public int NombreDistracteursQcm { get; set; } = 3;
+
     /// <summary>Probabilité qu'une question bonus tirée en mode Qcm devienne une "course" (retour
     /// utilisateur : le premier qui répond, juste ou faux, décide seul du sort de sa mise ; les
     /// autres ne gagnent ni ne perdent rien tant qu'un joueur a répondu). Ne s'applique jamais aux

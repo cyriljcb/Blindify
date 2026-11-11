@@ -25,18 +25,18 @@ public class JokerServiceTests
         var track = NouveauTrack("correct");
         var options = new List<RoundOption>
         {
-            new() { TrackId = "correct", TexteAffiche = "Correct", EstFeinte = false, EstPiege = false },
-            new() { TrackId = "faux1", TexteAffiche = "Faux 1", EstFeinte = false, EstPiege = false },
-            new() { TrackId = "faux2", TexteAffiche = "Faux 2", EstFeinte = false, EstPiege = false },
-            new() { TrackId = "faux3", TexteAffiche = "Faux 3", EstFeinte = false, EstPiege = false },
+            new() { TrackId = "correct", OptionId = "o-correct", TexteAffiche = "Correct", EstFeinte = false, EstPiege = false },
+            new() { TrackId = "faux1", OptionId = "o-faux1", TexteAffiche = "Faux 1", EstFeinte = false, EstPiege = false },
+            new() { TrackId = "faux2", OptionId = "o-faux2", TexteAffiche = "Faux 2", EstFeinte = false, EstPiege = false },
+            new() { TrackId = "faux3", OptionId = "o-faux3", TexteAffiche = "Faux 3", EstFeinte = false, EstPiege = false },
         };
 
         var indice = _service.CalculerIndice(RoundMode.Qcm, RoundCible.Titre, track, options, null);
 
         Assert.NotNull(indice.OptionsRetirees);
         Assert.Equal(2, indice.OptionsRetirees!.Count);
-        Assert.DoesNotContain("correct", indice.OptionsRetirees);
-        Assert.All(indice.OptionsRetirees, id => Assert.Contains(id, new[] { "faux1", "faux2", "faux3" }));
+        Assert.DoesNotContain("o-correct", indice.OptionsRetirees);
+        Assert.All(indice.OptionsRetirees, id => Assert.Contains(id, new[] { "o-faux1", "o-faux2", "o-faux3" }));
         Assert.Equal(indice.OptionsRetirees.Count, indice.OptionsRetirees.Distinct().Count());
     }
 

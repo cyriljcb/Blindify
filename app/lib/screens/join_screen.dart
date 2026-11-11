@@ -63,8 +63,11 @@ class _JoinScreenState extends State<JoinScreen> {
       game.pendingJoinCode = null;
     }
 
+    // Défilable : clavier ouvert sur un petit écran, le bouton « Rejoindre » sortait de l'écran
+    // (audit 2026-11-10, même correctif que ConnectScreen).
     return Center(
-      child: ConstrainedBox(
+      child: SingleChildScrollView(
+        child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
         child: GameCard(
           child: Column(
@@ -77,8 +80,10 @@ class _JoinScreenState extends State<JoinScreen> {
               const SizedBox(height: 20),
               TextField(
                 controller: _nomController,
-                decoration: const InputDecoration(labelText: 'Ton pseudo'),
+                decoration: const InputDecoration(labelText: 'Ton pseudo', counterText: ''),
                 textCapitalization: TextCapitalization.words,
+                // Même borne que le serveur (noms longs illisibles sur la TV).
+                maxLength: longueurMaxNom,
               ),
               const SizedBox(height: 12),
               TextField(
@@ -127,6 +132,7 @@ class _JoinScreenState extends State<JoinScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

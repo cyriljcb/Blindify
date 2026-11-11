@@ -16,7 +16,7 @@ public interface IBonusRoundService
     /// <summary>Retourne false si la mise est invalide (partie en pause, phase question déjà démarrée,
     /// joueur a déjà misé, ou roundId ne correspond plus au BonusRound courant — V2, voir
     /// BonusRound.Id).</summary>
-    bool EnregistrerMise(GameSession session, BonusRound bonusRound, string playerId, Guid roundId, int palierIndex);
+    bool EnregistrerMise(GameSession session, BonusRound bonusRound, SeriesConfig config, string playerId, Guid roundId, int palierIndex);
 
     /// <summary>Applique le palier "safe" par défaut à tout joueur n'ayant pas misé dans le délai.</summary>
     void AppliquerPaliersParDefaut(GameSession session, BonusRound bonusRound);

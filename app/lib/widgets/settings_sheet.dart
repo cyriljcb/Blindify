@@ -61,7 +61,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           border: Border(top: BorderSide(color: BlindifyColors.ink, width: 3)),
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        child: Column(
+        // Défilable (audit 2026-11-10) : section admin + liste des morceaux dépassaient l'écran.
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -182,6 +184,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               },
             ),
           ],
+        ),
         ),
       ),
     );

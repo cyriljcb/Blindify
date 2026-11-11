@@ -1,3 +1,5 @@
+using Blindify.Domain.Configuration;
+
 namespace Blindify.Application.Answers;
 
 /// <summary>Validation des réponses en mode TapeReponse — voir architecture.md section 11 (recommandation Levenshtein).</summary>
@@ -6,6 +8,10 @@ public interface IAnswerMatcher
     int DistanceLevenshtein(string a, string b);
 
     string Normaliser(string texte);
+
+    /// <summary>Version utilisée en jeu : quatre zones de tolérance lues dans GameConfig (exacte,
+    /// très courte, courte, ratio) et équivalences "&amp;"/"and"/"et" — voir AnswerMatcher.</summary>
+    bool EstCorrecte(string reponseJoueur, string reponseAttendue, GameConfig config);
 
     /// <summary>Trois zones selon la longueur du texte attendu normalisé (voir GameConfig) :
     /// en dessous de longueurMinimalePourToleranceFixe, réponse exacte exigée ; entre ce seuil et

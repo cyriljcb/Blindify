@@ -10,6 +10,19 @@ const manualPlayBtn = el("btn-manual-play");
 
 let fadeIntervalId = null;
 
+// Callback « obligatoire » du fondu en cours (changement de source) — audit 2026-11-10 : un fondu
+// interrompu (pause, R) dans les 280 ms avant le changement de morceau perdait ce callback, et le
+// morceau précédent, déjà révélé, rejouait pendant le nouveau round. Exécuté immédiatement si un
+// autre fondu le supplante.
+let fadeObligatoire = null;
+
+// Prévient main.js qu'un fichier audio est introuvable ou illisible (audit 2026-11-10 : round muet
+// avec un trompeur « lecture bloquée par le navigateur »).
+let surErreurAudio = () => {};
+export function definirSurErreurAudio(fn) {
+  surErreurAudio = fn;
+}
+
 // Refonte UI (lot 2) — volume du lecteur maison : le volume effectif est le produit du niveau de
 // fondu (0 → 1, piloté par les transitions ci-dessous) et du volume principal choisi par le host
 // (curseur « Vol. »), pour que les fondus ne l'écrasent jamais.
@@ -33,8 +46,11 @@ function definirNiveauFondu(niveau) {
 
 // Fondu de volume — évite les coupures sèches entre la découverte et le reveal, ou entre
 // deux morceaux qui s'enchaînent automatiquement.
-export function fadeAudioVolume(cible, dureeMs, onDone) {
+export function fadeAudioVolume(cible, dureeMs, onDone, { obligatoire = false } = {}) {
   clearInterval(fadeIntervalId);
+  const supplante = fadeObligatoire;
+  fadeObligatoire = obligatoire ? onDone : null;
+  if (supplante) supplante();
   const depart = niveauFondu;
   const debutTs = performance.now();
   fadeIntervalId = setInterval(() => {
@@ -43,16 +59,31 @@ export function fadeAudioVolume(cible, dureeMs, onDone) {
     if (t >= 1) {
       clearInterval(fadeIntervalId);
       fadeIntervalId = null;
+      if (obligatoire) fadeObligatoire = null;
       if (onDone) onDone();
     }
   }, 30);
 }
 
+// NotAllowedError = autoplay refusé par le navigateur (bouton de lecture manuelle) ; toute autre
+// erreur (NotSupportedError : fichier absent ou illisible) est signalée comme telle.
 export function lancerLecture() {
   const playPromise = audioEl.play();
   if (playPromise && typeof playPromise.catch === "function") {
-    playPromise.catch(() => manualPlayBtn.classList.remove("hidden"));
+    playPromise.catch((err) => {
+      if (err?.name === "NotAllowedError") manualPlayBtn.classList.remove("hidden");
+      else if (err?.name !== "AbortError") surErreurAudio(audioEl.src);
+    });
   }
+}
+
+audioEl.addEventListener("error", () => {
+  if (audioEl.getAttribute("src")) surErreurAudio(audioEl.src);
+});
+
+// Morceau joué en ce moment (avant une pause) — pour ne relancer à la reprise que ce qui jouait.
+export function estEnLecture() {
+  return !audioEl.paused && !audioEl.ended;
 }
 
 export function playAudio(serverBaseUrl, filePath, playbackRate = 1) {
@@ -78,7 +109,7 @@ export function playAudio(serverBaseUrl, filePath, playbackRate = 1) {
   // morceau suivant était fondue, donnant une impression de coupure sèche plutôt que de
   // transition (retour utilisateur : "aucune transition entre le reveal et la découverte").
   if (!audioEl.paused && !audioEl.ended) {
-    fadeAudioVolume(0, 280, demarrerNouveauMorceau);
+    fadeAudioVolume(0, 280, demarrerNouveauMorceau, { obligatoire: true });
   } else {
     demarrerNouveauMorceau();
   }
@@ -97,12 +128,22 @@ export function jouerRefrain(refrainStartMs) {
 // Reprise après RejoinAsHost (V2) — contrairement à playAudio, reprend à une position donnée plutôt
 // que depuis le début. currentTime n'est fiable qu'une fois les métadonnées chargées (durée connue),
 // d'où l'attente de "loadedmetadata" plutôt qu'une affectation immédiate après load().
-export function resumeAudio(serverBaseUrl, filePath, positionMs, enPause) {
-  audioEl.src = `${serverBaseUrl}/files/${filePath}`;
+let repriseEnAttente = null;
+
+export function resumeAudio(serverBaseUrl, filePath, positionMs, enPause, playbackRate = 1) {
+  // Audit 2026-11-10 : le listener { once } pouvait se déclencher sur le morceau SUIVANT (saut à
+  // l'ancienne position, voire pause) si un autre morceau était chargé avant ses métadonnées.
+  if (repriseEnAttente) audioEl.removeEventListener("loadedmetadata", repriseEnAttente);
+  const src = `${serverBaseUrl}/files/${filePath}`;
+  audioEl.src = src;
   audioEl.load();
+  audioEl.playbackRate = playbackRate;
   manualPlayBtn.classList.add("hidden");
 
   const reprendre = () => {
+    repriseEnAttente = null;
+    if (audioEl.src !== src && !audioEl.src.endsWith(`/files/${filePath}`)) return;
+    audioEl.playbackRate = playbackRate;
     audioEl.currentTime = positionMs / 1000;
     if (enPause) {
       audioEl.pause();
@@ -114,6 +155,7 @@ export function resumeAudio(serverBaseUrl, filePath, positionMs, enPause) {
     }
   };
 
+  repriseEnAttente = reprendre;
   audioEl.addEventListener("loadedmetadata", reprendre, { once: true });
 }
 
@@ -126,8 +168,8 @@ export function remettreVitesseNormale() {
 }
 
 manualPlayBtn.addEventListener("click", () => {
-  audioEl.play();
   manualPlayBtn.classList.add("hidden");
+  lancerLecture();
 });
 
 // Refonte UI (lot 1) — raccourci R / bouton « Réécouter depuis le début » du panneau host : relance

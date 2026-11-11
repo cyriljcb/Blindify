@@ -16,6 +16,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from tracks_io import ecrire_json_atomique
 
 TRACKS_JSON_PATH = Path(__file__).parent.parent / "tracks.json"
 
@@ -52,7 +53,7 @@ def main() -> None:
     if args.dry_run:
         print("--dry-run : tracks.json non modifié.", file=sys.stderr)
         return
-    TRACKS_JSON_PATH.write_text(json.dumps(tracks, ensure_ascii=False, indent=2), encoding="utf-8")
+    ecrire_json_atomique(TRACKS_JSON_PATH, tracks)  # atomique, voir tracks_io.py
 
 
 if __name__ == "__main__":

@@ -56,22 +56,15 @@ public class GameHubFlagsIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task SignalerMorceau_MorceauJoueDansLaSession_RetourneUnFlagIdEtDiffuseAuHost()
+    public async Task SignalerMorceau_MorceauJoueDansLaSession_RetourneUnFlagId()
     {
         await CreerEtConfigurerPartie(_hostConnection, 1);
         var trackId = await DemarrerRoundEtObtenirTrackId();
-
-        var morceauSignaleTcs = new TaskCompletionSource<MorceauSignaleDto>();
-        _hostConnection.On<MorceauSignaleDto>("MorceauSignale", payload => morceauSignaleTcs.TrySetResult(payload));
 
         var resultat = await _hostConnection.InvokeAsync<SignalementResultDto>("SignalerMorceau", new SignalementRequestDto(trackId, RaisonSignalement.MauvaiseVersion, "version live"));
 
         Assert.False(resultat.DejaSignale);
         Assert.NotEmpty(resultat.FlagId);
-
-        var evenement = await AvecTimeout(morceauSignaleTcs.Task, TimeSpan.FromSeconds(5));
-        Assert.Equal(trackId, evenement.TrackId);
-        Assert.Equal(RaisonSignalement.MauvaiseVersion, evenement.Raison);
 
         await _hostConnection.InvokeAsync("EndGame");
     }
@@ -107,7 +100,7 @@ public class GameHubFlagsIntegrationTests : IAsyncLifetime
     public async Task SignalerMorceau_AppeleParUnJoueurNonAuthentifie_LeveUneException()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, 1);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         var trackId = await DemarrerRoundEtObtenirTrackId();
 
         await Assert.ThrowsAsync<HubException>(() =>
@@ -120,7 +113,7 @@ public class GameHubFlagsIntegrationTests : IAsyncLifetime
     public async Task SignalerMorceau_AppeleParUnAdminAuthentifie_EstAccepte()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, 1);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         var trackId = await DemarrerRoundEtObtenirTrackId();
 
         var auth = await _playerConnection.InvokeAsync<AdminAuthResultDto>("AuthenticateAdmin", "test-admin-pw");
@@ -136,11 +129,11 @@ public class GameHubFlagsIntegrationTests : IAsyncLifetime
     public async Task SignalerMorceau_NeDiffuseJamaisAuxJoueurs()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, 1);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         var trackId = await DemarrerRoundEtObtenirTrackId();
 
         var recuParLeJoueur = false;
-        _playerConnection.On<MorceauSignaleDto>("MorceauSignale", _ => recuParLeJoueur = true);
+        _playerConnection.On<object>("MorceauSignale", _ => recuParLeJoueur = true);
 
         await _hostConnection.InvokeAsync<SignalementResultDto>("SignalerMorceau", new SignalementRequestDto(trackId, RaisonSignalement.PasSaPlace, null));
 
@@ -167,7 +160,11 @@ public class GameHubFlagsIntegrationTests : IAsyncLifetime
         for (var i = 0; i < 3; i++)
         {
             tracksSelectionnes.Add(await DemarrerRoundEtObtenirTrackId());
-            if (i < 2) await _hostConnection.InvokeAsync("NextRound");
+            if (i < 2)
+            {
+                await _hostConnection.InvokeAsync("RevelerMaintenant"); // aucun joueur : clôture immédiate
+                await _hostConnection.InvokeAsync("NextRound");
+            }
         }
 
         Assert.DoesNotContain(trackIdBloque, tracksSelectionnes);
@@ -191,7 +188,11 @@ public class GameHubFlagsIntegrationTests : IAsyncLifetime
         for (var i = 0; i < 5; i++)
         {
             tracksSelectionnes.Add(await DemarrerRoundEtObtenirTrackId());
-            if (i < 4) await _hostConnection.InvokeAsync("NextRound");
+            if (i < 4)
+            {
+                await _hostConnection.InvokeAsync("RevelerMaintenant");
+                await _hostConnection.InvokeAsync("NextRound");
+            }
         }
 
         Assert.Contains(trackIdBloque, tracksSelectionnes);

@@ -50,7 +50,7 @@ public class GameHubReconnectionIntegrationTests : IClassFixture<GameHubTestFact
 
         await using var premiereConnexion = _factory.CreateHubConnection();
         await premiereConnexion.StartAsync();
-        await premiereConnexion.InvokeAsync<JoinGameResultDto>("JoinGame", code, "Alice", "player-reco-auto-1");
+        await JoinDeTest.JoinAsync(premiereConnexion, code, "Alice", "player-reco-auto-1");
 
         RoundStartedForPlayersDto? roundStartedPlayer = null;
         premiereConnexion.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
@@ -87,7 +87,7 @@ public class GameHubReconnectionIntegrationTests : IClassFixture<GameHubTestFact
 
         var premiereConnexion = _factory.CreateHubConnection();
         await premiereConnexion.StartAsync();
-        await premiereConnexion.InvokeAsync<JoinGameResultDto>("JoinGame", code, "Alice", "player-reco-grace-1");
+        await JoinDeTest.JoinAsync(premiereConnexion, code, "Alice", "player-reco-grace-1");
 
         var playerDisconnectedRecu = false;
         _hostConnection.On<PlayerConnectionChangedDto>("PlayerDisconnected", _ => playerDisconnectedRecu = true);
@@ -112,7 +112,7 @@ public class GameHubReconnectionIntegrationTests : IClassFixture<GameHubTestFact
 
         var premiereConnexion = _factory.CreateHubConnection();
         await premiereConnexion.StartAsync();
-        await premiereConnexion.InvokeAsync<JoinGameResultDto>("JoinGame", code, "Alice", "player-reco-grace-2");
+        await JoinDeTest.JoinAsync(premiereConnexion, code, "Alice", "player-reco-grace-2");
 
         var playerDisconnectedTcs = new TaskCompletionSource<PlayerConnectionChangedDto>();
         _hostConnection.On<PlayerConnectionChangedDto>("PlayerDisconnected", payload => playerDisconnectedTcs.TrySetResult(payload));
@@ -131,15 +131,19 @@ public class GameHubReconnectionIntegrationTests : IClassFixture<GameHubTestFact
 
         await using var playerConnection = _factory.CreateHubConnection();
         await playerConnection.StartAsync();
-        await playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", code, "Alice", "player-roundid-1");
+        await JoinDeTest.JoinAsync(playerConnection, code, "Alice", "player-roundid-1");
 
         RoundStartedForPlayersDto? roundStarted = null;
         playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStarted = payload);
+        var premierRoundTermine = false;
+        _hostConnection.On<RoundEndedDto>("RoundEnded", _ => premierRoundTermine = true);
 
         await _hostConnection.InvokeAsync("StartRound");
         await AttendreAsync(() => roundStarted is not null);
         var premierRoundId = roundStarted!.RoundId;
 
+        // NextRound est refusé tant que le round n'est pas clôturé (audit 2026-11-10).
+        await AttendreAsync(() => premierRoundTermine, timeoutMs: 8000);
         await _hostConnection.InvokeAsync("NextRound");
         roundStarted = null;
         await _hostConnection.InvokeAsync("StartRound");
@@ -154,7 +158,7 @@ public class GameHubReconnectionIntegrationTests : IClassFixture<GameHubTestFact
             "SubmitAnswer", new SubmitAnswerRequestDto(premierRoundId, "peu importe"));
         Assert.False(reponsePerimee.EstCorrecte);
         Assert.Equal(0, reponsePerimee.Points);
-        Assert.Equal(0, reponsePerimee.NouveauScore);
+        Assert.Equal(-5, reponsePerimee.NouveauScore); // seule la pénalité d'absence du premier round (clôturé à échéance)
 
         // L'essai sur le round COURANT reste disponible : la soumission périmée ne l'a pas consommé.
         var reponseCourante = await playerConnection.InvokeAsync<RoundAnswerResultDto>(
@@ -171,7 +175,7 @@ public class GameHubReconnectionIntegrationTests : IClassFixture<GameHubTestFact
 
         await using var playerConnection = _factory.CreateHubConnection();
         await playerConnection.StartAsync();
-        await playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", code, "Alice", "player-double-start-1");
+        await JoinDeTest.JoinAsync(playerConnection, code, "Alice", "player-double-start-1");
 
         var recus = new List<RoundStartedForPlayersDto>();
         playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => { lock (recus) recus.Add(payload); });

@@ -8,4 +8,9 @@ public interface IAnneeQcmGenerator
     /// écart d'au moins 2 ans entre options, jamais plus de 10 ans de anneeCorrecte, jamais dans le
     /// futur (année courante en UTC).</summary>
     List<int> GenererOptions(int anneeCorrecte, Random random);
+
+    /// <summary>Même règle avec <paramref name="nombreOptions"/> options (bonne réponse comprise,
+    /// GameConfig.NombreDistracteursQcm + 1). Toujours distinctes, même pour un morceau de l'année
+    /// courante (toutes les options passent alors en dessous).</summary>
+    List<int> GenererOptions(int anneeCorrecte, Random random, int nombreOptions);
 }

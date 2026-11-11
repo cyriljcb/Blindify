@@ -1,17 +1,15 @@
+/// Option QCM telle qu'envoyée par le serveur (voir QcmOptionDto côté backend) : un identifiant
+/// opaque, à renvoyer tel quel comme réponse, et le seul texte à afficher pour la cible du round
+/// (titre, premier artiste crédité ou film — déjà calculé côté serveur). Audit 2026-11-10 : plus
+/// de TrackId, qui permettait de télécharger le MP3 de chaque option et d'en déduire la réponse.
 class QcmOption {
-  QcmOption({required this.trackId, required this.title, required this.artist, required this.film});
+  QcmOption({required this.optionId, required this.texte});
 
-  final String trackId;
-  final String title;
-  final String artist;
-
-  /// Nom du film d'origine (cible Film, morceaux "disney") — voir FilmNameResolver côté backend.
-  final String film;
+  final String optionId;
+  final String texte;
 
   factory QcmOption.fromJson(Map<String, dynamic> json) => QcmOption(
-        trackId: json['trackId'] as String,
-        title: json['title'] as String,
-        artist: json['artist'] as String,
-        film: json['film'] as String,
+        optionId: json['optionId'] as String,
+        texte: json['texte'] as String,
       );
 }

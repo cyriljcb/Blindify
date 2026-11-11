@@ -68,19 +68,31 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
         // V2, section 12.5 : la combinaison PremiereLettre + Année n'a pas de sens (pas de "première
         // lettre" d'un nombre) — ChoisirCible ne le sait pas (le mode y sert seulement à filtrer
         // Titre/Auteur), donc l'override se fait ici, après coup, comme pour Cible elle-même.
-        if (round.Cible == RoundCible.Annee && round.Mode == RoundMode.PremiereLettre)
-            round.Mode = RoundMode.TapeReponse;
+        round.Mode = ModeJouable(answerMatcher, round.Mode, round.Cible, track);
 
         if (round.Mode == RoundMode.Qcm && round.Cible == RoundCible.Annee)
         {
-            round.AnneeOptions = anneeQcmGenerator.GenererOptions(track.Year!.Value, Random.Shared);
+            round.AnneeOptions = anneeQcmGenerator.GenererOptions(track.Year!.Value, Random.Shared, config.NombreDistracteursQcm + 1);
         }
         else if (round.Mode == RoundMode.Qcm)
         {
             var pool = PoolPourQcm(round.Cible, track, catalogueComplet, tags);
-            var options = qcmGenerator.GenererOptions(track, pool, config, Random.Shared);
+            var options = qcmGenerator.GenererOptions(track, pool, config, Random.Shared, round.Cible);
             round.QcmOptionTrackIds = options.OptionsTrackIds.ToList();
         }
+    }
+
+    /// <summary>Mode réellement jouable une fois la cible connue — partagé avec
+    /// BonusRoundService.CreerBonusRound. PremiereLettre bascule en TapeReponse quand la cible n'a pas
+    /// de première lettre A-Z : Année (V2, section 12.5, pas de "première lettre" d'un nombre) et,
+    /// audit 2026-11-10, un nom de film commençant par un chiffre ("8 Mile") — la cible Film est
+    /// imposée avant le contrôle d'éligibilité de ChoisirCible, qui ne s'applique qu'à Titre/Auteur.</summary>
+    internal static RoundMode ModeJouable(IAnswerMatcher answerMatcher, RoundMode mode, RoundCible cible, Track track)
+    {
+        if (mode != RoundMode.PremiereLettre) return mode;
+        if (cible == RoundCible.Annee) return RoundMode.TapeReponse;
+        if (cible == RoundCible.Film && !EstEligiblePremiereLettre(answerMatcher, RoundCible.Film, track)) return RoundMode.TapeReponse;
+        return mode;
     }
 
     /// <summary>Pool de tirage des distracteurs QCM — retour utilisateur : une question Film (Disney)
@@ -108,10 +120,15 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
             return catalogueComplet.Where(t => t.Tags.Contains(tagOeuvre, StringComparer.OrdinalIgnoreCase)).ToList();
         }
 
-        var filtre = FiltrerParTagsOuGenres(catalogueComplet, tags).ToList();
+        // Thème aléatoire (tags vide) : FiltrerParTagsOuGenres renvoie tout le catalogue, morceaux à
+        // tag œuvre exclusifs compris — audit 2026-11-10 : "Hakuna Matata" pouvait servir de
+        // distracteur à un tube pop. Exclus ici comme dans le repli ci-dessous.
+        var filtre = FiltrerParTagsOuGenres(catalogueComplet, tags)
+            .Where(t => tags.Count > 0 || !TagsOeuvre.EstExclusif(t))
+            .ToList();
         var artistesAutresDistincts = filtre
-            .Select(t => PremierAuteur(t.Artist))
-            .Where(a => !string.Equals(a, PremierAuteur(correct.Artist), StringComparison.OrdinalIgnoreCase))
+            .Select(AuteurVariantes.Premier)
+            .Where(a => !string.Equals(a, AuteurVariantes.Premier(correct), StringComparison.OrdinalIgnoreCase))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Count();
         if (filtre.Count >= 4 && artistesAutresDistincts >= 3) return filtre;
@@ -127,8 +144,19 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     {
         if (session.EnPause) return null;
         if (round.DebutRound is null) return null;
+        if (round.TermineA is not null) return null;
         if (round.Id != roundId) return null;
         if (round.Reponses.Any(r => r.PlayerId == playerId)) return null;
+        // Audit 2026-11-10 : une réponse vide (bouton Valider sur champ vide) consommait l'unique
+        // essai avec la pénalité d'une mauvaise réponse, plus sévère que l'absence.
+        if (string.IsNullOrWhiteSpace(reponse)) return null;
+
+        // QCM : le client renvoie l'identifiant opaque de l'option (RoundOption.OptionId), jamais un
+        // TrackId (voir GameHub.ConstruireQcmOptions). Option inconnue = mauvaise réponse. Sans
+        // Options (round construit hors du hub, tests unitaires), la réponse reste un TrackId.
+        var estQcmMorceau = round.Mode == RoundMode.Qcm && round.Cible != RoundCible.Annee;
+        var optionChoisie = estQcmMorceau ? round.Options?.FirstOrDefault(o => o.OptionId == reponse) : null;
+        var trackIdSoumis = round.Options is null ? reponse : optionChoisie?.TrackId ?? "";
 
         var pointsEnJeu = scoring.CalculerPointsEnJeu(round.DebutRound.Value, maintenant, round.DureeEnPauseMs, seriesConfig);
         bool estCorrecte;
@@ -163,31 +191,22 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
             var reponsesAcceptables = ReponsesAcceptables(round.Cible, track);
             estCorrecte = round.Mode switch
             {
-                RoundMode.Qcm => EstQcmCorrect(round.Cible, track, reponse, resolveTrack),
+                RoundMode.Qcm => trackIdSoumis.Length > 0 && EstQcmCorrect(round.Cible, track, trackIdSoumis, resolveTrack),
                 RoundMode.PremiereLettre => reponsesAcceptables.Any(texte => EstPremiereLettreCorrecte(reponse, texte)),
-                _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(
-                    reponse, texte,
-                    session.Config.SeuilToleranceLevenshteinRatio,
-                    session.Config.LongueurMinimalePourTolerance,
-                    session.Config.LongueurMinimalePourToleranceFixe,
-                    session.Config.ToleranceFixeReponseCourte)),
+                _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(reponse, texte, session.Config)),
             };
             points = estCorrecte ? scoring.PointsBonneReponse(pointsEnJeu) : scoring.PointsMauvaiseReponse(pointsEnJeu, seriesConfig);
         }
 
-        // V2 (socle statistiques) : option choisie recoupée avec round.Options uniquement en mode
-        // Qcm hors cible Année (reponse = le TrackId cliqué) — voir RoundOption/RoundAnswer. Une
-        // question Année en Qcm n'a pas d'"option" au sens RoundOption (voir Round.AnneeOptions).
-        var optionChoisie = round.Mode == RoundMode.Qcm && round.Cible != RoundCible.Annee
-            ? round.Options?.FirstOrDefault(o => o.TrackId == reponse)
-            : null;
         var tempsReponseMs = (int)Math.Max(0, (maintenant - round.DebutRound.Value).TotalMilliseconds - round.DureeEnPauseMs);
 
         var answer = new RoundAnswer
         {
             PlayerId = playerId,
             Timestamp = maintenant,
-            Reponse = reponse,
+            // QCM : texte réellement affiché pour l'option choisie (lisible dans le récapitulatif du
+            // host), plutôt que son identifiant opaque.
+            Reponse = optionChoisie?.TexteAffiche ?? reponse,
             EstCorrecte = estCorrecte,
             Points = points,
             PointsEnJeu = pointsEnJeu,
@@ -212,6 +231,7 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     {
         if (session.EnPause) return null;
         if (round.Id != roundId) return null;
+        if (round.DebutRound is null || round.TermineA is not null) return null;
         if (round.Reponses.Any(r => r.PlayerId == playerId)) return null;
 
         var joueur = session.Players.FirstOrDefault(p => p.PlayerId == playerId);
@@ -225,6 +245,11 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
 
     public void TerminerParTimeout(GameSession session, Round round, SeriesConfig config)
     {
+        // Idempotent : la clôture n'a lieu qu'une fois, même si le chrono et « Révéler maintenant »
+        // se croisent.
+        if (round.TermineA is not null) return;
+        round.TermineA = DateTimeOffset.UtcNow;
+
         var repondants = round.Reponses.Select(r => r.PlayerId).ToHashSet();
         var penalite = scoring.PointsAbsenceReponse(config);
 
@@ -249,11 +274,16 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     public RoundAnswer? ValiderManuellement(GameSession session, Round round, SeriesConfig config, string playerId, bool estCorrecte)
     {
         var answer = round.Reponses.FirstOrDefault(r => r.PlayerId == playerId);
-        if (answer is null) return null;
+        // Audit 2026-11-10 : une absence (PointsEnJeu = 0) validée à la main remettait ses points à 0
+        // (+5) sans changer EstAbsent — il n'y a pas de réponse à juger.
+        if (answer is null || answer.EstAbsent) return null;
 
-        var nouveauxPoints = estCorrecte
-            ? scoring.PointsBonneReponse(answer.PointsEnJeu)
+        // Cible Année saisie : "faux" ne doit jamais être plus clément que l'échelle de proximité
+        // qui s'appliquait déjà (jusqu'à −100 % des points en jeu, voir PointsAnneeApproximative).
+        var pointsFaux = answer.EcartAnnee is { } ecart
+            ? Math.Min(scoring.PointsMauvaiseReponse(answer.PointsEnJeu, config), scoring.PointsAnneeApproximative(answer.PointsEnJeu, ecart, config))
             : scoring.PointsMauvaiseReponse(answer.PointsEnJeu, config);
+        var nouveauxPoints = estCorrecte ? scoring.PointsBonneReponse(answer.PointsEnJeu) : pointsFaux;
 
         AppliquerPoints(session, playerId, nouveauxPoints - answer.Points);
         answer.EstCorrecte = estCorrecte;
@@ -274,7 +304,8 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     {
         if (tags.Count == 0) return pool;
 
-        var candidats = pool.Where(t => t.Tags.Intersect(tags).Any() || t.Genres.Intersect(tags).Any());
+        var candidats = pool.Where(t =>
+            t.Tags.Intersect(tags, StringComparer.OrdinalIgnoreCase).Any() || t.Genres.Intersect(tags, StringComparer.OrdinalIgnoreCase).Any());
 
         return candidats.Where(t => TagsOeuvre.AdmisDansTheme(t, tags));
     }
@@ -298,7 +329,7 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     /// réutilisé par EstEligiblePremiereLettre ci-dessous.</summary>
     internal static IEnumerable<string> ReponsesAcceptables(RoundCible cible, Track track) => cible switch
     {
-        RoundCible.Auteur => AuteurVariantes.Acceptables(track.Artist),
+        RoundCible.Auteur => AuteurVariantes.Acceptables(track),
         RoundCible.Film => [FilmNameResolver.Resoudre(track)],
         _ => TitreVariantes.Acceptables(track.Title)
     };
@@ -383,10 +414,8 @@ public class RoundService(IScoringService scoring, IQcmGenerator qcmGenerator, I
     /// changent que le texte envoyé aux clients, jamais ces champs bruts ni le TrackId soumis).</summary>
     internal static bool EstQcmEquivalent(RoundCible cible, Track a, Track b) => cible switch
     {
-        RoundCible.Auteur => string.Equals(PremierAuteur(a.Artist), PremierAuteur(b.Artist), StringComparison.OrdinalIgnoreCase),
+        RoundCible.Auteur => string.Equals(AuteurVariantes.Premier(a), AuteurVariantes.Premier(b), StringComparison.OrdinalIgnoreCase),
         RoundCible.Film => string.Equals(FilmNameResolver.Resoudre(a), FilmNameResolver.Resoudre(b), StringComparison.OrdinalIgnoreCase),
         _ => string.Equals(a.Title, b.Title, StringComparison.OrdinalIgnoreCase),
     };
-
-    private static string PremierAuteur(string artist) => artist.Split(',')[0].Trim();
 }

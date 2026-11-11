@@ -49,6 +49,8 @@ export function syncDisplay(state) {
     // Retour utilisateur (2026-10-17) — qui a déjà misé (jamais le palier), décompte du vote des thèmes.
     misesEnregistrees: state.misesEnregistrees,
     votesThemes: state.votesThemes,
+    // Joueurs ayant déjà répondu à la question en cours — rattrapage après un rechargement de l'écran public.
+    repondants: state.repondants,
     equipeParJoueur: state.equipeParJoueur,
     equipes: state.equipes,
     timerEndAt: timerEndAtCourant(),
@@ -105,6 +107,8 @@ export function sendJokerUtilise({ playerId }) {
 // éviter le switch de fenêtre) vers l'orchestration de main.js.
 export function initDisplayBridge(state, { onStartRoundRequested }) {
   window.addEventListener("message", (event) => {
+    // Uniquement la fenêtre d'écran public ouverte par ce panneau (audit 2026-11-10).
+    if (!displayWindow || event.source !== displayWindow) return;
     if (event.data?.type === "request-sync") {
       if (lastDisplayState) sendToDisplay(lastDisplayState);
       if (state.leaderboardOpen && state.lastLeaderboardDto) sendLeaderboardShow(state.lastLeaderboardDto);

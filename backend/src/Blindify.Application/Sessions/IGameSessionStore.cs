@@ -10,6 +10,9 @@ public interface IGameSessionStore
     bool Exists(string code);
     void Remove(string code);
 
+    /// <summary>Instantané de toutes les sessions — purge des salons abandonnés (SessionCleanupService).</summary>
+    IReadOnlyList<GameSession> Lister();
+
     /// <summary>
     /// Les méthodes host/joueur du contrat SignalR (StartRound, SubmitAnswer, ...) ne prennent pas de
     /// `code` en paramètre — la partie est retrouvée à partir du ConnectionId de l'appelant.

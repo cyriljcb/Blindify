@@ -9,6 +9,7 @@ internal static class TrackMapper
         Id = dto.Id,
         Title = dto.Title,
         Artist = dto.Artist,
+        Artists = dto.Artists ?? [],
         Album = dto.Album,
         Oeuvre = dto.Oeuvre,
         SpotifyId = dto.SpotifyId,

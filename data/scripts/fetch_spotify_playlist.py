@@ -30,6 +30,8 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
+from tracks_io import est_version_karaoke
+
 TOKEN_URL = "https://accounts.spotify.com/api/token"
 API_BASE = "https://api.spotify.com/v1"
 ARTIST_BATCH_SIZE = 50
@@ -45,6 +47,16 @@ PLAYLIST_PAGE_SIZE = 100
 # couvrent les innombrables noms de mix ("Klaas Vocal Edit", "Nalin & Kane Mix"...) sans les
 # lister un par un.
 _TITRE_FEAT = re.compile(r"\s*[\(\[]\s*feat\.[^\)\]]*[\)\]]", re.IGNORECASE)
+# « (with X) » n'est retiré que si X cite un des artistes crédités : sinon c'est une partie du
+# vrai titre (« Quit Playing Games (With My Heart) »), pas un invité.
+_TITRE_WITH = re.compile(r"\s*[\(\[]\s*with\s([^\)\]]*)[\)\]]", re.IGNORECASE)
+
+# Audit 2026-11-10 : suffixes restés dans le catalogue, impossibles à taper en mode « tape la
+# réponse » — « - From "Film" », « (From "Film") », et les listes « - Acoustic; Live at… ».
+_TITRE_FROM = re.compile(r"\s+[-–]\s+from\s+[\"“«].*$|\s*[\(\[]\s*from\s+[\"“«][^\)\]]*[\)\]]", re.IGNORECASE)
+_TITRE_LISTE_SUFFIXES = re.compile(
+    r"\s+[-–]\s+[^-–]*;\s*.*\b(?:live|remaster\w*|acoustic|version|mix|edit|unplugged)\b.*$", re.IGNORECASE
+)
 
 _SUFFIXE_ALTS = (
     r"acoustic|mono|stereo|version originale(?:\s*\d{4})?|"
@@ -62,11 +74,22 @@ _TITRE_SUFFIXES_PARENTHESES = re.compile(
 )
 
 
-def nettoyer_titre(titre: str) -> str:
+def nettoyer_titre(titre: str, artistes: list[str] | None = None) -> str:
     """Retire les suffixes d'édition ('- Radio Edit', '(2022 Remaster)', '- ... Remix',
     '(feat. ...)') du titre brut Spotify. Appliqué en boucle car un titre peut cumuler
-    plusieurs suffixes (ex. '- 2015 - Remaster')."""
+    plusieurs suffixes (ex. '- 2015 - Remaster').
+    artistes : artistes crédités du morceau — « (with X) » n'est retiré que si X en cite un.
+    Sans cette liste, « (with X) » est toujours conservé."""
+    noms = [a.casefold() for a in (artistes or []) if a]
+
+    def _retirer_with(m: re.Match) -> str:
+        invites = m.group(1).casefold()
+        return "" if any(nom in invites for nom in noms) else m.group(0)
+
     resultat = _TITRE_FEAT.sub("", titre)
+    resultat = _TITRE_WITH.sub(_retirer_with, resultat)
+    resultat = _TITRE_FROM.sub("", resultat)
+    resultat = _TITRE_LISTE_SUFFIXES.sub("", resultat)
     while True:
         sans_suffixe = _TITRE_SUFFIXES_TIRET.sub("", resultat)
         sans_suffixe = _TITRE_SUFFIXES_PARENTHESES.sub("", sans_suffixe)
@@ -156,6 +179,12 @@ def build_track_entries(
     entries = []
 
     for track in raw_tracks:
+        noms_artistes = [a["name"] for a in track["artists"]]
+        # Karaokés et reprises « à la manière de » (audit 2026-11-10) : l'artiste crédité est un
+        # label, la question Auteur n'a pas de sens — écartés dès l'import.
+        if est_version_karaoke(track["name"], ", ".join(noms_artistes), track["album"].get("name")):
+            print(f"Ignoré (karaoké/reprise) : {', '.join(noms_artistes)} - {track['name']}", file=sys.stderr)
+            continue
         artist_ids = [a["id"] for a in track["artists"]]
         genres = sorted({g for aid in artist_ids for g in genres_by_artist.get(aid, [])})
 
@@ -168,8 +197,11 @@ def build_track_entries(
         entries.append(
             {
                 "id": track["id"],
-                "title": nettoyer_titre(track["name"]),
-                "artist": ", ".join(a["name"] for a in track["artists"]),
+                "title": nettoyer_titre(track["name"], noms_artistes),
+                "artist": ", ".join(noms_artistes),
+                # Liste exacte fournie par Spotify — prioritaire sur le découpage de `artist` côté
+                # backend (un nom comme "Earth, Wind & Fire" contient lui-même une virgule).
+                "artists": noms_artistes,
                 "album": track["album"].get("name"),
                 "spotifyId": track["id"],
                 "youtubeId": None,

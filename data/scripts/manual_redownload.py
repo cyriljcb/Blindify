@@ -17,7 +17,7 @@ prend pour une option — place les arguments positionnels après un "--" :
 --spotify-id : à fournir seulement si le morceau Spotify importé à l'origine était
 lui-même une mauvaise version (live/compilation, voir audit_live_versions.py — ex. un
 titre dont la seule entrée Spotify disponible est un album live). Met à jour spotifyId/
-album/durationMs/year/spotifyCoverUrl (et retélécharge la cover) depuis ce nouveau
+album/durationMs/year (et retélécharge la cover) depuis ce nouveau
 morceau ; sans cette option, durationMs n'est pas vérifié — on fait confiance à la
 recherche manuelle. L'`id` du morceau (utilisé pour filePath/coverPath/stats.json) n'est
 JAMAIS modifié, même si spotifyId change : c'est un identifiant stable indépendant de sa
@@ -80,9 +80,11 @@ def main() -> None:
         if release_date[:4].isdigit():
             track["year"] = int(release_date[:4])
         if images:
-            track["spotifyCoverUrl"] = images[0]["url"]
+            # URL gardée en local uniquement : la clé spotifyCoverUrl ne fait pas partie du schéma de
+            # tracks.json (audit 2026-11-10), seule la cover téléchargée (coverPath) compte.
             cover_path = COVERS_DIR / f"{track['id']}.jpg"
-            telecharger_cover(track["spotifyCoverUrl"], cover_path)
+            telecharger_cover(images[0]["url"], cover_path)
+            track.pop("spotifyCoverUrl", None)
             print(f"Cover mise à jour : {cover_path}", file=sys.stderr)
 
         print(f"Source Spotify remplacée : album={track['album']!r}, durationMs={track['durationMs']}", file=sys.stderr)

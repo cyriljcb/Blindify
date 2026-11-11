@@ -7,7 +7,17 @@ import 'vote_themes.dart';
 /// par rapport à JoinResult : pas de roster/teams à renvoyer, déjà connus du client depuis le join
 /// initial.
 class EtatCourantConnexion {
-  EtatCourantConnexion({required this.score, this.teamId, this.etatCourant, this.jokerDisponible = false, this.afficherEcart = true, this.voteThemes});
+  EtatCourantConnexion({
+    required this.score,
+    this.teamId,
+    this.etatCourant,
+    this.jokerDisponible = false,
+    this.afficherEcart = true,
+    this.voteThemes,
+    this.enPause = false,
+    this.etat = 'Lobby',
+    this.estAdmin = false,
+  });
 
   final int score;
   final String? teamId;
@@ -22,6 +32,11 @@ class EtatCourantConnexion {
   /// Retour utilisateur (2026-10-17) — voir JoinResult.voteThemes.
   final VoteThemesEtat? voteThemes;
 
+  /// Voir JoinResult.enPause / etat / estAdmin.
+  final bool enPause;
+  final String etat;
+  final bool estAdmin;
+
   factory EtatCourantConnexion.fromJson(Map<String, dynamic> json) => EtatCourantConnexion(
         score: json['score'] as int,
         teamId: json['teamId'] as String?,
@@ -30,5 +45,8 @@ class EtatCourantConnexion {
         jokerDisponible: json['jokerDisponible'] as bool? ?? false,
         afficherEcart: json['afficherEcart'] as bool? ?? true,
         voteThemes: json['voteThemes'] != null ? VoteThemesEtat.fromJson(json['voteThemes'] as Map<String, dynamic>) : null,
+        enPause: json['enPause'] as bool? ?? false,
+        etat: json['etat'] as String? ?? 'Lobby',
+        estAdmin: json['estAdmin'] as bool? ?? false,
       );
 }

@@ -4,10 +4,13 @@
 // host/display.js (écran public) — voir docs/refactor-decisions.md section 2 étape 1. Chargées par
 // les deux pages en modules ES natifs (aucun bundler, servies telles quelles par le backend).
 
+// Audit 2026-11-10 (critique) : la version précédente (textContent -> innerHTML) n'échappait pas
+// les guillemets — un nom de joueur piégé injecté dans un attribut (title="…") exécutait du script
+// sur l'écran TV, qui a accès au panneau host (window.opener). Échappe désormais aussi " et '.
+const ECHAPPEMENTS_HTML = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+
 export function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str ?? "";
-  return div.innerHTML;
+  return String(str ?? "").replace(/[&<>"']/g, (c) => ECHAPPEMENTS_HTML[c]);
 }
 
 export function capitaliser(texte) {

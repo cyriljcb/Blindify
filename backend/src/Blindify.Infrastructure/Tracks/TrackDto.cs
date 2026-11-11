@@ -6,6 +6,9 @@ public class TrackDto
     public required string Id { get; set; }
     public required string Title { get; set; }
     public required string Artist { get; set; }
+
+    /// <summary>Artistes crédités, un par élément (facultatif, audit 2026-11-10) — voir Track.Artists.</summary>
+    public List<string>? Artists { get; set; }
     public string? Album { get; set; }
     public string? Oeuvre { get; set; }
     public string? SpotifyId { get; set; }

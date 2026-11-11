@@ -65,14 +65,17 @@ function updateTimer() {
   if (remaining <= 0) clearInterval(timerInterval);
 }
 
-export function startTimer(durationMs, fillEl) {
+// ecouleMs/enPause : reprise d'une phase déjà entamée (rechargement du host, voir
+// main.js:appliquerSnapshot) — la barre repart du temps réellement restant.
+export function startTimer(durationMs, fillEl, ecouleMs = 0, enPause = false) {
   clearInterval(timerInterval);
   timerFillEl = fillEl;
   timerDurationMs = durationMs;
-  timerEndAt = Date.now() + durationMs;
+  timerEndAt = Date.now() + Math.max(0, durationMs - ecouleMs);
   timerPausedRemainingMs = null;
   timerInterval = setInterval(updateTimer, 100);
   updateTimer();
+  if (enPause) pauseTimer();
 }
 
 export function pauseTimer() {

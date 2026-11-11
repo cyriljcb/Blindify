@@ -5,6 +5,7 @@ using Blindify.Application.Sessions;
 using Blindify.Application.Stats;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Entities;
+using Blindify.Domain.Statistics;
 using Blindify.Infrastructure.Stats;
 using Blindify.Infrastructure.Tracks;
 using Microsoft.AspNetCore.SignalR;
@@ -15,42 +16,31 @@ namespace Blindify.Api.Hubs;
 /// Surveille la fin d'un round classique (durée fixe, indépendante des réponses reçues — architecture.md
 /// section 6). Tourne hors du cycle de vie d'un appel de hub, d'où l'usage de IHubContext plutôt que
 /// Clients directement.
+///
+/// Audit 2026-11-10 : toute exception (disque, concurrence) dans la tâche de fond la faisait mourir en
+/// silence — RoundEnded n'était jamais diffusé et la partie restait figée. Toutes les collections sont
+/// désormais lues sous session.Lock (DTO construits sous verrou), l'écriture des stats a lieu hors
+/// verrou dans son propre try/catch, et un filet global logge toute exception restante.
 /// </summary>
 public class RoundTimerCoordinator(
     IHubContext<GameHub> hubContext,
     IGameSessionStore sessionStore,
     IRoundService roundService,
     ITracksRepository tracksRepository,
-    IStatsRepository statsRepository)
+    IStatsRepository statsRepository,
+    ILogger<RoundTimerCoordinator> logger)
 {
     private const int IntervalleVerificationMs = 250;
 
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _timers = new();
 
-    /// <summary>Dernier round terminé par session (code → Round.Id) — garantit qu'un round n'est
-    /// terminé et diffusé qu'une seule fois, que la fin vienne du minuteur ou de TerminerMaintenantAsync
-    /// (bouton « Révéler maintenant » du host), même si les deux se produisent au même instant. Lu et
-    /// écrit uniquement sous session.Lock.</summary>
-    private readonly ConcurrentDictionary<string, Guid> _roundsTermines = new();
-
-    private bool MarquerTermine(string code, Round round)
-    {
-        if (_roundsTermines.TryGetValue(code, out var dernier) && dernier == round.Id) return false;
-        _roundsTermines[code] = round.Id;
-        return true;
-    }
-
-    /// <summary>Vrai si ce round a déjà été terminé (minuteur ou « Révéler maintenant ») — à lire
-    /// sous session.Lock, comme MarquerTermine.</summary>
-    public bool EstTermine(string code, Round round) =>
-        _roundsTermines.TryGetValue(code, out var dernier) && dernier == round.Id;
+    /// <summary>Vrai si ce round a déjà été clôturé (minuteur ou « Révéler maintenant ») — porté par
+    /// le round lui-même (Round.TermineA), à lire sous session.Lock.</summary>
+    public bool EstTermine(string code, Round round) => round.TermineA is not null;
 
     public void DemarrerSurveillance(string code, SeriesConfig config)
     {
         Annuler(code);
-        // Un même round peut être redémarré (StartRound sans NextRound rejoue le round courant, même
-        // Round.Id) : sans ça, il serait considéré comme déjà terminé et ne se terminerait jamais.
-        _roundsTermines.TryRemove(code, out _);
         var cts = new CancellationTokenSource();
         _timers[code] = cts;
         _ = SurveillerAsync(code, config, cts.Token);
@@ -71,18 +61,16 @@ public class RoundTimerCoordinator(
     /// session.Lock. Retourne false si le round était déjà terminé ou n'existe plus.</summary>
     public async Task<bool> TerminerMaintenantAsync(GameSession session, SeriesConfig config)
     {
-        Round round;
+        Fin fin;
         lock (session.Lock)
         {
-            var roundCourant = session.RoundCourant();
-            if (roundCourant?.DebutRound is null) return false;
-            round = roundCourant;
-            if (!MarquerTermine(session.Id, round)) return false;
+            var round = session.RoundCourant();
+            if (round?.DebutRound is null || round.TermineA is not null) return false;
             Annuler(session.Id);
-            roundService.TerminerParTimeout(session, round, config);
+            fin = Terminer(session, round, config);
         }
 
-        await DiffuserFinDeRoundAsync(session, round);
+        await DiffuserFinDeRoundAsync(session, fin);
         return true;
     }
 
@@ -97,13 +85,11 @@ public class RoundTimerCoordinator(
                 var session = sessionStore.Get(code);
                 if (session is null) return;
 
-                bool termine;
-                Round round;
+                Fin? fin = null;
                 lock (session.Lock)
                 {
-                    var roundCourant = session.RoundCourant();
-                    if (roundCourant?.DebutRound is null) return;
-                    round = roundCourant;
+                    var round = session.RoundCourant();
+                    if (round?.DebutRound is null || round.TermineA is not null) return;
 
                     var pauseEnCoursMs = session.EnPause && session.PauseDemarreeA is not null
                         ? (DateTimeOffset.UtcNow - session.PauseDemarreeA.Value).TotalMilliseconds
@@ -111,25 +97,24 @@ public class RoundTimerCoordinator(
                     var tempsEcouleMs = (DateTimeOffset.UtcNow - round.DebutRound.Value).TotalMilliseconds
                                          - (round.DureeEnPauseMs + pauseEnCoursMs);
 
-                    termine = tempsEcouleMs >= config.DureeFenetreReponseMs;
-                    if (termine)
-                    {
-                        // Déjà terminé par « Révéler maintenant » entre deux vérifications : rien à faire.
-                        if (!MarquerTermine(code, round)) return;
-                        roundService.TerminerParTimeout(session, round, config);
-                    }
+                    if (tempsEcouleMs >= config.DureeFenetreReponseMs)
+                        fin = Terminer(session, round, config);
                 }
 
-                if (termine)
+                if (fin is not null)
                 {
-                    await DiffuserFinDeRoundAsync(session, round);
+                    await DiffuserFinDeRoundAsync(session, fin);
                     return;
                 }
             }
         }
         catch (OperationCanceledException)
         {
-            // Annulé volontairement (NextRound/EndGame déclenchés avant l'échéance naturelle).
+            // Annulé volontairement (EndGame/FermerSalon/Révéler maintenant avant l'échéance naturelle).
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Chrono du round classique interrompu par une erreur — partie {Code}", code);
         }
         finally
         {
@@ -137,28 +122,29 @@ public class RoundTimerCoordinator(
         }
     }
 
-    private async Task DiffuserFinDeRoundAsync(GameSession session, Round round)
+    private sealed record Fin(RoundStatsUpdate Stats, RoundEndedDto Reveal, ScoreUpdateDto Scores);
+
+    /// <summary>Appelé sous session.Lock : clôture le round et capture tout ce qui sera diffusé.</summary>
+    private Fin Terminer(GameSession session, Round round, SeriesConfig config)
     {
-        var track = tracksRepository.GetById(round.TrackId);
+        roundService.TerminerParTimeout(session, round, config);
+        session.DerniereActiviteA = DateTimeOffset.UtcNow;
+        // V2 (socle statistiques) — Reponses contient déjà les entrées synthétiques EstAbsent. Ne tient
+        // pas compte d'un ValidateAnswerManually ultérieur — limitation assumée, voir RoundStatsAggregator.
+        return new Fin(
+            RoundStatsAggregator.PourRoundClassique(round),
+            RevealDtoBuilder.RoundEnded(session, round, tracksRepository),
+            ScoreDtoBuilder.Construire(session));
+    }
 
-        // V2 (socle statistiques) — TerminerParTimeout vient de tourner (voir SurveillerAsync
-        // ci-dessus), Reponses contient donc déjà les entrées synthétiques EstAbsent. Ne tient pas
-        // compte d'un ValidateAnswerManually ultérieur — limitation assumée, voir RoundStatsAggregator.
-        statsRepository.EnregistrerResultatsRound(RoundStatsAggregator.PourRoundClassique(round));
+    private async Task DiffuserFinDeRoundAsync(GameSession session, Fin fin)
+    {
+        await hubContext.Clients.Group(session.Id).SendAsync("RoundEnded", fin.Reveal);
+        await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", fin.Scores);
 
-        var resultats = session.Players
-            .Select(p =>
-            {
-                var reponse = round.Reponses.FirstOrDefault(r => r.PlayerId == p.PlayerId);
-                return new RoundResultEntryDto(p.PlayerId, reponse?.Reponse, reponse?.EstCorrecte, reponse?.Points ?? 0, reponse?.EcartAnnee);
-            })
-            .ToList();
-
-        var film = track is not null ? FilmNameResolver.Resoudre(track) : "?";
-
-        await hubContext.Clients.Group(session.Id)
-            .SendAsync("RoundEnded", new RoundEndedDto(round.TrackId, track?.Title ?? "?", track?.Artist ?? "?", track?.CoverPath, round.Cible, film, resultats, track?.Year));
-
-        await hubContext.Clients.Group(session.Id).SendAsync("ScoreUpdate", ScoreDtoBuilder.Construire(session));
+        // Après la diffusion : une écriture disque lente (HDD qui se réveille) ou en échec ne doit
+        // jamais retarder ni empêcher le reveal.
+        try { statsRepository.EnregistrerResultatsRound(fin.Stats); }
+        catch (Exception ex) { logger.LogError(ex, "Écriture des statistiques du round impossible — partie {Code}", session.Id); }
     }
 }

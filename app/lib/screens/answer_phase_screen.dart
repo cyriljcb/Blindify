@@ -44,25 +44,49 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
   int _remainingMs = 0;
   bool _autoSubmitDeclenche = false;
 
+  /// Instant (horloge locale) où la phase se termine côté serveur — audit 2026-11-10 : le décompte
+  /// retirait 100 ms fixes à chaque tic et ignorait le temps déjà passé sur l'écran d'intro du mode
+  /// course (≈ 2,5 s de trop). Calculé depuis la réception de la phase (GameConnection.phaseRecueA),
+  /// recalé à chaque reprise après une pause.
+  DateTime? _echeance;
+
+  /// Identifiant de la phase affichée — le même State peut être réutilisé si une reconnexion fait
+  /// passer directement au round suivant (main.dart garde la clé d'écran) : tout est alors remis à
+  /// zéro (chrono, auto-validation, saisie).
+  String? _phaseId;
+
   bool get _bonus => widget.variant == AnswerPhaseVariant.bonus;
+
+  String? _phaseCourante(GameConnection game) =>
+      _bonus ? game.bonusQuestion?.roundId : game.currentRound?.roundId;
+
+  int _restantInitialMs(GameConnection game) {
+    final duree = _bonus ? game.bonusQuestion?.dureePhaseQuestionMs : game.currentRound?.dureeFenetreReponseMs;
+    final ecoule = _bonus ? game.bonusQuestion?.tempsEcouleMs : game.currentRound?.tempsEcouleMs;
+    if (duree == null) return 0;
+    // tempsEcouleMs > 0 après une reconnexion en pleine phase (voir EtatCourantJoueur), plus le
+    // temps passé depuis la réception (écran d'intro du mode course, rendu tardif).
+    final depuisReception = game.paused || game.phaseRecueA == null ? 0 : DateTime.now().difference(game.phaseRecueA!).inMilliseconds;
+    return (duree - (ecoule ?? 0) - depuisReception).clamp(0, duree);
+  }
+
+  void _initialiserPhase(GameConnection game) {
+    _phaseId = _phaseCourante(game);
+    _ticker?.cancel();
+    _ticker = null;
+    _autoSubmitDeclenche = false;
+    _alerteJouee = false;
+    _dernierTic = null;
+    _reponseController.clear();
+    _remainingMs = _restantInitialMs(game);
+    _echeance = DateTime.now().add(Duration(milliseconds: _remainingMs));
+    if (!game.paused) _startTicker();
+  }
 
   @override
   void initState() {
     super.initState();
-    final game = context.read<GameConnection>();
-    // tempsEcouleMs > 0 quand cet écran est réaffiché après une reconnexion en pleine phase
-    // (voir EtatCourantJoueur) — sans le soustraire, la barre de temps repartirait de la durée
-    // totale au lieu du temps réellement restant.
-    _remainingMs = _bonus
-        ? (game.bonusQuestion == null
-            ? 0
-            : (game.bonusQuestion!.dureePhaseQuestionMs - game.bonusQuestion!.tempsEcouleMs)
-                .clamp(0, game.bonusQuestion!.dureePhaseQuestionMs))
-        : (game.currentRound == null
-            ? 0
-            : (game.currentRound!.dureeFenetreReponseMs - game.currentRound!.tempsEcouleMs)
-                .clamp(0, game.currentRound!.dureeFenetreReponseMs));
-    if (!game.paused) _startTicker();
+    _initialiserPhase(context.read<GameConnection>());
   }
 
   // Marge avant zéro à laquelle la validation auto est tentée, pas au tout dernier tick — sans
@@ -97,8 +121,11 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
 
   void _startTicker() {
     _ticker?.cancel();
+    _echeance = DateTime.now().add(Duration(milliseconds: _remainingMs));
     _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      setState(() => _remainingMs = (_remainingMs - 100).clamp(0, _remainingMs));
+      if (!mounted) return;
+      final restant = _echeance!.difference(DateTime.now()).inMilliseconds;
+      setState(() => _remainingMs = restant < 0 ? 0 : restant);
       _ticSiDernieresSecondes();
       if (_remainingMs <= _margeAutoSubmitMs && !_autoSubmitDeclenche) {
         _autoSubmitDeclenche = true;
@@ -136,6 +163,17 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
     }
   }
 
+  /// Nouvelle phase reçue sans changement d'écran (reconnexion directement sur le round suivant) :
+  /// repart de zéro, voir [_phaseId].
+  void _syncPhase(GameConnection game) {
+    final phase = _phaseCourante(game);
+    if (phase != null && phase != _phaseId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _initialiserPhase(context.read<GameConnection>()));
+      });
+    }
+  }
+
   @override
   void dispose() {
     _ticker?.cancel();
@@ -153,7 +191,9 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
   /// sur l'écran public. Au moins 1 : le PlayerAnswered du joueur lui-même peut arriver juste après
   /// l'accusé de sa propre réponse.
   static String _texteVerrouille(GameConnection game) {
-    final total = game.players.length;
+    // Seuls les joueurs encore attendus (connectés, pas partis) — sinon le compteur n'atteignait
+    // jamais le total (audit 2026-11-10).
+    final total = game.players.where((p) => p.estConnecte && !p.aQuitte).length;
     final repondus = game.repondants.length.clamp(1, total > 0 ? total : 1);
     return total > 0 ? 'Réponse verrouillée · $repondus/$total ont répondu' : 'Réponse verrouillée';
   }
@@ -175,6 +215,7 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
       return const Center(child: Text('En attente du round...'));
     }
 
+    _syncPhase(game);
     _syncTickerWithPause(game.paused);
     final disabled = game.roundAnswered || game.paused;
     final progress = round.dureeFenetreReponseMs > 0 ? _remainingMs / round.dureeFenetreReponseMs : 0.0;
@@ -229,6 +270,7 @@ class _AnswerPhaseScreenState extends State<AnswerPhaseScreen> {
       return const Center(child: Text('En attente de la question...'));
     }
 
+    _syncPhase(game);
     _syncTickerWithPause(game.paused);
     final disabled = game.bonusAnswered || game.paused;
     final progress = question.dureePhaseQuestionMs > 0 ? _remainingMs / question.dureePhaseQuestionMs : 0.0;
@@ -430,23 +472,25 @@ class _QcmAnswers extends StatelessWidget {
     final tuiles = <Widget>[];
     for (var index = 0; index < qcmOptions.length; index++) {
       final option = qcmOptions[index];
-      if (optionsRetirees?.contains(option.trackId) ?? false) continue;
+      if (optionsRetirees?.contains(option.optionId) ?? false) continue;
       // Un seul champ affiché par option (titre, premier auteur, ou film), pas plusieurs — un
       // morceau à plusieurs auteurs listés en entier rend le QCM illisible.
+      // Texte déjà calculé par le serveur pour la cible (premier artiste crédité, film...) — plus de
+      // découpage local sur la virgule, qui coupait "Earth, Wind & Fire" (audit 2026-11-10).
       final label = switch (cible) {
-        RoundCible.titre => option.title,
-        RoundCible.auteur => option.artist.split(',').first.trim(),
-        RoundCible.film => option.film,
+        RoundCible.titre => option.texte,
+        RoundCible.auteur => option.texte,
+        RoundCible.film => option.texte,
         // Jamais atteint en pratique (cible Année routée vers _AnneeQcmAnswers, voir
         // _buildAnswerArea) — présent pour l'exhaustivité du switch.
-        RoundCible.annee => option.title,
+        RoundCible.annee => option.texte,
       };
       tuiles.add(QcmTile(
         label: label,
         index: index,
         ordreApparition: tuiles.length,
-        etat: _etatTuile(repondu: repondu, reponseChoisie: reponseChoisie, valeur: option.trackId),
-        onPressed: disabled ? null : () => onSubmit(option.trackId),
+        etat: _etatTuile(repondu: repondu, reponseChoisie: reponseChoisie, valeur: option.optionId),
+        onPressed: disabled ? null : () => onSubmit(option.optionId),
       ));
     }
     return GrilleQcm(tuiles: tuiles);
@@ -517,7 +561,13 @@ class _LetterAnswer extends StatelessWidget {
             return AnimatedOpacity(
               opacity: etat == EtatTuileQcm.estompee ? 0.3 : 1,
               duration: BlindifyMotion.fast,
-              child: AppuiTolerant(
+              child: Semantics(
+                button: true,
+                enabled: !disabled,
+                selected: choisie,
+                label: 'Lettre $letter',
+                excludeSemantics: true,
+                child: AppuiTolerant(
                 onTap: disabled ? null : () => onSubmit(letter),
                 child: Container(
                   decoration: BoxDecoration(
@@ -528,6 +578,7 @@ class _LetterAnswer extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(letter, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
                 ),
+              ),
               ),
             );
           },
@@ -614,11 +665,19 @@ class _AnneeInput extends StatelessWidget {
   /// V2, section 12.7 — décennie révélée par le joker (ex. 1980), null tant qu'il n'a pas été utilisé.
   final int? decennie;
 
+  static final _anneeValide = RegExp(r'^\d{4}$');
+
   @override
   Widget build(BuildContext context) {
-    return Column(
+    // Audit 2026-11-10 : un envoi vide consommait l'unique essai avec la pénalité d'une mauvaise
+    // réponse — Valider reste grisé tant que l'année n'a pas 4 chiffres.
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, valeur, _) {
+        final peutValider = !disabled && _anneeValide.hasMatch(valeur.text.trim());
+        return SingleChildScrollView(
+          child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (decennie != null) ...[
           Text(
@@ -636,14 +695,17 @@ class _AnneeInput extends StatelessWidget {
           maxLength: 4,
           style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
           decoration: const InputDecoration(labelText: 'Année (ex. 1986)', counterText: ''),
-          onSubmitted: disabled ? null : (value) => onSubmit(value.trim()),
+          onSubmitted: peutValider ? (value) => onSubmit(value.trim()) : null,
         ),
         const SizedBox(height: 12),
         FilledButton(
-          onPressed: disabled ? null : () => onSubmit(controller.text.trim()),
+          onPressed: peutValider ? () => onSubmit(controller.text.trim()) : null,
           child: const Text('Valider'),
         ),
       ],
+          ),
+        );
+      },
     );
   }
 }
@@ -679,10 +741,18 @@ class _TextAnswer extends StatelessWidget {
       // présent pour l'exhaustivité du switch.
       RoundCible.annee => 'Année',
     };
-    return Column(
+    // Clavier ouvert : la pochette du joker est masquée et la zone défile, pour que le champ et
+    // « Valider » restent visibles sur un petit écran (audit 2026-11-10).
+    final clavierOuvert = MediaQuery.viewInsetsOf(context).bottom > 0;
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, valeur, _) {
+        final peutValider = !disabled && valeur.text.trim().isNotEmpty;
+        return SingleChildScrollView(
+          child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (coverUrl != null) ...[
+        if (coverUrl != null && !clavierOuvert) ...[
           Center(child: CoverArt(imageUrl: coverUrl, size: 96)),
           const SizedBox(height: 12),
         ],
@@ -697,15 +767,23 @@ class _TextAnswer extends StatelessWidget {
         TextField(
           controller: controller,
           enabled: !disabled,
-          decoration: InputDecoration(labelText: label),
-          onSubmitted: disabled ? null : (value) => onSubmit(value.trim()),
+          // L'autocorrection « corrigeait » les noms d'artistes et les titres anglais.
+          autocorrect: false,
+          enableSuggestions: false,
+          textCapitalization: TextCapitalization.none,
+          maxLength: 200,
+          decoration: InputDecoration(labelText: label, counterText: ''),
+          onSubmitted: peutValider ? (value) => onSubmit(value.trim()) : null,
         ),
         const SizedBox(height: 12),
         FilledButton(
-          onPressed: disabled ? null : () => onSubmit(controller.text.trim()),
+          onPressed: peutValider ? () => onSubmit(controller.text.trim()) : null,
           child: const Text('Valider'),
         ),
       ],
+          ),
+        );
+      },
     );
   }
 }

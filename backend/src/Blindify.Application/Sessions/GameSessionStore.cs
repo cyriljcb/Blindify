@@ -14,7 +14,14 @@ public class GameSessionStore : IGameSessionStore
 
     public bool Exists(string code) => _sessions.ContainsKey(code);
 
-    public void Remove(string code) => _sessions.TryRemove(code, out _);
+    public void Remove(string code)
+    {
+        _sessions.TryRemove(code, out _);
+        foreach (var (connectionId, codeAssocie) in _connexions)
+            if (codeAssocie == code) _connexions.TryRemove(connectionId, out _);
+    }
+
+    public IReadOnlyList<GameSession> Lister() => [.. _sessions.Values];
 
     public void AssocierConnexion(string connectionId, string code) => _connexions[connectionId] = code;
 

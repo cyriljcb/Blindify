@@ -23,9 +23,7 @@ public class PresetsRepository : IPresetsRepository
         // production (Docker), data/presets.json est monté fichier par fichier comme stats.json : sans
         // Data__PresetsPath explicite, les écritures resteraient dans le conteneur et seraient perdues.
         _presetsPath = dataPaths.Value.PresetsPath ?? Path.Combine(dataPaths.Value.RootPath, "presets.json");
-        _presets = File.Exists(_presetsPath)
-            ? JsonSerializer.Deserialize<List<PresetEntryDto>>(File.ReadAllText(_presetsPath), JsonOptions) ?? []
-            : [];
+        _presets = AtomicJsonFile.Read<List<PresetEntryDto>>(_presetsPath, JsonOptions, () => []);
     }
 
     public IReadOnlyList<PresetEntryDto> Lister()

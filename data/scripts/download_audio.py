@@ -40,6 +40,7 @@ import yt_dlp
 from pychorus import find_and_output_chorus
 
 from live_keywords import mots_suspects
+from tracks_io import artistes, cle_doublon, ecrire_json_atomique
 
 SCRIPTS_DIR = Path(__file__).parent
 DATA_DIR = SCRIPTS_DIR.parent
@@ -66,7 +67,7 @@ def charger_tracks_json() -> list[dict]:
 
 
 def sauvegarder_tracks_json(tracks: list[dict]) -> None:
-    TRACKS_JSON_PATH.write_text(json.dumps(tracks, ensure_ascii=False, indent=2), encoding="utf-8")
+    ecrire_json_atomique(TRACKS_JSON_PATH, tracks)  # atomique, voir tracks_io.py
 
 
 _RECHERCHE_NB_CANDIDATS = 5
@@ -270,6 +271,10 @@ def main() -> None:
 
     tracks = charger_tracks_json()
     ids_existants = {t["id"] for t in tracks}
+    # Audit 2026-11-10 : seul l'id Spotify était comparé — la même chanson importée depuis deux
+    # albums (compilation, réédition) entrait deux fois (304 groupes de doublons) et pouvait sortir
+    # deux fois dans une partie.
+    cles_existantes = {cle_doublon(t) for t in tracks}
 
     a_verifier: list[dict] = []
     echecs: list[dict] = []
@@ -280,9 +285,10 @@ def main() -> None:
         track_id = entry["id"]
         titre, artiste = entry["title"], entry["artist"]
 
-        if track_id in ids_existants:
+        if track_id in ids_existants or cle_doublon(entry) in cles_existantes:
             deja_presents += 1
             continue
+        cles_existantes.add(cle_doublon(entry))
 
         audio_path = AUDIO_DIR / f"{track_id}.mp3"
         print(f"[{i}/{len(entries)}] {artiste} - {titre}", file=sys.stderr)
@@ -329,6 +335,8 @@ def main() -> None:
                     "id": track_id,
                     "title": titre,
                     "artist": artiste,
+                    # Liste exacte des artistes crédités (fetch_spotify_*), voir tracks_io.artistes.
+                    "artists": entry.get("artists") or artistes(entry),
                     "album": entry.get("album"),
                     **oeuvre,
                     "spotifyId": entry.get("spotifyId"),

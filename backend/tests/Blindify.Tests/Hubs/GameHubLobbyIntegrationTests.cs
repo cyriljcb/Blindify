@@ -38,8 +38,8 @@ public class GameHubLobbyIntegrationTests : IClassFixture<GameHubTestFactory>, I
     private async Task<string> CreerSalon()
     {
         var creation = await _host.InvokeAsync<CreateGameResultDto>("CreateGame", new CreateGameRequestDto(false, null));
-        await _alice.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "alice");
-        await _bob.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Bob", "bob");
+        await JoinDeTest.JoinAsync(_alice, creation.Code, "Alice", "alice");
+        await JoinDeTest.JoinAsync(_bob, creation.Code, "Bob", "bob");
         return creation.Code;
     }
 
@@ -60,7 +60,7 @@ public class GameHubLobbyIntegrationTests : IClassFixture<GameHubTestFactory>, I
 
         Assert.Equal("alice", recu!.PlayerId);
         Assert.True(recu.Retire);
-        var join = await _bob.InvokeAsync<JoinGameResultDto>("JoinGame", code, "Bob", "bob");
+        var join = await JoinDeTest.JoinAsync(_bob, code, "Bob", "bob");
         Assert.DoesNotContain(join.Joueurs, j => j.PlayerId == "alice");
     }
 
@@ -80,7 +80,7 @@ public class GameHubLobbyIntegrationTests : IClassFixture<GameHubTestFactory>, I
         Assert.True(fin.Resultats.Single(r => r.PlayerId == "bob").Points < 0);
 
         // Retour avec le même playerId (crash de l'app, ou changement d'avis) : même joueur, plus « parti ».
-        var retour = await _alice.InvokeAsync<JoinGameResultDto>("JoinGame", code, "Alice", "alice");
+        var retour = await JoinDeTest.JoinAsync(_alice, code, "Alice", "alice");
         Assert.True(retour.Success);
         Assert.False(retour.Joueurs.Single(j => j.PlayerId == "alice").APartie);
     }
@@ -157,7 +157,7 @@ public class GameHubLobbyIntegrationTests : IClassFixture<GameHubTestFactory>, I
         await _host.InvokeAsync("OuvrirVoteThemes", new OuvrirVoteThemesRequestDto(2, NombreRoundsMin: 1));
         await _alice.InvokeAsync<bool>("VoterThemes", new List<string> { "test-cover" });
 
-        var join = await _alice.InvokeAsync<JoinGameResultDto>("JoinGame", code, "Alice", "alice");
+        var join = await JoinDeTest.JoinAsync(_alice, code, "Alice", "alice");
 
         Assert.NotNull(join.VoteThemes);
         Assert.True(join.VoteThemes!.Ouvert);
@@ -177,7 +177,7 @@ public class GameHubLobbyIntegrationTests : IClassFixture<GameHubTestFactory>, I
         await Configurer();
         await _host.InvokeAsync("StartRound");
         await roundEnded.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await _host.InvokeAsync("NextRound");
+        // Dernier round de la série joué : le host enchaîne directement sur la question bonus.
         await _host.InvokeAsync("StartBonusRound");
         await AttendreAsync(() => options is not null);
 

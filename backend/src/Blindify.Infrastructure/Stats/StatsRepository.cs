@@ -17,9 +17,7 @@ public class StatsRepository : IStatsRepository
     public StatsRepository(IOptions<DataPathsOptions> dataPaths)
     {
         _path = dataPaths.Value.StatsPath;
-        _stats = File.Exists(_path)
-            ? JsonSerializer.Deserialize<Dictionary<string, StatsEntryDto>>(File.ReadAllText(_path), JsonOptions) ?? []
-            : [];
+        _stats = AtomicJsonFile.Read<Dictionary<string, StatsEntryDto>>(_path, JsonOptions, () => []);
     }
 
     public int GetPlayCount(string trackId)

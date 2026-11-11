@@ -9,6 +9,12 @@ public class Track
     public required string Id { get; set; }
     public required string Title { get; set; }
     public required string Artist { get; set; }
+
+    /// <summary>Artistes crédités, un par élément (audit 2026-11-10) — prioritaire sur le découpage
+    /// de Artist par virgule, qui coupait en deux les noms contenant eux-mêmes une virgule
+    /// ("Earth, Wind &amp; Fire", "Tyler, The Creator"). Vide = repli sur ce découpage (anciennes
+    /// entrées de tracks.json). Voir Rounds.AuteurVariantes.</summary>
+    public List<string> Artists { get; set; } = [];
     public string? Album { get; set; }
 
     /// <summary>Nom du film/de la série dont est tiré le morceau, saisi à la main — prioritaire sur

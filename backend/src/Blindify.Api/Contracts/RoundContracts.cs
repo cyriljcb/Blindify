@@ -2,9 +2,11 @@ using Blindify.Domain.Enums;
 
 namespace Blindify.Api.Contracts;
 
-/// <summary>Film : nom nettoyé du film d'origine (voir FilmNameResolver), affiché à la place de
-/// Title/Artist quand la cible du round est RoundCible.Film (morceaux "disney").</summary>
-public record QcmOptionDto(string TrackId, string Title, string Artist, string Film);
+/// <summary>Option QCM telle qu'envoyée aux clients (audit 2026-11-10) : un identifiant opaque
+/// (RoundOption.OptionId, à renvoyer tel quel dans SubmitAnswer) et le seul texte affiché pour la
+/// cible du round (titre, premier artiste crédité ou film — feinte éventuelle comprise). Plus de
+/// TrackId : il permettait de télécharger le MP3/la pochette de chaque option via /files.</summary>
+public record QcmOptionDto(string OptionId, string Texte);
 
 /// <summary>Envoyé uniquement au host — inclut le chemin audio (jamais transmis aux joueurs).
 /// RoundId (V2) : identité du round, voir Round.Id — le host n'en a pas l'usage aujourd'hui (il ne
@@ -57,4 +59,6 @@ public record RoundResultEntryDto(string PlayerId, string? Reponse, bool? EstCor
 /// <summary>Annee (V2, section 12.5) : Track.Year tel quel, pour que le reveal puisse afficher
 /// l'année réelle quand Cible == Annee (le host/l'écran public n'ont sinon aucun moyen de la
 /// connaître — jamais transmise avant le reveal). Null si le morceau n'a pas d'année renseignée.</summary>
-public record RoundEndedDto(string TrackId, string Title, string Artist, string? CoverPath, RoundCible Cible, string Film, List<RoundResultEntryDto> Resultats, int? Annee = null);
+/// <summary>BonneOptionId : OptionId de la bonne réponse en mode QCM (null sinon) — permet aux
+/// clients de la mettre en évidence sans connaître les TrackId des options.</summary>
+public record RoundEndedDto(string TrackId, string Title, string Artist, string? CoverPath, RoundCible Cible, string Film, List<RoundResultEntryDto> Resultats, int? Annee = null, string? BonneOptionId = null);

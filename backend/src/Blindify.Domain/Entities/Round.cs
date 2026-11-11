@@ -20,6 +20,11 @@ public class Round
     public RoundCible Cible { get; set; }
 
     public DateTimeOffset? DebutRound { get; set; }
+
+    /// <summary>Instant de clôture du round (fenêtre écoulée ou « Révéler maintenant ») — posé par
+    /// RoundService.TerminerParTimeout. Toute réponse/joker arrivant ensuite est refusé (audit
+    /// 2026-11-10 : un joueur qui rejoignait pendant le reveal pouvait encore répondre).</summary>
+    public DateTimeOffset? TermineA { get; set; }
     public long DureeEnPauseMs { get; set; }
     public List<RoundAnswer> Reponses { get; set; } = [];
 

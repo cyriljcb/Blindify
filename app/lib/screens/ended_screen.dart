@@ -10,6 +10,7 @@ import '../services/game_connection.dart';
 import '../theme.dart';
 import '../widgets/game_card.dart';
 import '../widgets/player_avatar.dart';
+import '../widgets/quitter_salon.dart';
 
 class EndedScreen extends StatefulWidget {
   const EndedScreen({super.key});
@@ -166,6 +167,20 @@ class _EndedScreenState extends State<EndedScreen> {
                         .slideY(begin: 0.3, curve: BlindifyMotion.pop);
                   },
                 ),
+              ),
+              // Audit 2026-11-10 : la seule sortie était cachée dans les réglages. Le host peut aussi
+              // relancer la partie (« Rejouer ») : rester sur cet écran suffit pour la suivante.
+              const SizedBox(height: 8),
+              Text(
+                'Le host peut relancer une partie avec le même code — reste ici pour rejouer.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+              ),
+              TextButton.icon(
+                onPressed: () => confirmerQuitterSalon(context),
+                icon: const Icon(Icons.logout_rounded, size: 18),
+                label: const Text('Rejoindre une autre partie'),
+                style: TextButton.styleFrom(foregroundColor: BlindifyColors.coral),
               ),
             ],
           ),

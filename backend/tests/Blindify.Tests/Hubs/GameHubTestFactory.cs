@@ -10,6 +10,23 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace Blindify.Tests.Hubs;
 
+/// <summary>JoinGame exige le jeton du joueur pour reprendre un PlayerId déjà inscrit (audit
+/// 2026-11-10) — ce helper le mémorise par (code, playerId) et le repasse, comme l'app Flutter qui le
+/// persiste. CreateHubConnection(code, playerId) le reprend aussi pour la reconnexion automatique.</summary>
+public static class JoinDeTest
+{
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string, string), string> Jetons = new();
+
+    public static string? Jeton(string code, string playerId) => Jetons.GetValueOrDefault((code, playerId));
+
+    public static async Task<JoinGameResultDto> JoinAsync(HubConnection connexion, string code, string nom, string playerId)
+    {
+        var resultat = await connexion.InvokeAsync<JoinGameResultDto>("JoinGame", code, nom, playerId, Jeton(code, playerId));
+        if (resultat.Jeton is not null) Jetons[(code, playerId)] = resultat.Jeton;
+        return resultat;
+    }
+}
+
 /// <summary>Héberge Blindify.Api en mémoire, avec tracks.json/stats.json pointés vers des fichiers temporaires.</summary>
 public class GameHubTestFactory : WebApplicationFactory<Program>
 {
@@ -59,6 +76,8 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
                 ["Data:FlagsResolutionsPath"] = FlagsResolutionsPath,
                 ["Data:PresetsPath"] = PresetsPath,
                 ["Data:RootPath"] = RootPath,
+                ["Data:AudioPath"] = Path.Combine(RootPath, "audio"),
+                ["Data:CoversPath"] = Path.Combine(RootPath, "covers"),
                 // Vide explicitement : sinon hérite de la vraie valeur de appsettings.Development.json
                 // (environnement de test "Development" par défaut), qui pointe vers le vrai dossier
                 // host/ du repo — les tests qui en ont besoin le réactivent eux-mêmes (voir StaticFilesTests).
@@ -74,7 +93,7 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
     /// code/playerId (V2) : posés en query string de l'URL du hub, exactement comme le fait le client
     /// Flutter dès que le code de partie est connu — permet à GameHub.OnConnectedAsync de rattacher
     /// automatiquement le joueur à sa reconnexion, voir GameHub.ReconnexionAutomatique_*Tests.</summary>
-    public HubConnection CreateHubConnection(string? code = null, string? playerId = null)
+    public HubConnection CreateHubConnection(string? code = null, string? playerId = null, string? jeton = null)
     {
         var chemin = "/hubs/game";
         if (code is not null || playerId is not null)
@@ -82,7 +101,8 @@ public class GameHubTestFactory : WebApplicationFactory<Program>
             var query = string.Join("&", new[]
             {
                 code is not null ? $"code={Uri.EscapeDataString(code)}" : null,
-                playerId is not null ? $"playerId={Uri.EscapeDataString(playerId)}" : null
+                playerId is not null ? $"playerId={Uri.EscapeDataString(playerId)}" : null,
+                (jeton ?? (code is not null && playerId is not null ? JoinDeTest.Jeton(code, playerId) : null)) is { } j ? $"jeton={Uri.EscapeDataString(j)}" : null
             }.Where(p => p is not null));
             chemin += $"?{query}";
         }

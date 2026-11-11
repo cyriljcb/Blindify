@@ -24,7 +24,7 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
 
         // V2, section 12.5 : voir RoundService.DemarrerRound pour la même règle (pas de "première
         // lettre" d'un nombre).
-        if (cible == RoundCible.Annee && mode == RoundMode.PremiereLettre) mode = RoundMode.TapeReponse;
+        mode = RoundService.ModeJouable(answerMatcher, mode, cible, track);
 
         // "Course" (retour utilisateur) : réservée au Qcm — répondre à voix haute ou par écrit n'a
         // pas de sens pour trancher qui a "buzzé" en premier, alors que les options Qcm restent le
@@ -35,12 +35,12 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
 
         if (mode == RoundMode.Qcm && cible == RoundCible.Annee)
         {
-            bonusRound.AnneeOptions = anneeQcmGenerator.GenererOptions(track.Year!.Value, Random.Shared);
+            bonusRound.AnneeOptions = anneeQcmGenerator.GenererOptions(track.Year!.Value, Random.Shared, config.NombreDistracteursQcm + 1);
         }
         else if (mode == RoundMode.Qcm)
         {
             var pool = RoundService.PoolPourQcm(cible, track, catalogueComplet, tags);
-            var options = qcmGenerator.GenererOptions(track, pool, config, Random.Shared);
+            var options = qcmGenerator.GenererOptions(track, pool, config, Random.Shared, cible);
             bonusRound.QcmOptionTrackIds = options.OptionsTrackIds.ToList();
         }
 
@@ -49,8 +49,12 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
 
     public void DemarrerPhaseMise(BonusRound bonusRound, DateTimeOffset maintenant) => bonusRound.DebutPhaseMise = maintenant;
 
-    public bool EnregistrerMise(GameSession session, BonusRound bonusRound, string playerId, Guid roundId, int palierIndex)
+    public bool EnregistrerMise(GameSession session, BonusRound bonusRound, SeriesConfig config, string playerId, Guid roundId, int palierIndex)
     {
+        // Audit 2026-11-10 (critique) : un index hors bornes était accepté puis faisait planter le
+        // règlement des mises (IndexOutOfRangeException dans la tâche du chrono bonus), figeant la
+        // partie sur la question.
+        if (palierIndex < 0 || palierIndex >= config.PaliersDeMise.Length) return false;
         if (session.EnPause) return false;
         if (bonusRound.Id != roundId) return false;
         if (bonusRound.DebutPhaseQuestion is not null) return false;
@@ -79,13 +83,21 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
         if (session.EnPause) return null;
         if (bonusRound.Id != roundId) return null;
         if (bonusRound.DebutPhaseQuestion is null) return null;
+        if (bonusRound.TermineA is not null) return null;
         if (bonusRound.Reponses.Any(r => r.PlayerId == playerId)) return null;
+        if (string.IsNullOrWhiteSpace(reponse)) return null;
         // Course déjà tranchée par un autre joueur (retour utilisateur) : "c'est seulement le
         // premier qui répond qui a ou perd les points" — les suivants n'affectent plus rien.
         if (bonusRound.EstCourse && bonusRound.Reponses.Count > 0) return null;
 
         var mise = bonusRound.Mises.FirstOrDefault(m => m.PlayerId == playerId);
         if (mise is null) return null;
+
+        // QCM : identifiant opaque d'option, voir RoundService.SoumettreReponse (même repli sans Options).
+        var optionChoisie = bonusRound.Mode == RoundMode.Qcm && bonusRound.Cible != RoundCible.Annee
+            ? bonusRound.Options?.FirstOrDefault(o => o.OptionId == reponse)
+            : null;
+        var trackIdSoumis = bonusRound.Options is null ? reponse : optionChoisie?.TrackId ?? "";
 
         bool estCorrecte;
         int? ecartAnnee = null;
@@ -113,36 +125,27 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
             var reponsesAcceptables = bonusRound.Cible switch
             {
                 RoundCible.Film => [FilmNameResolver.Resoudre(track)],
-                RoundCible.Auteur => AuteurVariantes.Acceptables(track.Artist),
+                RoundCible.Auteur => AuteurVariantes.Acceptables(track),
                 _ => TitreVariantes.Acceptables(track.Title)
             };
             estCorrecte = bonusRound.Mode switch
             {
-                RoundMode.Qcm => RoundService.EstQcmCorrect(bonusRound.Cible, track, reponse, resolveTrack),
+                RoundMode.Qcm => trackIdSoumis.Length > 0 && RoundService.EstQcmCorrect(bonusRound.Cible, track, trackIdSoumis, resolveTrack),
                 RoundMode.PremiereLettre => reponsesAcceptables.Any(texte => EstPremiereLettreCorrecte(reponse, texte)),
-                _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(
-                    reponse, texte,
-                    session.Config.SeuilToleranceLevenshteinRatio,
-                    session.Config.LongueurMinimalePourTolerance,
-                    session.Config.LongueurMinimalePourToleranceFixe,
-                    session.Config.ToleranceFixeReponseCourte)),
+                _ => reponsesAcceptables.Any(texte => answerMatcher.EstCorrecte(reponse, texte, session.Config)),
             };
         }
 
         var valeurMise = bonusScoring.ValeurPalier(config, mise.PalierIndex);
         var points = bonusScoring.PointsResultat(valeurMise, estCorrecte);
 
-        // V2 (socle statistiques) — voir RoundService.SoumettreReponse pour le même principe.
-        var optionChoisie = bonusRound.Mode == RoundMode.Qcm && bonusRound.Cible != RoundCible.Annee
-            ? bonusRound.Options?.FirstOrDefault(o => o.TrackId == reponse)
-            : null;
         var tempsReponseMs = (int)Math.Max(0, (maintenant - bonusRound.DebutPhaseQuestion!.Value).TotalMilliseconds - bonusRound.DureeEnPauseMs);
 
         var answer = new BonusAnswer
         {
             PlayerId = playerId,
             Timestamp = maintenant,
-            Reponse = reponse,
+            Reponse = optionChoisie?.TexteAffiche ?? reponse,
             EstCorrecte = estCorrecte,
             Points = points,
             OptionChoisieTrackId = optionChoisie?.TrackId,
@@ -160,6 +163,9 @@ public class BonusRoundService(IBonusScoringService bonusScoring, IAnswerMatcher
 
     public void TerminerParTimeout(GameSession session, BonusRound bonusRound, SeriesConfig config)
     {
+        if (bonusRound.TermineA is not null) return;
+        bonusRound.TermineA = DateTimeOffset.UtcNow;
+
         var repondants = bonusRound.Reponses.Select(r => r.PlayerId).ToHashSet();
 
         // Course déjà tranchée (un joueur a répondu, juste ou faux) : les autres mises ne sont ni

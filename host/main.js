@@ -43,6 +43,7 @@ async function tenterConnexion(url, { silencieux = false, timeoutMs = null } = {
   }
   state.serverBaseUrl = url;
 
+  await transport.arreterConnexion();
   const connection = transport.creerConnexion(url);
   registerHandlers(connection, { onConnectionChanged: setConnected, onEvent: handleEvent, onReconnected: reprendreControleApresReconnexion });
 
@@ -63,31 +64,143 @@ async function tenterConnexion(url, { silencieux = false, timeoutMs = null } = {
 
 // Retour utilisateur (2026-11-01) : une reconnexion automatique de SignalR donne une nouvelle
 // connexion, que le serveur ne connaît pas comme host (HostConnectionId) ni comme membre du groupe de
-// la partie — le panneau ne recevait plus RoundStarted/PlayerAnswered et ses actions étaient refusées
-// (« Seul le host… »). On se ré-annonce, sans changer d'écran ; si un round tourne, sa cible et son
-// mode sont resynchronisés au cas où un RoundStarted aurait été manqué pendant la coupure.
+// la partie. On se ré-annonce et on se resynchronise sur l'état complet renvoyé (audit 2026-11-10 :
+// un RoundEnded/BonusResult manqué pendant une coupure de quelques secondes laissait la TV et le
+// panneau figés sur la question).
 async function reprendreControleApresReconnexion() {
   if (!state.gameCode || !state.hostSecret) return;
   try {
     const snapshot = await transport.invoke.rejoinAsHost(state.gameCode, state.hostSecret);
-    state.jeuEnPause = snapshot.enPause;
-    if (state.currentScreen === "round" && snapshot.cibleCourante) {
-      state.currentRoundInfo = { ...state.currentRoundInfo, cible: snapshot.cibleCourante, mode: snapshot.modeCourant };
-    }
-    notify();
+    appliquerSnapshot(snapshot, { rechargement: false });
   } catch (err) {
     console.error("RejoinAsHost après reconnexion :", err);
+    // Serveur redémarré entre-temps (état en mémoire) : la partie est perdue, le dire clairement.
+    erreurEcranCourant("La partie n'existe plus sur le serveur (redémarré ?) — crée un nouveau salon.");
   }
+}
+
+// ----- Reprise à partir du snapshot de RejoinAsHost (audit 2026-11-10) -----
+// Reconstruit l'écran courant en rejouant les handlers habituels (mêmes mutations, mêmes effets),
+// puis recale audio et minuteur sur la position réelle. rechargement=false (simple reconnexion) :
+// si la question affichée est toujours celle du serveur, on ne fait que resynchroniser joueurs,
+// pause et réponses reçues, sans relancer l'audio ni les minuteurs.
+const ECRAN_PAR_PHASE = {
+  Lobby: "lobby",
+  AvantSerie: "serie-intro",
+  Round: "round",
+  RoundTermine: "round-ended",
+  RoundPret: "round-ended",
+  BonusMise: "bonus-stake",
+  BonusQuestion: "bonus-question",
+  BonusTermine: "bonus-result",
+  Termine: "ended",
+};
+
+function idQuestionDuSnapshot(snapshot) {
+  return snapshot.round?.roundId ?? snapshot.bonusQuestion?.roundId ?? snapshot.bonusMise?.roundId ?? null;
+}
+
+function appliquerSnapshot(snapshot, { rechargement }) {
+  state.jeuEnPause = snapshot.enPause;
+  state.votesThemes = snapshot.votesThemes ?? null;
+  state.partieConfiguree = snapshot.partieConfiguree;
+  state.nombreSeriesTotal = snapshot.nombreSeries;
+  state.nombreRoundsParSerie = snapshot.nombreRoundsParSerie;
+  state.tagsParSerieCourante = snapshot.tagsParSerie ?? [];
+  state.equipes = snapshot.equipes ?? [];
+  state.players = (snapshot.joueurs ?? []).map((j) => ({ playerId: j.playerId, nom: j.nom, estConnecte: j.estConnecte, aQuitte: !!j.aPartie }));
+  state.equipeParJoueur = Object.fromEntries((snapshot.joueurs ?? []).filter((j) => j.teamId).map((j) => [j.playerId, j.teamId]));
+  if (snapshot.scores) state.dernierScoreDto = snapshot.scores;
+
+  const ecran = ECRAN_PAR_PHASE[snapshot.phase] ?? "lobby";
+  const memeQuestion = !rechargement && state.currentScreen === ecran && idQuestionDuSnapshot(snapshot) === state.questionIdCourante
+    && snapshot.phase !== "AvantSerie";
+  if (memeQuestion) {
+    if (snapshot.repondants) state.repondants = snapshot.repondants;
+    if (snapshot.misesEnregistrees) state.misesEnregistrees = snapshot.misesEnregistrees;
+    notify();
+    return;
+  }
+
+  timers.annulerTousLesMinuteurs();
+  timers.stopTimer();
+  state.serieCouranteIndex = snapshot.serieCouranteIndex;
+  state.roundSuivantDejaAvance = false;
+  displayBridge.resetPlayerAnswered();
+
+  switch (snapshot.phase) {
+    case "AvantSerie":
+      state.roundsDemarres = 0;
+      // Rediffuse l'annonce de la série (SerieAnnoncee pilote l'écran d'intro et son minuteur).
+      afficherIntroSerie();
+      break;
+
+    case "Round": {
+      state.roundsDemarres = Math.max(0, snapshot.roundsDemarresDansSerie - 1);
+      mutations.RoundStarted(state, snapshot.round);
+      state.repondants = snapshot.repondants ?? [];
+      for (const r of state.repondants) displayBridge.sendPlayerAnswered(r);
+      audio.resumeAudio(state.serverBaseUrl, snapshot.round.filePath, snapshot.positionAudioMs ?? 0, snapshot.enPause);
+      audio.definirRepereRefrain(state.refrainCourantMs);
+      timers.startTimer(snapshot.round.dureeFenetreReponseMs, el("timer-fill"), snapshot.tempsEcouleMs ?? 0, snapshot.enPause);
+      break;
+    }
+
+    case "RoundTermine":
+    case "RoundPret":
+      state.roundsDemarres = snapshot.roundsDemarresDansSerie;
+      mutations.RoundEnded(state, snapshot.roundEnded);
+      state.roundSuivantDejaAvance = snapshot.phase === "RoundPret";
+      if (!snapshot.enPause) armerEnchainementApresRound();
+      break;
+
+    case "BonusMise":
+      state.roundsDemarres = snapshot.nombreRoundsParSerie;
+      mutations.BonusStakeOptions(state, snapshot.bonusMise);
+      state.misesEnregistrees = snapshot.misesEnregistrees ?? [];
+      timers.startTimer(snapshot.bonusMise.dureePhaseMiseMs, el("bonus-stake-timer-fill"), snapshot.tempsEcouleMs ?? 0, snapshot.enPause);
+      break;
+
+    case "BonusQuestion": {
+      state.roundsDemarres = snapshot.nombreRoundsParSerie;
+      const q = snapshot.bonusQuestion;
+      mutations.BonusQuestionStarted(state, q);
+      state.repondants = snapshot.repondants ?? [];
+      for (const r of state.repondants) displayBridge.sendPlayerAnswered(r);
+      const rate = q.ralentissementActive ? q.facteurRalentissement : 1;
+      audio.resumeAudio(state.serverBaseUrl, q.filePath, snapshot.positionAudioMs ?? 0, snapshot.enPause, rate);
+      audio.definirRepereRefrain(state.refrainCourantMs);
+      timers.startTimer(q.dureePhaseQuestionMs, el("bonus-question-timer-fill"), snapshot.tempsEcouleMs ?? 0, snapshot.enPause);
+      break;
+    }
+
+    case "BonusTermine":
+      state.roundsDemarres = snapshot.nombreRoundsParSerie;
+      mutations.BonusResult(state, snapshot.bonusResult);
+      if (!snapshot.enPause) armerEnchainementApresBonus(false);
+      break;
+
+    case "Termine":
+      mutations.GameEnded(state, snapshot.gameEnded);
+      demarrerDefilementTitres();
+      break;
+
+    default:
+      state.currentScreen = "lobby";
+      state.currentDisplayScreen = "lobby";
+      chargerPresets();
+  }
+
+  notify();
 }
 
 el("btn-connect").addEventListener("click", () => tenterConnexion(el("server-url").value));
 
 // V2 — reconnexion host : restaure le contrôle d'une partie déjà créée après un refresh accidentel
-// de la page (code + hostSecret en sessionStorage, voir state.js). Le snapshot renvoyé par
-// RejoinAsHost (position audio, pause, mode) ne porte pas assez d'info (joueurs, série, options QCM)
-// pour reconstruire fidèlement l'écran de round : on atterrit sur le lobby avec le contrôle restauré
-// (pause/reprise/tableau général/fin de partie redeviennent utilisables) plutôt que d'afficher un
-// écran de round forcément incomplet. Retourne true si une session a été reprise avec succès.
+// de la page (code + hostSecret en sessionStorage, voir state.js). Depuis l'audit 2026-11-10, le
+// snapshot de RejoinAsHost porte l'état complet (phase, joueurs, série, question en cours, résultats)
+// et l'écran courant est reconstruit tel quel — voir appliquerSnapshot. Retourne true si une session
+// a été reprise avec succès.
 async function tenterResumeHostSession() {
   const session = loadHostSession();
   if (!session) return false;
@@ -96,25 +209,15 @@ async function tenterResumeHostSession() {
     const snapshot = await transport.invoke.rejoinAsHost(session.code, session.hostSecret);
     state.gameCode = session.code;
     state.hostSecret = session.hostSecret;
-    state.jeuEnPause = snapshot.enPause;
-    state.votesThemes = snapshot.votesThemes ?? null;
-
-    if (snapshot.trackId) {
-      audio.resumeAudio(state.serverBaseUrl, snapshot.filePath, snapshot.positionAudioMs, snapshot.enPause);
-    }
-
-    state.currentScreen = "lobby";
     chargerPresets();
-    showScreen("screen-lobby");
-    el("lobby-error").textContent =
-      "Partie en cours reprise après rechargement de la page — utilise les actions ci-dessous (pause, tableau général, fin de partie) ; l'écran de round n'est pas reconstruit.";
-    notify();
+    appliquerSnapshot(snapshot, { rechargement: true });
     return true;
   } catch (err) {
     // Secret invalide ou partie disparue (backend redémarré entre-temps, état 100% en mémoire) —
     // pas la peine de réessayer indéfiniment, ni de bloquer la connexion pour autant.
     console.error("RejoinAsHost:", err);
     clearHostSession();
+    el("setup-error").textContent = "La partie précédente n'existe plus sur le serveur (redémarré ?) — crée un nouveau salon.";
     return false;
   }
 }
@@ -174,26 +277,36 @@ function handleEvent(name, payload) {
       } else if (!el("setup-audio-continu").checked) {
         audio.pauseAudioEnDouceur();
       }
-      timers.minuteurAnnulable("auto-next", delaiEnchainementMs(), avancerRoundSuivant, {
-        onTick: (restantMs) => {
-          const label = state.roundsDemarres >= state.nombreRoundsParSerie ? "Question bonus" : "Round suivant";
-          el("auto-next-note").textContent = `${label} dans ${Math.ceil(restantMs / 1000)}s...`;
-        },
-        onCancel: () => { el("auto-next-note").textContent = ""; },
-      });
+      armerEnchainementApresRound();
       break;
 
     case "GamePaused":
+      // Audit 2026-11-10 : seule la musique qui jouait est relancée à la reprise (pas pendant une
+      // mise, une annonce de série ou un reveal sans « musique continue »).
+      audioJouaitAvantPause = audio.estEnLecture();
       audio.pauseAudioEnDouceur();
       timers.pauseTimer();
       timers.annulerMinuteur("auto-next");
       timers.annulerMinuteur("auto-fin-ou-serie-suivante");
+      // Audit 2026-11-10 : ces minuteurs continuaient pendant la pause — un round démarrait en
+      // pleine pause après l'annonce de série, ou l'audio du mode course partait quand même.
+      timers.annulerMinuteur("auto-intro-serie");
+      timers.annulerMinuteur("classement-auto");
+      if (introCourseEnAttente) timers.annulerMinuteur("bonus-course-intro");
       break;
 
     case "GameResumed":
-      audio.lancerLecture();
-      audio.fadeAudioVolume(1, 450);
       timers.resumeTimer();
+      if (introCourseEnAttente) {
+        // Intro du mode course interrompue : l'audio et le chrono démarrent maintenant.
+        const demarrer = introCourseEnAttente;
+        introCourseEnAttente = null;
+        demarrer();
+      } else if (audioJouaitAvantPause) {
+        audio.lancerLecture();
+        audio.fadeAudioVolume(1, 450);
+      }
+      audioJouaitAvantPause = false;
       break;
 
     case "GameEnded":
@@ -222,7 +335,11 @@ function handleEvent(name, payload) {
 
     case "BonusQuestionStarted": {
       displayBridge.resetPlayerAnswered();
+      // Arrête tout de suite le chrono de la mise (audit 2026-11-10 : la TV l'affichait à 0 s
+      // pendant l'intro du mode course).
+      timers.stopTimer();
       const demarrerAudioEtMinuteur = () => {
+        introCourseEnAttente = null;
         const rate = payload.ralentissementActive ? payload.facteurRalentissement : 1;
         audio.playAudio(state.serverBaseUrl, payload.filePath, rate); // depuis le début — c'est la devinette elle-même
         audio.definirRepereRefrain(state.refrainCourantMs);
@@ -235,6 +352,7 @@ function handleEvent(name, payload) {
       // délais doivent rester identiques ; DemarrerAudioEtMinuteur est annulable via
       // annulerMinuteur("bonus-course-intro") si un BonusResult arrive avant l'échéance.
       if (payload.estCourse) {
+        introCourseEnAttente = demarrerAudioEtMinuteur;
         timers.minuteurAnnulable("bonus-course-intro", DUREE_INTRO_COURSE_MS, demarrerAudioEtMinuteur);
       } else {
         demarrerAudioEtMinuteur();
@@ -244,6 +362,7 @@ function handleEvent(name, payload) {
 
     case "BonusResult":
       timers.annulerMinuteur("bonus-course-intro");
+      introCourseEnAttente = null;
       timers.stopTimer();
       audio.remettreVitesseNormale(); // remis à la vitesse normale pour la suite (fin de partie, replay...)
       if (state.refrainCourantMs !== null) {
@@ -251,35 +370,7 @@ function handleEvent(name, payload) {
       } else {
         audio.pauseAudioEnDouceur();
       }
-      // Refonte UI (lot 3) : classement automatique (TV + téléphones) aux séries prévues, quelques
-      // secondes après le résultat ; la série suivante attend d'autant plus longtemps.
-      const classementAuto = seriesAvecClassementAuto(state.nombreSeriesTotal).includes(state.serieCouranteIndex);
-      if (classementAuto) {
-        timers.minuteurAnnulable("classement-auto", DELAI_AVANT_CLASSEMENT_AUTO_MS, () =>
-          transport.invoke.showLeaderboard().catch((err) => console.error("Classement automatique :", err))
-        );
-      }
-      if (state.serieCouranteIndex < state.nombreSeriesTotal) {
-        const delaiSerieSuivante = delaiEnchainementMs() + (classementAuto ? DUREE_CLASSEMENT_AUTO_MS : 0);
-        timers.minuteurAnnulable("auto-fin-ou-serie-suivante", delaiSerieSuivante, avancerSerieSuivante, {
-          onTick: (restantMs) => {
-            el("bonus-end-note").textContent = `Série suivante dans ${Math.ceil(restantMs / 1000)}s...`;
-          },
-          onCancel: () => { el("bonus-end-note").textContent = ""; },
-        });
-      } else {
-        timers.minuteurAnnulable("auto-fin-ou-serie-suivante", delaiEnchainementMs(), () => {
-          transport.invoke.endGame().catch((err) => {
-            console.error(err);
-            el("bonus-end-note").textContent = "Erreur : " + (err.message || err);
-          });
-        }, {
-          onTick: (restantMs) => {
-            el("bonus-end-note").textContent = `Fin de la partie dans ${Math.ceil(restantMs / 1000)}s...`;
-          },
-          onCancel: () => { el("bonus-end-note").textContent = ""; },
-        });
-      }
+      armerEnchainementApresBonus(true);
       break;
 
     case "LeaderboardShown":
@@ -300,6 +391,60 @@ function handleEvent(name, payload) {
 
   notify();
 }
+
+// Minuteur d'enchaînement après un round révélé — partagé entre RoundEnded et la reprise
+// (appliquerSnapshot).
+function armerEnchainementApresRound() {
+  timers.minuteurAnnulable("auto-next", delaiEnchainementMs(), avancerRoundSuivant, {
+    onTick: (restantMs) => {
+      const label = state.roundsDemarres >= state.nombreRoundsParSerie ? "Question bonus" : "Round suivant";
+      el("auto-next-note").textContent = `${label} dans ${Math.ceil(restantMs / 1000)}s...`;
+    },
+    onCancel: () => { el("auto-next-note").textContent = ""; },
+  });
+}
+
+// Après le résultat d'une question bonus : série suivante ou fin de partie. [avecClassement] :
+// classement automatique aux séries prévues (pas lors d'une reprise, pour ne pas le rejouer).
+function armerEnchainementApresBonus(avecClassement) {
+  // Refonte UI (lot 3) : classement automatique (TV + téléphones) aux séries prévues, quelques
+  // secondes après le résultat ; la série suivante attend d'autant plus longtemps.
+  const classementAuto = avecClassement && seriesAvecClassementAuto(state.nombreSeriesTotal).includes(state.serieCouranteIndex);
+  if (classementAuto) {
+    timers.minuteurAnnulable("classement-auto", DELAI_AVANT_CLASSEMENT_AUTO_MS, () =>
+      transport.invoke.showLeaderboard().catch((err) => console.error("Classement automatique :", err))
+    );
+  }
+  if (state.serieCouranteIndex < state.nombreSeriesTotal) {
+    const delaiSerieSuivante = delaiEnchainementMs() + (classementAuto ? DUREE_CLASSEMENT_AUTO_MS : 0);
+    timers.minuteurAnnulable("auto-fin-ou-serie-suivante", delaiSerieSuivante, avancerSerieSuivante, {
+      onTick: (restantMs) => {
+        el("bonus-end-note").textContent = `Série suivante dans ${Math.ceil(restantMs / 1000)}s...`;
+      },
+      onCancel: () => { el("bonus-end-note").textContent = ""; },
+    });
+  } else {
+    timers.minuteurAnnulable("auto-fin-ou-serie-suivante", delaiEnchainementMs(), () => {
+      transport.invoke.endGame().catch((err) => {
+        console.error(err);
+        el("bonus-end-note").textContent = "Erreur : " + (err.message || err);
+      });
+    }, {
+      onTick: (restantMs) => {
+        el("bonus-end-note").textContent = `Fin de la partie dans ${Math.ceil(restantMs / 1000)}s...`;
+      },
+      onCancel: () => { el("bonus-end-note").textContent = ""; },
+    });
+  }
+}
+
+// État de pause local (voir GamePaused/GameResumed).
+let audioJouaitAvantPause = false;
+let introCourseEnAttente = null;
+
+audio.definirSurErreurAudio(() => {
+  erreurEcranCourant("Fichier audio introuvable ou illisible pour ce morceau — passe au suivant et signale-le.");
+});
 
 function delaiEnchainementMs() {
   return Math.max(1, parseInt(el("setup-delai-enchainement").value, 10) || 10) * 1000;
@@ -341,7 +486,9 @@ async function avancerRoundSuivant() {
   }
 
   try {
-    await transport.invoke.nextRound();
+    // Reprise après rechargement (phase RoundPret) : NextRound a déjà été appelé côté serveur.
+    if (!state.roundSuivantDejaAvance) await transport.invoke.nextRound();
+    state.roundSuivantDejaAvance = false;
     await transport.invoke.startRound();
   } catch (err) {
     console.error(err);

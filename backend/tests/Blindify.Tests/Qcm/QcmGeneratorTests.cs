@@ -156,11 +156,11 @@ public class QcmGeneratorTests
         var pool = new List<Track>
         {
             correct,
-            new() { Id = "loin1", Title = "T", Artist = "Artiste loin1", FilePath = "audio/loin1.mp3", Year = 1970 },
-            new() { Id = "proche1", Title = "T", Artist = "Artiste proche1", FilePath = "audio/proche1.mp3", Year = 1999 },
-            new() { Id = "proche2", Title = "T", Artist = "Artiste proche2", FilePath = "audio/proche2.mp3", Year = 2001 },
-            new() { Id = "moyen", Title = "T", Artist = "Artiste moyen", FilePath = "audio/moyen.mp3", Year = 1985 },
-            new() { Id = "loin2", Title = "T", Artist = "Artiste loin2", FilePath = "audio/loin2.mp3", Year = 2020 },
+            new() { Id = "loin1", Title = "T loin1", Artist = "Artiste loin1", FilePath = "audio/loin1.mp3", Year = 1970 },
+            new() { Id = "proche1", Title = "T proche1", Artist = "Artiste proche1", FilePath = "audio/proche1.mp3", Year = 1999 },
+            new() { Id = "proche2", Title = "T proche2", Artist = "Artiste proche2", FilePath = "audio/proche2.mp3", Year = 2001 },
+            new() { Id = "moyen", Title = "T moyen", Artist = "Artiste moyen", FilePath = "audio/moyen.mp3", Year = 1985 },
+            new() { Id = "loin2", Title = "T loin2", Artist = "Artiste loin2", FilePath = "audio/loin2.mp3", Year = 2020 },
         };
         var config = new GameConfig { ProbabiliteQcmPiege = 0 };
 

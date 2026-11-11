@@ -1,8 +1,10 @@
 using Blindify.Api.Contracts;
+using Blindify.Application.Sessions;
 using Blindify.Domain.Configuration;
 using Blindify.Domain.Enums;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Blindify.Tests.Hubs;
 
@@ -29,6 +31,16 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     {
         await _hostConnection.DisposeAsync();
         await _playerConnection.DisposeAsync();
+    }
+
+    /// <summary>Les options QCM n'exposent plus de TrackId (identifiant opaque, audit 2026-11-10) :
+    /// la bonne option est retrouvée côté serveur, comme le fait RoundService.SoumettreReponse.</summary>
+    private QcmOptionDto BonneOption(List<QcmOptionDto> options, RoundStartedForHostDto host)
+    {
+        var store = _factory.Services.GetRequiredService<IGameSessionStore>();
+        var round = store.Lister().SelectMany(s => s.SeriesList).SelectMany(s => s.Rounds).First(r => r.Id == host.RoundId);
+        var optionId = round.Options!.First(o => o.TrackId == round.TrackId).OptionId;
+        return options.First(o => o.OptionId == optionId);
     }
 
     // CreateGame ne configure plus rien (retour utilisateur du 2026-08-24 : permettre de recréer une
@@ -78,7 +90,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             roundStartedHost = null;
             roundStartedPlayer = null;
             creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-            join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+            join = await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
             await _hostConnection.InvokeAsync("StartRound");
             await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
             if (roundStartedHost!.Mode == RoundMode.Qcm) break;
@@ -99,9 +111,9 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         Assert.Equal(4, roundStartedPlayer.QcmOptions!.Count);
         Assert.NotNull(roundStartedHost!.FilePath);
 
-        var bonneOption = roundStartedPlayer.QcmOptions.First(o => o.TrackId == roundStartedHost.TrackId);
+        var bonneOption = BonneOption(roundStartedPlayer.QcmOptions, roundStartedHost);
 
-        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
+        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.OptionId));
 
         Assert.True(resultat.EstCorrecte);
         Assert.True(resultat.Points > 0);
@@ -130,11 +142,11 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         await _hostConnection.InvokeAsync("StartRound");
         await AvecTimeout(roundEndedTcs.Task, TimeSpan.FromSeconds(5));
 
-        // Un seul round dans l'unique série : plus rien à démarrer après NextRound().
-        await _hostConnection.InvokeAsync("NextRound");
-
-        var exception = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync("StartRound"));
-        Assert.Contains("Plus de round classique", exception.Message);
+        // Un seul round dans l'unique série : NextRound() refuse de passer la question bonus (audit
+        // 2026-11-10 — un host rechargé pouvait la sauter), puis un second StartRound ne relance pas
+        // le round terminé.
+        var exception = await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync("NextRound"));
+        Assert.Contains("question bonus", exception.Message);
     }
 
     [Fact]
@@ -148,7 +160,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         // Catalogue de test réduit à des morceaux "disney" sans tags (voir GameHubTestFactory) —
         // thème vide ("aléatoire") pour ne pas dépendre d'un tag qui n'existe pas dans ce catalogue.
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
 
         await _hostConnection.InvokeAsync("AnnoncerSerieCourante");
 
@@ -227,7 +239,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             roundStartedHost = null;
             roundStartedPlayer = null;
             creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+            await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
             await _hostConnection.InvokeAsync("StartRound");
             await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
             if (roundStartedHost!.Mode == RoundMode.Qcm) break;
@@ -236,8 +248,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             await _hostConnection.InvokeAsync("EndGame");
         }
 
-        var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
-        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
+        var bonneOption = BonneOption(roundStartedPlayer!.QcmOptions!, roundStartedHost!);
+        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.OptionId));
         await AvecTimeout(roundEndedTcs.Task, TimeSpan.FromSeconds(5));
 
         await _hostConnection.InvokeAsync("EndGame");
@@ -245,7 +257,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         await AttendreAsync(() => gameRestartedTcs.Task.IsCompleted);
 
         // Reconnexion avec le même playerId : le score doit être remis à zéro.
-        var rejoin = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        var rejoin = await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         Assert.Equal(0, rejoin.Score);
 
         // La partie doit pouvoir redémarrer sans repasser par CreateGame/ConfigurerPartie — RejouerPartie
@@ -265,21 +277,21 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _playerConnection.On("SalonFerme", () => salonFermeTcs.TrySetResult());
 
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         await _hostConnection.InvokeAsync("EndGame");
 
         await _hostConnection.InvokeAsync("FermerSalon");
         await AttendreAsync(() => salonFermeTcs.Task.IsCompleted);
 
         // L'ancien code n'existe plus, et la connexion joueur n'y est plus rattachée.
-        var rejoinAncien = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        var rejoinAncien = await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         Assert.False(rejoinAncien.Success);
         await Assert.ThrowsAsync<HubException>(() => _hostConnection.InvokeAsync("StartRound"));
 
         // Le même host recrée un salon, avec un nouveau code, que le joueur peut rejoindre.
         var nouveau = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
         Assert.NotEqual(creation.Code, nouveau.Code);
-        var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", nouveau.Code, "Alice", "player-1");
+        var join = await JoinDeTest.JoinAsync(_playerConnection, nouveau.Code, "Alice", "player-1");
         Assert.True(join.Success);
         Assert.Equal(0, join.Score);
     }
@@ -291,7 +303,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", p => roundStarted = p);
 
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         await _hostConnection.InvokeAsync("StartRound");
         await AttendreAsync(() => roundStarted is not null);
 
@@ -308,7 +320,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _hostConnection.On<RoundEndedDto>("RoundEnded", _ => Interlocked.Increment(ref roundsEnded));
 
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         await _hostConnection.InvokeAsync("StartRound");
         await AttendreAsync(() => roundStarted is not null);
 
@@ -326,7 +338,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     public async Task FermerSalon_ParUnJoueur_EstRefuse()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
 
         await Assert.ThrowsAsync<HubException>(() => _playerConnection.InvokeAsync("FermerSalon"));
     }
@@ -335,7 +347,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     public async Task AuthenticateAdmin_MotDePasseCorrect_PermetPauseSansDelogerLeHost()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
 
         var auth = await _playerConnection.InvokeAsync<AdminAuthResultDto>("AuthenticateAdmin", "test-admin-pw");
         Assert.True(auth.Success);
@@ -354,7 +366,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     public async Task AuthenticateAdmin_MotDePasseIncorrect_NAccordeAucunPrivilege()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
 
         var auth = await _playerConnection.InvokeAsync<AdminAuthResultDto>("AuthenticateAdmin", "mauvais-mot-de-passe");
         Assert.False(auth.Success);
@@ -372,7 +384,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _hostConnection.On<PlayerAnsweredDto>("PlayerAnswered", payload => playerAnsweredTcs.TrySetResult(payload));
 
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         await _hostConnection.InvokeAsync("StartRound");
         await AttendreAsync(() => roundStartedPlayer is not null);
 
@@ -405,7 +417,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             creation = await CreerEtConfigurerPartie(_hostConnection, true, 1, [], null, nomsEquipes: ["Rouge", "Bleu"]);
             equipeRouge = creation.Teams.First(t => t.Nom == "Rouge");
 
-            var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+            var join = await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
             if (tentative == 0)
             {
                 Assert.Equal(2, creation.Teams.Count);
@@ -423,8 +435,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             await _hostConnection.InvokeAsync("EndGame");
         }
 
-        var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
-        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
+        var bonneOption = BonneOption(roundStartedPlayer!.QcmOptions!, roundStartedHost!);
+        var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>("SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.OptionId));
 
         await AttendreAsync(() => scoreUpdates.Count > 0);
         var dernier = scoreUpdates[^1];
@@ -468,7 +480,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             roundStartedHost = null;
             roundStartedPlayer = null;
             var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], config);
-            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", $"player-champ-{tentative}");
+            await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", $"player-champ-{tentative}");
             await _hostConnection.InvokeAsync("StartRound");
             await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
             if (roundStartedHost!.Mode == RoundMode.Qcm) break;
@@ -480,12 +492,10 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         var correctId = roundStartedHost!.TrackId;
         var champAttendu = roundStartedHost.Cible == RoundCible.Titre ? auteursParId[correctId] : titresParId[correctId];
 
-        var distracteurs = roundStartedPlayer!.QcmOptions!.Where(o => o.TrackId != correctId).ToList();
-        var champAffiche = roundStartedHost.Cible == RoundCible.Titre
-            ? distracteurs.Select(o => o.Title)
-            : distracteurs.Select(o => o.Artist);
+        var texteCorrect = roundStartedHost.Cible == RoundCible.Titre ? titresParId[correctId] : auteursParId[correctId];
+        var distracteurs = roundStartedPlayer!.QcmOptions!.Where(o => o.Texte != texteCorrect).ToList();
 
-        Assert.Contains(champAttendu, champAffiche);
+        Assert.Contains(champAttendu, distracteurs.Select(o => o.Texte));
     }
 
     [Fact]
@@ -513,7 +523,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
             var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], config);
 
-            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", $"player-texte-{tentative}");
+            await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", $"player-texte-{tentative}");
             await _hostConnection.InvokeAsync("StartRound");
             await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
             if (!Trouve()) await _hostConnection.InvokeAsync("EndGame");
@@ -521,8 +531,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         Assert.True(Trouve(), "Pas obtenu (t1, Auteur, Qcm) en 200 tentatives.");
 
-        var distracteurs = roundStartedPlayer!.QcmOptions!.Where(o => o.TrackId != roundStartedHost!.TrackId);
-        Assert.Contains("Faux Artiste Test", distracteurs.Select(o => o.Artist));
+        Assert.Contains("Faux Artiste Test", roundStartedPlayer!.QcmOptions!.Select(o => o.Texte));
     }
 
     [Fact]
@@ -533,13 +542,13 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         // Retour utilisateur : un joueur seul se voyait comme "0 joueur connecté" (PlayerJoined
         // n'est diffusé qu'aux AUTRES joueurs déjà présents) — le roster renvoyé par JoinGame
         // doit inclure le joueur qui vient de rejoindre, pas seulement ceux déjà là avant lui.
-        var joinAlice = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-1");
+        var joinAlice = await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-1");
         Assert.Single(joinAlice.Joueurs);
         Assert.Equal("player-1", joinAlice.Joueurs[0].PlayerId);
 
         await using var autreConnexion = _factory.CreateHubConnection();
         await autreConnexion.StartAsync();
-        var joinBob = await autreConnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Bob", "player-2");
+        var joinBob = await JoinDeTest.JoinAsync(autreConnexion, creation.Code, "Bob", "player-2");
 
         Assert.Equal(2, joinBob.Joueurs.Count);
         Assert.Contains(joinBob.Joueurs, p => p.PlayerId == "player-1");
@@ -549,7 +558,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     [Fact]
     public async Task JoinGame_CodeInconnu_RetourneUnEchec()
     {
-        var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", "ZZZZZ", "Bob", "player-2");
+        var join = await JoinDeTest.JoinAsync(_playerConnection, "ZZZZZ", "Bob", "player-2");
 
         Assert.False(join.Success);
         Assert.NotNull(join.ErrorMessage);
@@ -566,13 +575,13 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
 
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-reco-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-reco-1");
         await _hostConnection.InvokeAsync("StartRound");
         await AttendreAsync(() => roundStartedPlayer is not null);
 
         await using var reconnexion = _factory.CreateHubConnection();
         await reconnexion.StartAsync();
-        var rejoin = await reconnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-reco-1");
+        var rejoin = await JoinDeTest.JoinAsync(reconnexion, creation.Code, "Alice", "player-reco-1");
 
         Assert.True(rejoin.Success);
         Assert.NotNull(rejoin.EtatCourant);
@@ -593,7 +602,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _playerConnection.On<RoundStartedForPlayersDto>("RoundStarted", payload => roundStartedPlayer = payload);
 
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-reco-2");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-reco-2");
         await _hostConnection.InvokeAsync("StartRound");
         await AttendreAsync(() => roundStartedPlayer is not null);
 
@@ -603,7 +612,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         await using var reconnexion = _factory.CreateHubConnection();
         await reconnexion.StartAsync();
-        var rejoin = await reconnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-reco-2");
+        var rejoin = await JoinDeTest.JoinAsync(reconnexion, creation.Code, "Alice", "player-reco-2");
 
         Assert.NotNull(rejoin.EtatCourant);
         Assert.Equal(PhaseJoueur.RoundClassique, rejoin.EtatCourant!.Phase);
@@ -614,7 +623,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
     public async Task JoinGame_AvantLeDemarrageDeLaPartie_EtatCourantEstNull()
     {
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        var join = await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-lobby");
+        var join = await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-lobby");
 
         Assert.Null(join.EtatCourant);
     }
@@ -629,14 +638,18 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         _playerConnection.On<BonusStakeOptionsDto>("BonusStakeOptions", payload => stakeOptions = payload);
 
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-bonus-mise-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-bonus-mise-1");
+        var roundTermine = false;
+        _hostConnection.On<RoundEndedDto>("RoundEnded", _ => roundTermine = true);
         await _hostConnection.InvokeAsync("StartRound");
+        // StartBonusRound est refusé pendant un round classique (audit 2026-11-10).
+        await AttendreAsync(() => roundTermine);
         await _hostConnection.InvokeAsync("StartBonusRound");
         await AttendreAsync(() => stakeOptions is not null);
 
         await using var reconnexion = _factory.CreateHubConnection();
         await reconnexion.StartAsync();
-        var rejoin = await reconnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-bonus-mise-1");
+        var rejoin = await JoinDeTest.JoinAsync(reconnexion, creation.Code, "Alice", "player-bonus-mise-1");
 
         Assert.NotNull(rejoin.EtatCourant);
         Assert.Equal(PhaseJoueur.BonusMise, rejoin.EtatCourant!.Phase);
@@ -659,15 +672,19 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         // le palier par défaut ("safe") est appliqué automatiquement à l'échéance
         // (BonusTimerCoordinator.AppliquerPaliersParDefaut) puis la phase question démarre.
         var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null, dureePhaseMiseMs: 200, dureePhaseQuestionMs: 5000);
-        await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-bonus-q-1");
+        await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", "player-bonus-q-1");
+        var roundTermine = false;
+        _hostConnection.On<RoundEndedDto>("RoundEnded", _ => roundTermine = true);
         await _hostConnection.InvokeAsync("StartRound");
+        // StartBonusRound est refusé pendant un round classique (audit 2026-11-10).
+        await AttendreAsync(() => roundTermine);
         await _hostConnection.InvokeAsync("StartBonusRound");
         await AttendreAsync(() => stakeOptions is not null);
         await AttendreAsync(() => questionStarted is not null, timeoutMs: 3000);
 
         await using var reconnexion = _factory.CreateHubConnection();
         await reconnexion.StartAsync();
-        var rejoin = await reconnexion.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", "player-bonus-q-1");
+        var rejoin = await JoinDeTest.JoinAsync(reconnexion, creation.Code, "Alice", "player-bonus-q-1");
 
         Assert.NotNull(rejoin.EtatCourant);
         Assert.Equal(PhaseJoueur.BonusQuestion, rejoin.EtatCourant!.Phase);
@@ -696,7 +713,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             roundStartedHost = null;
             roundStartedPlayer = null;
             var creation = await CreerEtConfigurerPartie(_hostConnection, false, 1, [], null);
-            await _playerConnection.InvokeAsync<JoinGameResultDto>("JoinGame", creation.Code, "Alice", $"player-pause-{tentative}");
+            await JoinDeTest.JoinAsync(_playerConnection, creation.Code, "Alice", $"player-pause-{tentative}");
             await _hostConnection.InvokeAsync("StartRound");
             await AttendreAsync(() => roundStartedPlayer is not null && roundStartedHost is not null);
             if (roundStartedHost!.Mode == RoundMode.Qcm) break;
@@ -711,9 +728,9 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         // Filet de sécurité serveur (architecture.md section 9) : toute soumission reçue pendant
         // EnPause=true est rejetée, pas juste désactivée côté UI — et ne consomme pas l'unique
         // essai du joueur (RoundService.SoumettreReponse retourne avant d'enregistrer la réponse).
-        var bonneOption = roundStartedPlayer!.QcmOptions!.First(o => o.TrackId == roundStartedHost!.TrackId);
+        var bonneOption = BonneOption(roundStartedPlayer!.QcmOptions!, roundStartedHost!);
         var reponsePendantPause = await _playerConnection.InvokeAsync<RoundAnswerResultDto>(
-            "SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
+            "SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.OptionId));
         Assert.False(reponsePendantPause.EstCorrecte);
         Assert.Equal(0, reponsePendantPause.Points);
 
@@ -723,7 +740,7 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
 
         // Après reprise, l'essai du joueur est toujours disponible et accepté normalement.
         var resultat = await _playerConnection.InvokeAsync<RoundAnswerResultDto>(
-            "SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.TrackId));
+            "SubmitAnswer", new SubmitAnswerRequestDto(roundStartedPlayer!.RoundId, bonneOption.OptionId));
         Assert.True(resultat.EstCorrecte);
         Assert.True(resultat.Points > 0);
     }
@@ -755,8 +772,9 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
             "RejoinAsHost", creation.Code, creation.HostSecret);
 
         Assert.False(snapshot.EnPause);
-        Assert.Equal(roundStartedHost!.TrackId, snapshot.TrackId);
-        Assert.Equal(roundStartedHost.FilePath, snapshot.FilePath);
+        Assert.Equal(PhaseHost.Round, snapshot.Phase);
+        Assert.Equal(roundStartedHost!.TrackId, snapshot.Round!.TrackId);
+        Assert.Equal(roundStartedHost.FilePath, snapshot.Round.FilePath);
         Assert.NotNull(snapshot.PositionAudioMs);
         Assert.True(snapshot.PositionAudioMs >= 0);
 
@@ -775,7 +793,8 @@ public class GameHubIntegrationTests : IClassFixture<GameHubTestFactory>, IAsync
         var snapshot = await _hostConnection.InvokeAsync<HostStateSnapshotDto>("RejoinAsHost", creation.Code, creation.HostSecret);
 
         Assert.False(snapshot.EnPause);
-        Assert.Null(snapshot.TrackId);
+        Assert.Equal(PhaseHost.Lobby, snapshot.Phase);
+        Assert.Null(snapshot.Round);
     }
 
     private static async Task AttendreAsync(Func<bool> condition, int timeoutMs = 5000)
